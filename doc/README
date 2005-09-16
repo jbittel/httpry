@@ -1,0 +1,107 @@
+
+        -||-  HTTPry 0.0.6  -||-
+
+The HTTP protocol has become one of the most ubiquitous protocols utilized on
+the net today.
+
+Thanks:
+   p0f
+   Dug Song
+
+
+----------------------
+1. USAGE
+----------------------
+
+Running the program with the -h switch will print out an abbreviated description
+of the available options. However, this is merely an abbreviated description
+meant for quick reference and not an understanding of program behavior. This
+section describes these options in greater detail.
+
+httpry [-dhp] [-c count] [-f file] [-i interface] [-l filter] [-o file] [-r dir]
+       [-u user]
+
+-c <count> :
+Specifies a number of packets to capture, following which the
+program will terminate. Note that this is a count of total captured packets, not
+of parsed HTTP packets.
+
+-d :
+Runs the program as a daemon process. All program status output will be
+sent to the syslog. Additionally, there is a pid file created for the process in
+/var/run/httpry.pid.
+
+-f <file> :
+Provide an input capture file to read from instead of performing a
+live capture. The program expects a valid capture file as input. Note that this
+does not require the program to be run as root, as no access to the NIC is
+required.
+
+-h :
+Displays the program name and version, along with a brief description of
+these options.
+
+-i <interface> :
+Specifies an ethernet interface for the program to listen on.
+This is optional; by default the program will poll the system for a list of
+interfaces and select the first one that it finds.
+
+-l <filter> :
+Allows the default capture filter to be overridden by a filter
+that follows the tcpdump format. Useful for capturing traffic on non-standard
+ports or to/from specific hosts.
+
+-o <file> :
+Provides an output file for writing parsed packet data. Running the
+program as a daemon without this option would be pretty useless and/or stupid.
+Note that if the program is running as a daemon, its base directory is set to
+the filesystem root so an absolute path to the output file should be specified.
+
+-p :
+Disables promiscuous mode on the NIC. Under most circumstances this should
+not be required.
+
+-r :
+Allows a running directory to be specified when running in daemon mode. By default
+this is set to /, which should be adequate for most uses.
+
+-u <user> :
+Allows an alternate user to take ownership of the process. This is
+particularly useful when running in daemon mode. Note that you still need root
+priviledges in order to run the program; it will switch to the alternate
+credentials once initialization is complete.
+
+
+----------------------
+2. CHANGELOG
+----------------------
+
+version 0.0.6
+   + Add: ability to change process owner (-u)
+   + Add: additional error checking when entering daemon mode
+   + Add: ability to specify running directory (-r)
+   = Chg: completely reworked ouput data handling
+   = Chg: removed stdout suppression (-s)
+   = Chg: daemon mode (-d) now requires output file (-o)
+   = Chg: error/log message printing pushed into function macros
+   - Fix:
+
+version 0.0.5
+   + Initial "official" release
+
+All previous releases were internal pre-release builds
+
+
+----------------------
+1. FUTURE IDEAS
+----------------------
+
+* Internal packet queue to help with burst traffic
+* Parent/worker threaded design
+* Optionally read settings from a config file
+* Configurable subset of HTTP traffic to parse/output
+* More extensive disassembly of the HTTP protocol
+* Viewable packet capture statistics
+* Option to fallback on rDNS when Host: unavailable
+* HTTP client/server session tracking
+* Option to dump raw packets that are logged

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+case $1 in
+start)
+	echo Starting httpry...
+	/home/jbittel/httpry/httpry -d -o /home/jbittel/httpry/out.log
+	;;
+stop)
+	if [ -r /var/run/httpry.pid ]; then
+		echo Stopping httpry...
+		kill `cat /var/run/httpry.pid`
+	fi
+	;;
+restart)
+	$0 stop
+	sleep 2
+	$0 start
+	;;
+*)
+	echo "Usage: $0 [start|stop|restart]"
+	;;
+esac
