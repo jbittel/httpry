@@ -62,9 +62,10 @@
 #include "httpry.h"
 
 /* Macros for logging/displaying status messages */
-#define warn(x...) fprintf(stderr, x)
+#define info(x...) fprintf(stderr, x)
+#define warn(x...) fprintf(stderr, "Warning: " x)
 #define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
-#define die(x...) { fprintf(stderr, x); exit(EXIT_FAILURE); }
+#define die(x...) { fprintf(stderr, "Error: " x); exit(EXIT_FAILURE); }
 
 void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
 pcap_t* open_dev(char *dev, int promisc, char *fname);
@@ -86,8 +87,8 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
                 // Search for network device
                 *dev = pcap_lookupdev(errbuf);
                 if (dev == NULL) {
-                        log("Error: cannot find capture device: %s\n", errbuf);
-                        die("Error: cannot find capture device: %s\n", errbuf);
+                        log("Cannot find capture device: %s\n", errbuf);
+                        die("Cannot find capture device: %s\n", errbuf);
                 }
         } else {
                 // Use network interface from user parameter
@@ -96,8 +97,8 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
 
         // Retrieve network information
         if (pcap_lookupnet(*dev, net, &mask, errbuf) == -1) {
-                log("Error: cannot find network info: %s\n", errbuf);
-                die("Error: cannot find network info: %s\n", errbuf);
+                log("Cannot find network info: %s\n", errbuf);
+                die("Cannot find network info: %s\n", errbuf);
         }
 
         return;
@@ -112,15 +113,15 @@ pcap_t* open_dev(char *dev, int promisc, char *fname) {
                 // Open saved capture file
                 pcap_hnd = pcap_open_offline(fname, errbuf);
                 if (pcap_hnd == NULL) {
-                        log("Error: cannot open capture file '%s': %s\n", fname, errbuf);
-                        die("Error: cannot open capture file '%s': %s\n", fname, errbuf);
+                        log("Cannot open capture file '%s': %s\n", fname, errbuf);
+                        die("Cannot open capture file '%s': %s\n", fname, errbuf);
                 }
         } else {
                 // Open live capture
                 pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, TO_MS, errbuf);
                 if (pcap_hnd == NULL) {
-                        log("Error: invalid device '%s': %s\n", dev, errbuf);
-                        die("Error: invalid device '%s': %s\n", dev, errbuf);
+                        log("Invalid device '%s': %s\n", dev, errbuf);
+                        die("Invalid device '%s': %s\n", dev, errbuf);
                 }
         }
 
@@ -133,14 +134,14 @@ void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net) {
 
         // Compile filter string
         if (pcap_compile(pcap_hnd, &filter, cap_filter, 0, net) == -1) {
-                log("Error: bad capture filter syntax in '%s'\n", cap_filter);
-                die("Error: bad capture filter syntax in '%s'\n", cap_filter);
+                log("Bad capture filter syntax in '%s'\n", cap_filter);
+                die("Bad capture filter syntax in '%s'\n", cap_filter);
         }
 
         // Apply compiled filter to pcap handle
         if (pcap_setfilter(pcap_hnd, &filter) == -1) {
-                log("Error: cannot compile capture filter\n");
-                die("Error: cannot compile capture filter\n");
+                log("Cannot compile capture filter\n");
+                die("Cannot compile capture filter\n");
         }
 
         // Clean up compiled filter
@@ -155,28 +156,28 @@ void change_user(char *new_user) {
 
         // Make sure we have correct priviledges
         if (geteuid() > 0) {
-                die("Error: you must be root to switch users\n");
+                die("You must be root to switch users\n");
         }
 
         // Test for user existence in the system
         if (!(user = getpwnam(new_user))) {
-                die("Error: user '%s' not found in system\n", new_user);
+                die("User '%s' not found in system\n", new_user);
         }
 
         // Set group information, GID and UID
         if (initgroups(user->pw_name, user->pw_gid)) {
-                die("Error: cannot initialize the group access list\n");
+                die("Cannot initialize the group access list\n");
         }
         if (setgid(user->pw_gid)) {
-                die("Error: cannot set GID\n");
+                die("Cannot set GID\n");
         }
         if (setuid(user->pw_uid)) {
-                die("Error: cannot set UID\n");
+                die("Cannot set UID\n");
         }
 
         // Test to see if we actually made it
         if ((getegid() != user->pw_gid) || (geteuid() != user->pw_uid)) {
-                die("Error: cannot change process owner to '%s'\n", new_user);
+                die("Cannot change process owner to '%s'\n", new_user);
         }
 
         return;
@@ -185,8 +186,8 @@ void change_user(char *new_user) {
 /* Begin packet capture/processing session */
 void get_packets(pcap_t *pcap_hnd, int pkt_count) {
         if (pcap_loop(pcap_hnd, pkt_count, process_pkt, NULL) < 0) {
-                log("Error: cannot read packets from interface\n");
-                die("Error: cannot read packets from interface\n");
+                log("Cannot read packets from interface\n");
+                die("Cannot read packets from interface\n");
         }
 
         pcap_close(pcap_hnd);
@@ -225,7 +226,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
         // Copy packet payload to editable buffer
         if ((data = malloc(size_data + 1)) == NULL) {
-                fprintf(stderr, "Error: cannot allocate memory for packet data\n");
+                fprintf(stderr, "Cannot allocate memory for packet data\n");
                 exit(EXIT_FAILURE);
         }
         memset(data, '\0', size_data + 1);
@@ -297,8 +298,8 @@ void runas_daemon(char *run_dir) {
 
         child_pid = fork();
         if (child_pid < 0) { // Error forking child
-                log("Error: cannot fork child process\n");
-                die("Error: cannot fork child process\n");
+                log("Cannot fork child process\n");
+                die("Cannot fork child process\n");
         }
         if (child_pid > 0) exit(0); // Parent bows out
 
@@ -306,14 +307,14 @@ void runas_daemon(char *run_dir) {
         dup2(1,2);
         close(0);
         if (freopen(NULL_FILE, "a", stderr) == NULL) {
-                log("Error: cannot open output stream to '%s'\n", optarg);
-                die("Error: cannot open output stream to '%s'\n", optarg);
+                log("Cannot open output stream to '%s'\n", optarg);
+                die("Cannot open output stream to '%s'\n", optarg);
         }
 
         // Assign new process group for child
         if (setsid() == -1) {
-                log("Warning: cannot assign new session for child process\n");
-                warn("Warning: cannot assign new session for child process\n");
+                log("Cannot assign new session for child process\n");
+                warn("Cannot assign new session for child process\n");
         }
 
         umask(0); // Reset file creation mask
@@ -322,12 +323,12 @@ void runas_daemon(char *run_dir) {
         // Open/create pid file
         pid_file = open(PID_FILE, O_RDWR|O_CREAT, 0640);
         if (pid_file < 0) {
-                log("Warning: cannot open PID file '%s'\n", PID_FILE);
-                warn("Warning: cannot open PID file '%s'\n", PID_FILE);
+                log("Cannot open PID file '%s'\n", PID_FILE);
+                warn("Cannot open PID file '%s'\n", PID_FILE);
         }
         if (lockf(pid_file, F_TLOCK, 0) < 0) {
-                log("Warning: cannot lock PID file '%s'\n", PID_FILE);
-                warn("Warning: cannot lock PID file '%s'\n", PID_FILE);
+                log("Cannot lock PID file '%s'\n", PID_FILE);
+                warn("Cannot lock PID file '%s'\n", PID_FILE);
         }
 
         // Write pid into file
@@ -352,12 +353,12 @@ void runas_daemon(char *run_dir) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        warn("Caught SIGINT, cleaning up...\n");
+                        info("Caught SIGINT, cleaning up...\n");
                         cleanup_exit();
                         exit(EXIT_SUCCESS);
                         break;
                 case SIGTERM:
-                        warn("Caught SIGTERM, cleaning up...\n");
+                        info("Caught SIGTERM, cleaning up...\n");
                         cleanup_exit();
                         exit(EXIT_SUCCESS);
                         break;
@@ -414,8 +415,8 @@ int main(int argc, char *argv[]) {
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
                         case 'o': if (freopen(optarg, "a", stdout) == NULL) {
-                                          log("Error: cannot open output stream to '%s'\n", optarg);
-                                          die("Error: cannot open output stream to '%s'\n", optarg);
+                                          log("Cannot open output stream to '%s'\n", optarg);
+                                          die("Cannot open output stream to '%s'\n", optarg);
                                   }
                                   use_outfile = 1; break;
                         case 'p': set_promisc = 0; break;
@@ -423,10 +424,10 @@ int main(int argc, char *argv[]) {
                         case 'u': new_user = optarg; break;
 
                         case '?': if (isprint(optopt)) {
-                                          warn("Error: unknown parameter '-%c'\n", optopt);
+                                          warn("Unknown parameter '-%c'\n", optopt);
                                           display_usage();
                                   } else {
-                                          warn("Error: unknown parameter\n");
+                                          warn("Unknown parameter\n");
                                           display_usage();
                                   }
                         default:  display_usage(); // Shouldn't be reached
