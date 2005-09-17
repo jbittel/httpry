@@ -1,16 +1,16 @@
 
         -||-  HTTPry 0.0.6  -||-
 
+----------------------
+I. ABOUT
+----------------------
+
 The HTTP protocol has become one of the most ubiquitous protocols utilized on
 the net today.
 
-Thanks:
-   p0f
-   Dug Song
-
 
 ----------------------
-1. USAGE
+II. USAGE
 ----------------------
 
 Running the program with the -h switch will print out an abbreviated description
@@ -73,7 +73,7 @@ credentials once initialization is complete.
 
 
 ----------------------
-2. CHANGELOG
+III. CHANGELOG
 ----------------------
 
 version 0.0.6
@@ -84,7 +84,7 @@ version 0.0.6
    = Chg: removed stdout suppression (-s)
    = Chg: daemon mode (-d) now requires output file (-o)
    = Chg: error/log message printing pushed into function macros
-   - Fix: cleaned up error and status message strings
+   - Fix: standardized error and status message strings
 
 version 0.0.5
    + Initial "official" release
@@ -93,7 +93,7 @@ All previous releases were internal pre-release builds
 
 
 ----------------------
-1. FUTURE IDEAS
+IV. FUTURE IDEAS
 ----------------------
 
 * Internal packet queue to help with burst traffic
@@ -105,3 +105,12 @@ All previous releases were internal pre-release builds
 * Option to fallback on rDNS when Host: unavailable
 * HTTP client/server session tracking
 * Option to dump raw packets that are logged
+
+
+----------------------
+V. CREDITS
+----------------------
+
+Thanks:
+   p0f
+   Dug Song

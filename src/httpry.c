@@ -201,9 +201,9 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         char daddr[INET_ADDRSTRLEN];
         char ts[MAX_TIME_LEN]; // Pcap packet timestamp
         struct tm *pkt_time;
-        char *data;                   // Editable copy of packet data
-        struct http_hdr http;         // HTTP request header fields
-        char *req_header;             // Request header line
+        char *data;            // Editable copy of packet data
+        struct http_hdr http;  // HTTP request header fields
+        char *req_header;      // Request header line
 
         const struct pkt_eth *eth; // These structs define the layout of the packet
         const struct pkt_ip *ip;
@@ -319,8 +319,8 @@ void runas_daemon(char *run_dir) {
 
         umask(0); // Reset file creation mask
         if (chdir(run_dir) == -1) {
-                log("Cannot change running directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
-                warn("Cannot change running directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
+                log("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
+                warn("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
                 chdir(RUN_DIR);
         }
 
@@ -445,7 +445,7 @@ int main(int argc, char *argv[]) {
                 die("Daemon mode requires an output file\n");
         }
         if (!daemon_mode && run_dir) {
-                warn("Run directory is only useful in daemon mode...ignoring\n");
+                warn("Run directory is only useful in daemon mode...ignored\n");
         }
 
         // General program setup
