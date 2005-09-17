@@ -84,7 +84,7 @@ version 0.0.6
    = Chg: removed stdout suppression (-s)
    = Chg: daemon mode (-d) now requires output file (-o)
    = Chg: error/log message printing pushed into function macros
-   - Fix:
+   - Fix: cleaned up error and status message strings
 
 version 0.0.5
    + Initial "official" release

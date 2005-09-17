@@ -318,7 +318,11 @@ void runas_daemon(char *run_dir) {
         }
 
         umask(0); // Reset file creation mask
-        chdir(run_dir);
+        if (chdir(run_dir) == -1) {
+                log("Cannot change running directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
+                warn("Cannot change running directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
+                chdir(RUN_DIR);
+        }
 
         // Open/create pid file
         pid_file = open(PID_FILE, O_RDWR|O_CREAT, 0640);
@@ -390,7 +394,6 @@ void display_usage() {
 int main(int argc, char *argv[]) {
         char *dev = NULL;
         bpf_u_int32 net;
-        //char default_capfilter[] = "tcp dst port 80";
         pcap_t *pcap_hnd; // Opened pcap device handle
 
         // Command line flags/options
@@ -415,8 +418,8 @@ int main(int argc, char *argv[]) {
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
                         case 'o': if (freopen(optarg, "a", stdout) == NULL) {
-                                          log("Cannot open output stream to '%s'\n", optarg);
-                                          die("Cannot open output stream to '%s'\n", optarg);
+                                          log("Cannot reopen output stream to '%s'\n", optarg);
+                                          die("Cannot reopen output stream to '%s'\n", optarg);
                                   }
                                   use_outfile = 1; break;
                         case 'p': set_promisc = 0; break;
@@ -434,21 +437,19 @@ int main(int argc, char *argv[]) {
                 }
         }
 
-        // Check for root privs by probing UID
+        // Test for error and warn conditions
         if ((getuid() != 0) && !use_infile) {
-                die("You don't appear to be root!\n"
-                    "I need root privs to get access to the NIC...\n");
+                die("Root privs required to access the NIC\n");
         }
-
-        // Create daemon process if requested
         if (daemon_mode && !use_outfile) {
-                die("Daemon mode requires an output file!\n"
-                    "I'm putting an end to this madness right now.\n");
+                die("Daemon mode requires an output file\n");
+        }
+        if (!daemon_mode && run_dir) {
+                warn("Run directory is only useful in daemon mode...ignoring\n");
         }
 
         // General program setup
         if (!capfilter) {
-                //capfilter = default_capfilter;
                 capfilter = DEFAULT_CAPFILTER;
         }
         if (!run_dir) {
