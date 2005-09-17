@@ -1,6 +1,7 @@
 
         -||-  HTTPry 0.0.6  -||-
 
+
 ----------------------
 I. ABOUT
 ----------------------
@@ -61,9 +62,9 @@ the filesystem root so an absolute path to the output file should be specified.
 Disables promiscuous mode on the NIC. Under most circumstances this should
 not be required.
 
--r :
+-r <dir> :
 Allows a running directory to be specified when running in daemon mode. By default
-this is set to /, which should be adequate for most uses.
+this is set to '/', which should be adequate for most uses.
 
 -u <user> :
 Allows an alternate user to take ownership of the process. This is
@@ -81,7 +82,7 @@ version 0.0.6
    + Add: additional error checking when entering daemon mode
    + Add: ability to specify running directory (-r)
    = Chg: completely reworked ouput data handling
-   = Chg: removed stdout suppression (-s)
+   = Chg: removed stdout suppression (-s) option
    = Chg: daemon mode (-d) now requires output file (-o)
    = Chg: error/log message printing pushed into function macros
    - Fix: standardized error and status message strings
@@ -95,6 +96,11 @@ All previous releases were internal pre-release builds
 ----------------------
 IV. FUTURE IDEAS
 ----------------------
+
+These are ideas that have occured to me while working on this project as
+potential ways to improve or extend the code. I'm still not convinced all of
+them are necessarily good ideas, but they are a source of inspiration and
+consideration as I continue working on the project.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
