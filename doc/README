@@ -32,7 +32,7 @@ of parsed HTTP packets.
 -d :
 Runs the program as a daemon process. All program status output will be
 sent to the syslog. Additionally, there is a pid file created for the process in
-/var/run/httpry.pid.
+/var/run/httpry.pid. Requires -o.
 
 -f <file> :
 Provide an input capture file to read from instead of performing a
@@ -71,7 +71,7 @@ this is set to '/', which should be adequate for most uses.
 -u <user> :
 Allows an alternate user to take ownership of the process. This is
 particularly useful when running in daemon mode. Note that you still need root
-priviledges in order to run the program; it will switch to the alternate
+privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
 
 

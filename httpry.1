@@ -3,14 +3,70 @@
 httpry - HTTP logging and information retrieval tool
 .SH SYNOPSIS
 .B httpry
-.I httpry [-dhp] [-c count] [-f file] [-i interface]
-          [-l filter] [-o file] [-r dir] [-u user]
+.I httpry [-dhp] [-c count] [-f file] [-i interface] [-l filter] [-o file] [-r dir] [-u user]
 .br
 .SH DESCRIPTION
 .PP
 .B httpry
+is a tool designed for displaying and logging HTTP traffic. It is not designed to
+perform analysis itself, but instead to capture, parse and log the traffic for later
+analysis. It can be run in real-time displaying the traffic as it is parsed, or as a
+daemon process that logs to an output file. It is written to be as lightweight and
+flexible as possible, so that it can be adapted to many different applications.
 .SH OPTIONS
-
+.TP
+\fB-c\fR count
+Specifies a number of packets to capture, following which the
+program will terminate. Note that this is a count of total captured packets, not
+of parsed HTTP packets.
+.TP
+\fB-d\fR
+Runs the program as a daemon process. All program status output will be
+sent to the syslog. Additionally, there is a pid file created for the process in
+/var/run/httpry.pid. Requires -o.
+.TP
+\fB-f\fR file
+Provide an input capture file to read from instead of performing a
+live capture. The program expects a valid capture file as input. Note that this
+does not require the program to be run as root, as no access to the NIC is
+required.
+.TP
+\fB-h\fR
+Displays the program name and version, along with a brief description of
+these options.
+.TP
+\fB-i\fR interface
+Specifies an ethernet interface for the program to listen on.
+This is optional; by default the program will poll the system for a list of
+interfaces and select the first one that it finds.
+.TP
+\fB-l\fR filter
+Allows the default capture filter to be overridden by a filter
+that follows the tcpdump format. Useful for capturing traffic on non-standard
+ports or to/from specific hosts.
+.TP
+\fB-o\fR file
+Provides an output file for writing parsed packet data. Running the
+program as a daemon without this option would be pretty useless and/or stupid.
+Note that if the program is running as a daemon, its base directory is set to
+the filesystem root so an absolute path to the output file should be specified.
+.TP
+\fB-p\fR
+Disables promiscuous mode on the NIC. Under most circumstances this should
+not be required.
+.TP
+\fB-r\fR dir
+Allows a running directory to be specified when running in daemon mode. By default
+this is set to '/', which should be adequate for most uses.
+.TP
+\fB-u\fR user
+Allows an alternate user to take ownership of the process. This is
+particularly useful when running in daemon mode. Note that you still need root
+privileges in order to run the program; it will switch to the alternate
+credentials once initialization is complete.
+.SH BUGS
+See the included README file for an up-to-date list of known issues.
 .SH AUTHOR
 .B httpry
-was written by Jason Bittel <jasonbittel@corban.edu>.
+was written by Jason Bittel <jasonbittel@corban.edu>. All rights reserved.
+See included LICENSE file for specific licensing information
