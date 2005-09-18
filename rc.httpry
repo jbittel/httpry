@@ -1,22 +1,45 @@
-#!/bin/bash
+#!/bin/sh
+
+#
+# rc.httpry 9/17/2005
+#
+# Copyright (c) 2005, Jason Bittel. All rights reserved.
+# See included LICENSE file for specific licensing information
+#
+# This is a start script written and tested under Slackware Linux. If you
+# are running the program under a different system and write your own
+# init script, please send it to me so I can include it in the package.
+#
+
+# --------------------
+# --- MODIFY THESE ---
+# --------------------
+# Change these values to reflect
+# your particular setup
+
+logs_dir="/home/jbittel/httpry/logs"
+
+# --------------------
 
 case $1 in
 start)
-	echo Starting httpry...
-	/home/jbittel/httpry/httpry -d -o /home/jbittel/httpry/out.log
-	;;
+        echo "Starting httpry..."
+        httpry -d -o $logs_dir/out.log
+        ;;
 stop)
-	if [ -r /var/run/httpry.pid ]; then
-		echo Stopping httpry...
-		kill `cat /var/run/httpry.pid`
-	fi
-	;;
+        echo "Stopping httpry..."
+        if [ -r /var/run/httpry.pid ]; then
+                kill `cat /var/run/httpry.pid`
+        else
+                killall httpry
+        fi
+        ;;
 restart)
-	$0 stop
-	sleep 2
-	$0 start
-	;;
+        $0 stop
+        sleep 2
+        $0 start
+        ;;
 *)
-	echo "Usage: $0 [start|stop|restart]"
-	;;
+        echo "Usage: $0 [start|stop|restart]"
+        ;;
 esac
