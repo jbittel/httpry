@@ -1,12 +1,19 @@
 
         -||-  HTTPry 0.0.6  -||-
 
- - HTTP logging and information retrieval tool
+  "HTTP logging and information retrieval tool"
 
 
 ----------------------
 I. ABOUT
 ----------------------
+
+httpry is a tool designed for displaying and logging HTTP traffic. It is not
+designed to perform analysis itself, but instead to capture, parse and log the
+traffic for later analysis. It can be run in real-time displaying the traffic as
+it is parsed, or as a daemon process that logs to an output file. It is written
+to be as lightweight and flexible as possible, so that it can be adapted to many
+different applications.
 
 The HTTP protocol has become one of the most ubiquitous protocols utilized on
 the net today.
@@ -76,18 +83,26 @@ credentials once initialization is complete.
 
 
 ----------------------
-III. CHANGELOG
+III. KNOWN ISSUES
+----------------------
+
+There are no known issues with the program at this time. If you should run into
+any problems or issues, please let me know.
+
+
+----------------------
+IV. CHANGELOG
 ----------------------
 
 version 0.0.6
    + Add: ability to change process owner (-u)
    + Add: additional error checking when entering daemon mode
-   + Add: ability to specify running directory (-r)
    = Chg: completely reworked ouput data handling
    = Chg: removed stdout suppression (-s) option
    = Chg: daemon mode (-d) now requires output file (-o)
-   = Chg: error/log message printing pushed into function macros
+   = Chg: error/log/warn message printing pushed into function macros
    - Fix: standardized error and status message strings
+   + Add: ability to specify running directory (-r)
 
 version 0.0.5
    + Initial "official" release
@@ -96,7 +111,7 @@ All previous releases were internal pre-release builds
 
 
 ----------------------
-IV. FUTURE IDEAS
+V. FUTURE IDEAS
 ----------------------
 
 These are ideas that have occured to me while working on this project as
@@ -106,7 +121,7 @@ consideration as I continue working on the project.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
-* Optionally read settings from a config file
+* Ability to read settings from a config file
 * Configurable subset of HTTP traffic to parse/output
 * More extensive disassembly of the HTTP protocol
 * Viewable packet capture statistics
@@ -116,7 +131,7 @@ consideration as I continue working on the project.
 
 
 ----------------------
-V. CREDITS
+VI. CREDITS
 ----------------------
 
 Thanks:

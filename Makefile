@@ -26,7 +26,7 @@ all:
 	$(PROG)
 
 install: $(PROG)
-	@echo "Installing httpry into /usr/sbin"
+	@echo "Installing httpry into /usr/sbin/"
 	cp -f $(PROG) /usr/sbin/
 	cp -f $(PROG).1 /usr/man/man1/ || cp -f $(PROG).1 /usr/local/man/man1/
 	@echo "You'll need to manually move the perl scripts"

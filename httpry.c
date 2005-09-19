@@ -426,7 +426,8 @@ int main(int argc, char *argv[]) {
                 die("Daemon mode requires an output file\n");
         }
         if (!daemon_mode && run_dir) {
-                warn("Run directory is only useful in daemon mode...ignored\n");
+                warn("Run directory is only used in daemon mode...ignored\n");
+                run_dir = NULL;
         }
 
         // General program setup
