@@ -26,11 +26,14 @@ all:
 	$(PROG)
 
 install: $(PROG)
+	@echo "--------------------------------------------------"
 	@echo "Installing httpry into /usr/sbin/"
+	@echo ""
+	@echo "You'll need to manually move the perl scripts"
+	@echo "and other tools to a spot that makes sense to you."
+	@echo "--------------------------------------------------"
 	cp -f $(PROG) /usr/sbin/
 	cp -f $(PROG).1 /usr/man/man1/ || cp -f $(PROG).1 /usr/local/man/man1/
-	@echo "You'll need to manually move the perl scripts"
-	@echo "and other tools to a place that makes sense to you."
 
 uninstall:
 	rm -f /usr/sbin/$(PROG)

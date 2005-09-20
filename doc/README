@@ -45,7 +45,7 @@ II. INSTALLATION
 Installing httpry is as simple as:
 
  $ make
- $ make install
+ # make install
 
 This will compile the latest version of the code and then install it
 appropriately in /usr/sbin. Along with httpry itself, there are several other
