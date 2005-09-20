@@ -20,19 +20,19 @@
 # Change these values to reflect
 # your particular setup
 
-tools_dir="/home/jbittel/httpry"
-logs_dir="/home/jbittel/httpry/logs"
-email_addr="jasonbittel@corban.edu"
-user="jbittel"
-group="users"
+tools_dir=""  # Change this to the location of the perl tool scripts
+logs_dir=""   # Change this to where you want to store your logs
+email_addr="" # Email address used by parse_log.pl reports
+user=""       # User to run httpry as
+group=""      # Group of the above user
 
 # --------------------
 
-log_fn="out.log"
-offense_fn="offensive.txt"
-parse_fn="`date +%-m-%-d-%Y`.log"
+log_fn="out.log"                  # Default file name for active log file
+offense_fn="offensive.txt"        # File name of content checks file; put in tools dir
+parse_fn="`date +%-m-%-d-%Y`.log" # This is the default format used by rotate_log.pl
 
-# Stop the HTTPry service if it is running
+# Stop the httpry service if it is running
 if [ -e "/var/run/httpry.pid" ]; then
         kill `cat /var/run/httpry.pid`
 else
@@ -44,7 +44,7 @@ if [ -e "$tools_dir/$log_fn" ]; then
         perl $tools_dir/rotate_log.pl -c -t -i $logs_dir/$log_fn -d $logs_dir
 fi
 
-# Start the HTTPry service
+# Start the httpry service
 httpry -d -u $user -o $logs_dir/$log_fn
 
 # Process new log file data

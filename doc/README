@@ -39,7 +39,25 @@ I can think of.
 
 
 ----------------------
-II. USAGE
+II. INSTALLATION
+----------------------
+
+Installing httpry is as simple as:
+
+ $ make
+ $ make install
+
+This will compile the latest version of the code and then install it
+appropriately in /usr/sbin. Along with httpry itself, there are several other
+tools included. These consist of a log rotation and log parsing script, and a
+shell script to tie these together. These may either be useful as-is, or as a
+starting point for your own tools. Additionally, there is an included rc file
+for automatically starting the program under Linux. This file has only been
+tested under Slackware Linux; your distro may handle things differently.
+
+
+----------------------
+III. USAGE
 ----------------------
 
 Running the program with the -h switch will print out an abbreviated description
@@ -102,7 +120,7 @@ credentials once initialization is complete.
 
 
 ----------------------
-III. KNOWN ISSUES
+IV. KNOWN ISSUES
 ----------------------
 
 There are no known issues with the program at this time. If you should run into
@@ -110,7 +128,7 @@ any problems or issues, please let me know.
 
 
 ----------------------
-IV. CHANGELOG
+V. CHANGELOG
 ----------------------
 
 version 0.0.6
@@ -130,7 +148,7 @@ All previous releases were internal pre-release builds
 
 
 ----------------------
-V. FUTURE IDEAS
+VI. FUTURE IDEAS
 ----------------------
 
 These are ideas that have occurred to me while working on this project as
@@ -150,7 +168,7 @@ consideration as I continue working on the project.
 
 
 ----------------------
-VI. CREDITS
+VII. CREDITS
 ----------------------
 
 Thanks:

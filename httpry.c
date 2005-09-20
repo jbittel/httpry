@@ -366,7 +366,8 @@ void cleanup_exit() {
 void display_usage() {
         warn("\n%s version %s\n"
              "Usage: %s [-dhp] [-c count] [-f file] [-i interface]\n"
-             "        [-l filter] [-o file] [-r dir ] [-u user]\n", PROG_NAME, PROG_VER, PROG_NAME);
+             "        [-l filter] [-o file] [-r dir ] [-u user]\n",
+             PROG_NAME, PROG_VER, PROG_NAME);
 
         exit(EXIT_SUCCESS);
 }

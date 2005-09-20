@@ -17,7 +17,7 @@
 # Change these values to reflect
 # your particular setup
 
-logs_dir="/home/jbittel/httpry/logs"
+logs_dir="" # Change this to where you want to store your logs
 
 # --------------------
 
