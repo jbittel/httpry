@@ -20,16 +20,17 @@
 # Change these values to reflect
 # your particular setup
 
-log_fn="out.log"
-offense_fn="offensive.txt"
 tools_dir="/home/jbittel/httpry"
 logs_dir="/home/jbittel/httpry/logs"
-parse_fn="`date +%-m-%-d-%Y`.log"
 email_addr="jasonbittel@corban.edu"
 user="jbittel"
 group="users"
 
 # --------------------
+
+log_fn="out.log"
+offense_fn="offensive.txt"
+parse_fn="`date +%-m-%-d-%Y`.log"
 
 # Stop the HTTPry service if it is running
 if [ -e "/var/run/httpry.pid" ]; then

@@ -23,7 +23,6 @@ my $GZIP = "gzip";
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %opts;
-
 my $compress = 0;
 my $del_text = 0;
 my $input_file;

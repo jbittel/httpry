@@ -17,7 +17,7 @@ my $PATTERN = "\t";
 my $PROG_NAME = "parse_log.pl";
 my $PROG_VER = "0.0.4";
 my $SENDMAIL = '/usr/lib/sendmail -i -t';
-my $SUMMARY_CAP = 15;
+my $SUMMARY_CAP = 15; # Default value, can be overridden with -c
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES

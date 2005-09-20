@@ -1,7 +1,15 @@
+      _     _   _
+     | |   | | | |
+     | |__ | |_| |_ _ __  _ __ _   _
+     | '_ \| __| __| '_ \| '__| | | |
+     | | | | |_| |_| |_) | |  | |_| |
+     |_| |_|\__|\__| .__/|_|   \__, |
+                   | |          __/ |
+                   |_|         |___/
 
         -||-  HTTPry 0.0.6  -||-
 
-  "HTTP logging and information retrieval tool"
+  HTTP logging and information retrieval tool
 
 
 ----------------------
@@ -15,8 +23,19 @@ it is parsed, or as a daemon process that logs to an output file. It is written
 to be as lightweight and flexible as possible, so that it can be adapted to many
 different applications.
 
-The HTTP protocol has become one of the most ubiquitous protocols utilized on
-the net today.
+"How is this tool useful?" you may ask. Well, here's a few ideas off the top of
+my head:
+
+ - Seeing what users on your network are looking at
+ - Checking for server configuration issues
+ - Researching patterns in HTTP usage
+ - Checking for dangerous download files
+ - Checking the enforcement of HTTP policy on your network
+ - Simple curiosity
+ - It's just plain fun to watch in realtime
+
+Of course, I hope that others will find additional uses of the tool beyond what
+I can think of.
 
 
 ----------------------
@@ -97,7 +116,7 @@ IV. CHANGELOG
 version 0.0.6
    + Add: ability to change process owner (-u)
    + Add: additional error checking when entering daemon mode
-   = Chg: completely reworked ouput data handling
+   = Chg: completely reworked output data handling
    = Chg: removed stdout suppression (-s) option
    = Chg: daemon mode (-d) now requires output file (-o)
    = Chg: error/log/warn message printing pushed into function macros
@@ -114,16 +133,16 @@ All previous releases were internal pre-release builds
 V. FUTURE IDEAS
 ----------------------
 
-These are ideas that have occured to me while working on this project as
+These are ideas that have occurred to me while working on this project as
 potential ways to improve or extend the code. I'm still not convinced all of
 them are necessarily good ideas, but they are a source of inspiration and
 consideration as I continue working on the project.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
-* Ability to read settings from a config file
-* Configurable subset of HTTP traffic to parse/output
-* More extensive disassembly of the HTTP protocol
+* Ability to read settings from a config file (.7)
+* Configurable subset of HTTP traffic to parse/output (.7)
+* More extensive disassembly of the HTTP protocol (.7)
 * Viewable packet capture statistics
 * Option to fallback on rDNS when Host: unavailable
 * HTTP client/server session tracking
