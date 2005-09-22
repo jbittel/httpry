@@ -377,6 +377,7 @@ int main(int argc, char *argv[]) {
         char *dev = NULL;
         bpf_u_int32 net;
         pcap_t *pcap_hnd; // Opened pcap device handle
+        char default_capfilter[] = DEFAULT_CAPFILTER;
 
         // Command line flags/options
         int arg;
@@ -433,7 +434,7 @@ int main(int argc, char *argv[]) {
 
         // General program setup
         if (!capfilter) {
-                capfilter = DEFAULT_CAPFILTER;
+                capfilter = default_capfilter;
         }
         if (!run_dir) {
                 run_dir = RUN_DIR;

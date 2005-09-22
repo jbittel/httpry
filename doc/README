@@ -9,7 +9,7 @@
 
         -||-  HTTPry 0.0.6  -||-
 
-  HTTP logging and information retrieval tool
+  HTTP logging and information display tool
 
 
 ----------------------
@@ -23,37 +23,43 @@ it is parsed, or as a daemon process that logs to an output file. It is written
 to be as lightweight and flexible as possible, so that it can be adapted to many
 different applications.
 
-"How is this tool useful?" you may ask. Well, here's a few ideas off the top of
-my head:
+"How is this tool useful?" you may ask. Well, here's a few ideas that have
+occurred to me:
 
  - Seeing what users on your network are looking at
- - Checking for server configuration issues
+ - Checking for proper server configuration (or even improper)
  - Researching patterns in HTTP usage
- - Checking for dangerous download files
- - Checking the enforcement of HTTP policy on your network
+ - Checking for dangerous downloaded files
+ - Verifying the enforcement of HTTP policy on your network
  - Simple curiosity
  - It's just plain fun to watch in realtime
 
-Of course, I hope that others will find additional uses of the tool beyond what
-I can think of.
+Of course, I hope that others will find additional uses for the tool beyond what
+I've imagined.
 
 
 ----------------------
 II. INSTALLATION
 ----------------------
 
-Installing httpry is as simple as:
+I was hoping you'd ask! Installing httpry is as simple as:
 
  $ make
  # make install
 
-This will compile the latest version of the code and then install it
+These commands will compile the latest version of the code and then install it
 appropriately in /usr/sbin. Along with httpry itself, there are several other
 tools included. These consist of a log rotation and log parsing script, and a
 shell script to tie these together. These may either be useful as-is, or as a
 starting point for your own tools. Additionally, there is an included rc file
 for automatically starting the program under Linux. This file has only been
 tested under Slackware Linux; your distro may handle things differently.
+Finally, if you ever tire of httpry, simply run:
+
+ # make uninstall
+
+from your installation directory, or just manually delete the executable and man
+page.
 
 
 ----------------------
@@ -140,6 +146,7 @@ version 0.0.6
    = Chg: error/log/warn message printing pushed into function macros
    - Fix: standardized error and status message strings
    + Add: ability to specify running directory (-r)
+   - Fix: fixed a potentially incorrect array initilization
 
 version 0.0.5
    + Initial "official" release
@@ -154,7 +161,8 @@ VI. FUTURE IDEAS
 These are ideas that have occurred to me while working on this project as
 potential ways to improve or extend the code. I'm still not convinced all of
 them are necessarily good ideas, but they are a source of inspiration and
-consideration as I continue working on the project.
+consideration as I continue working on the project. A number indicates the
+program version number I'm targeting to focus on that particular option.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
@@ -168,7 +176,7 @@ consideration as I continue working on the project.
 
 
 ----------------------
-VII. CREDITS
+VII. CREDITS/THANKS
 ----------------------
 
 Thanks:
