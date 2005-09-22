@@ -137,27 +137,33 @@ void change_user(char *new_user) {
 
         // Make sure we have correct priviledges
         if (geteuid() > 0) {
+                log("You must be root to switch users\n");
                 die("You must be root to switch users\n");
         }
 
         // Test for user existence in the system
         if (!(user = getpwnam(new_user))) {
+                log("User '%s' not found in system\n", new_user);
                 die("User '%s' not found in system\n", new_user);
         }
 
         // Set group information, GID and UID
         if (initgroups(user->pw_name, user->pw_gid)) {
+                log("Cannot initialize the group access list\n");
                 die("Cannot initialize the group access list\n");
         }
         if (setgid(user->pw_gid)) {
+                log("Cannot set GID\n");
                 die("Cannot set GID\n");
         }
         if (setuid(user->pw_uid)) {
+                log("Cannot set UID\n");
                 die("Cannot set UID\n");
         }
 
-        // Test to see if we actually made it
+        // Test to see if we actually made it to the new user
         if ((getegid() != user->pw_gid) || (geteuid() != user->pw_uid)) {
+                log("Cannot change process owner to '%s'\n", new_user);
                 die("Cannot change process owner to '%s'\n", new_user);
         }
 
@@ -364,7 +370,7 @@ void cleanup_exit() {
 
 /* Display help/usage information */
 void display_usage() {
-        warn("\n%s version %s\n"
+        info("\n%s version %s\n"
              "Usage: %s [-dhp] [-c count] [-f file] [-i interface]\n"
              "        [-l filter] [-o file] [-r dir ] [-u user]\n",
              PROG_NAME, PROG_VER, PROG_NAME);

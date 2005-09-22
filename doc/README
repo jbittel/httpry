@@ -27,7 +27,7 @@ different applications.
 occurred to me:
 
  - Seeing what users on your network are looking at
- - Checking for proper server configuration (or even improper)
+ - Checking for proper server configuration (or improper, as the case may be)
  - Researching patterns in HTTP usage
  - Checking for dangerous downloaded files
  - Verifying the enforcement of HTTP policy on your network
@@ -49,12 +49,12 @@ I was hoping you'd ask! Installing httpry is as simple as:
 
 These commands will compile the latest version of the code and then install it
 appropriately in /usr/sbin. Along with httpry itself, there are several other
-tools included. These consist of a log rotation and log parsing script, and a
-shell script to tie these together. These may either be useful as-is, or as a
-starting point for your own tools. Additionally, there is an included rc file
-for automatically starting the program under Linux. This file has only been
-tested under Slackware Linux; your distro may handle things differently.
-Finally, if you ever tire of httpry, simply run:
+tools included. These consist of a log rotation and log parsing script, as well
+as a shell script to tie these together. These may either be useful as-is, or as
+a starting point for your own tools. Additionally, there is an included
+rc.httpry file for automatically starting the program under Linux. This file has
+only been tested under Slackware Linux; your distro may handle things
+differently. Finally, if you ever tire of httpry, simply run:
 
  # make uninstall
 
@@ -91,8 +91,8 @@ does not require the program to be run as root, as no access to the NIC is
 required.
 
 -h :
-Displays the program name and version, along with a brief description of
-these options.
+Displays the program name, version and a brief description of these options,
+after which the program terminates.
 
 -i <interface> :
 Specifies an ethernet interface for the program to listen on.
@@ -146,7 +146,7 @@ version 0.0.6
    = Chg: error/log/warn message printing pushed into function macros
    - Fix: standardized error and status message strings
    + Add: ability to specify running directory (-r)
-   - Fix: fixed a potentially incorrect array initilization
+   - Fix: fixed an incorrect array initilization
 
 version 0.0.5
    + Initial "official" release
