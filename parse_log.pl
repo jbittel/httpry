@@ -53,6 +53,7 @@ my $hitlist_file;
 my $ignore_file;
 my $output_file;
 my @input_files;
+my $extended_hosts;
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -304,6 +305,8 @@ sub generate_output {
 # -----------------------------------------------------------------------------
 sub print_output {
         my $output;
+        my $curr_line;
+        my $local_ip;
 
         # Create a reference to output medium
         if ($output_file) {
@@ -317,10 +320,27 @@ sub print_output {
                 print $output "$_";
         }
 
+        # Create subfile for each host tagged in content checks
+        if ($extended_hosts) {
+                foreach $curr_line (@hits) {
+                        my @records;
+                        
+                        @records = split(/$PATTERN/, $curr_line);
+                        $local_ip = $records[1];
+
+                        open(HOSTFILE, ">>$extended_hosts/$local_ip.txt") || die "\nError: cannot open $extended_hosts/$local_ip.txt - $!\n";
+                        print HOSTFILE "$curr_line\n";
+                        close(HOSTFILE);
+                }
+        }
+
         if ($output_file) { close(OUTFILE); }
 
-        # Send email as necessary
+        # Send email if requested
         if ($email_addr) {
+                # TODO: fix MIME headers...use MIME:Lite?
+                # http://search.cpan.org/~yves/MIME-Lite-3.01/lib/MIME/Lite.pm
+
 #                my $mday = (localtime)[3];
 #                my $mon  = (localtime)[4] + 1;
 #                my $year = (localtime)[5] + 1900;
@@ -373,7 +393,7 @@ sub percent_of {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('c:e:fg:i:l:o:st:h', \%opts) or &print_usage();
+        getopts('c:e:fg:i:l:o:st:hx:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -390,6 +410,11 @@ sub get_arguments {
         $check_host = 0 unless ($check_host = $opts{t});
         $email_addr = 0 unless ($email_addr = $opts{e});
         $filetype = 0 unless ($filetype = $opts{f});
+        $extended_hosts = 0 unless ($extended_hosts = $opts{x});
+
+        if (!$hitlist_file && $extended_hosts) {
+                $extended_hosts = 0;
+        }
 
         if (!$log_summary && !$hitlist_file && !$check_ip && !$check_host && !$filetype) {
                 print "\nError: no processing option selected!\n";
@@ -404,6 +429,6 @@ sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
 Usage: $PROG_NAME [-fs] [-c count] [-l file] [-o file]
-        [-e email] [-g file] [input files]
+        [-e email] [-g file] [-x dir] [input files]
 USAGE
 }
