@@ -9,6 +9,7 @@
 
 use strict;
 use Getopt::Std;
+use MIME::Lite;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -307,6 +308,7 @@ sub print_output {
         my $output;
         my $curr_line;
         my $local_ip;
+        my $msg;
 
         # Create a reference to output medium
         if ($output_file) {
@@ -315,16 +317,16 @@ sub print_output {
         } else {
                 $output = *STDOUT{IO};
         }
-
         foreach (@output_data) {
                 print $output "$_";
         }
+        if ($output_file) { close(OUTFILE); }
 
         # Create subfile for each host tagged in content checks
         if ($extended_hosts) {
                 foreach $curr_line (@hits) {
                         my @records;
-                        
+
                         @records = split(/$PATTERN/, $curr_line);
                         $local_ip = $records[1];
 
@@ -334,48 +336,47 @@ sub print_output {
                 }
         }
 
-        if ($output_file) { close(OUTFILE); }
-
         # Send email if requested
-        if ($email_addr) {
-                # TODO: fix MIME headers...use MIME:Lite?
-                # http://search.cpan.org/~yves/MIME-Lite-3.01/lib/MIME/Lite.pm
+        if ($email_addr && $output_file) {
+                $msg = MIME::Lite->new(
+                        From    =>'admin@corban.edu',
+                        To      =>"$email_addr",
+                        Subject =>'HTTPry Report - ' . localtime(),
+                        Type    =>'multipart/mixed'
+                        );
 
-#                my $mday = (localtime)[3];
-#                my $mon  = (localtime)[4] + 1;
-#                my $year = (localtime)[5] + 1900;
-#
-#                my $boundary = "--part_httpry_report_$mday$mon$year";
-#                my $filename = "httpry_report_$mon-$mday-$year.txt";
+                $msg->attach(
+                        Type =>'TEXT',
+                        Data =>'HTTPry report for ' . localtime()
+                        );
+
+                $msg->attach(
+                        Type        =>'TEXT',
+                        Path        =>"$output_file",
+                        Filename    =>"$output_file",
+                        Disposition =>'attachment'
+                        );
 
                 open(EMAIL,"|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
+                print $msg->as_string;
+                close(EMAIL);
+        } elsif ($email_addr && !$output_file) {
+                my $email_body = "";
 
-                # Print email header
-                print EMAIL "To: $email_addr\n";
-                print EMAIL "From: admin\@corban\.edu\n";
-                print EMAIL "Subject: HTTPry Report - " . localtime() . "\n\n";
-#                print EMAIL "Mime-Version: 1.0\n";
-#                print EMAIL "Content-Type: multipart/mixed; boundary=\"$boundary\"\n";
-#                print EMAIL "This message is intended for a MIME capable client";
-#                print EMAIL "\n\n$boundary\n";
-#                print EMAIL "Content-Type: text/plain; charset=ISO-8859-1\n";
-#                print EMAIL "Content-Transfer-Encoding: quoted-printable\n";
-#                print EMAIL "Content-Disposition: inline\n\n";
-
-                # Print email body
-#                print EMAIL "HTTPry report for " . localtime() . "\n";
-
-                # Print email attachment
-#                print EMAIL "\n\n$boundary\n";
-#                print EMAIL "Content-Type: text/plain; name=\"$filename\"\n";
-#                print EMAIL "Content-Transfer-Encoding: quoted-printable\n";
-#                print EMAIL "Content-Disposition: attachment; filename=\"$filename\"\n\n";
                 foreach (@output_data) {
-                        print EMAIL "$_";
+                        $email_body .= $_;
                 }
 
-#                print EMAIL "\n\n$boundary--\n";
-                close (EMAIL);
+                $msg = MIME::Lite->new(
+                        From    =>'admin@corban.edu',
+                        To      =>"$email_addr",
+                        Subject =>'HTTPry Report - ' . localtime(),
+                        Data    =>"$email_body"
+                        );
+
+                open(EMAIL,"|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
+                print EMAIL $msg->as_string;
+                close(EMAIL);
         }
 }
 
