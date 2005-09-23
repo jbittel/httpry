@@ -17,7 +17,7 @@ use MIME::Lite;
 my $PATTERN = "\t";
 my $PROG_NAME = "parse_log.pl";
 my $PROG_VER = "0.0.4";
-my $SENDMAIL = '/usr/lib/sendmail -i -t';
+my $SENDMAIL = "/usr/lib/sendmail -t -oi";
 my $SUMMARY_CAP = 15; # Default value, can be overridden with -c
 
 # -----------------------------------------------------------------------------
@@ -337,30 +337,31 @@ sub print_output {
         }
 
         # Send email if requested
-        if ($email_addr && $output_file) {
+        if ($email_addr && $output_file) { # If output file exists, send it as an attachment
                 $msg = MIME::Lite->new(
-                        From    =>'admin@corban.edu',
-                        To      =>"$email_addr",
-                        Subject =>'HTTPry Report - ' . localtime(),
-                        Type    =>'multipart/mixed'
+                        From    => 'admin@corban.edu',
+                        To      => "$email_addr",
+                        Subject => 'HTTPry Report - ' . localtime(),
+                        Type    => 'multipart/mixed'
                         );
 
                 $msg->attach(
-                        Type =>'TEXT',
-                        Data =>'HTTPry report for ' . localtime()
+                        Type => 'TEXT',
+                        Data => 'HTTPry report for ' . localtime()
                         );
 
                 $msg->attach(
-                        Type        =>'TEXT',
-                        Path        =>"$output_file",
-                        Filename    =>"$output_file",
-                        Disposition =>'attachment'
+                        Type        => 'TEXT',
+                        Path        => "$output_file",
+                        Filename    => "$output_file",
+                        Disposition => 'attachment'
                         );
 
-                open(EMAIL,"|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
-                print $msg->as_string;
-                close(EMAIL);
-        } elsif ($email_addr && !$output_file) {
+                $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
+                #open(EMAIL, "|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
+                #print EMAIL $msg->as_string;
+                #close(EMAIL);
+        } elsif ($email_addr && !$output_file) { # If no output file, put report text directly into email body
                 my $email_body = "";
 
                 foreach (@output_data) {
@@ -368,15 +369,17 @@ sub print_output {
                 }
 
                 $msg = MIME::Lite->new(
-                        From    =>'admin@corban.edu',
-                        To      =>"$email_addr",
-                        Subject =>'HTTPry Report - ' . localtime(),
-                        Data    =>"$email_body"
+                        From    => 'admin@corban.edu',
+                        To      => "$email_addr",
+                        Subject => 'HTTPry Report - ' . localtime(),
+                        Type    => 'TEXT',
+                        Data    => "$email_body"
                         );
 
-                open(EMAIL,"|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
-                print EMAIL $msg->as_string;
-                close(EMAIL);
+                $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
+                #open(EMAIL, "|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
+                #print EMAIL $msg->as_string;
+                #close(EMAIL);
         }
 }
 
