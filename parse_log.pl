@@ -9,6 +9,7 @@
 
 use strict;
 use Getopt::Std;
+use File::Basename;
 use MIME::Lite;
 
 # -----------------------------------------------------------------------------
@@ -16,8 +17,8 @@ use MIME::Lite;
 # -----------------------------------------------------------------------------
 my $PATTERN = "\t";
 my $PROG_NAME = "parse_log.pl";
-my $PROG_VER = "0.0.4";
-my $SENDMAIL = "/usr/lib/sendmail -t -oi";
+my $PROG_VER = "0.0.5";
+my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $SUMMARY_CAP = 15; # Default value, can be overridden with -c
 
 # -----------------------------------------------------------------------------
@@ -37,7 +38,6 @@ my $file_cnt = 0;
 my $ext_cnt = 0;
 my @hits;
 my @hitlist;
-my @output_data;
 my $ignore_hosts = "";
 my $summary_cap;
 my $start_time;  # Start tick for timing code
@@ -61,8 +61,13 @@ my $extended_hosts;
 # -----------------------------------------------------------------------------
 &get_arguments();
 &parse_logfiles();
-&generate_output();
-&print_output();
+&write_output_file();
+if ($extended_hosts) {
+        &write_host_subfiles();
+}
+if ($email_addr) {
+        &send_email();
+}
 
 # -----------------------------------------------------------------------------
 # Core engine, parses all input file based on options provided
@@ -213,7 +218,7 @@ sub content_check {
 }
 
 # -----------------------------------------------------------------------------
-#
+# Log all requested filename extensions
 # -----------------------------------------------------------------------------
 sub filetype_check {
         my $extension = shift;
@@ -230,157 +235,130 @@ sub filetype_check {
 # -----------------------------------------------------------------------------
 # Build array of output data to prepare for printing
 # -----------------------------------------------------------------------------
-sub generate_output {
+sub write_output_file {
         my $key;
-        my $i = 0;
-        my $j = 0;
+        my $count = 0;
+
+        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
 
         if ($log_summary) {
-                $output_data[$j++] = "\n\nSUMMARY STATS\n\n";
-                $output_data[$j++] = "Total files:\t$file_cnt\n";
-                $output_data[$j++] = "Total size:\t$size_cnt MB\n";
-                $output_data[$j++] = "Total lines:\t$total_line_cnt\n";
-                $output_data[$j++] = "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
+                print OUTFILE "\n\nSUMMARY STATS\n\n";
+                print OUTFILE "Total files:\t$file_cnt\n";
+                print OUTFILE "Total size:\t$size_cnt MB\n";
+                print OUTFILE "Total lines:\t$total_line_cnt\n";
+                print OUTFILE "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
 
                 if ($ignore_hosts) {
-                        $output_data[$j++] = "\nHOST IGNORING ACTIVE: Some output may be suppressed!\n";
-                        $output_data[$j++] = "SOURCE LIST: $ignore_file\n";
+                        print OUTFILE "\nHOST IGNORING ACTIVE: Some output may be suppressed!\n";
+                        print OUTFILE "SOURCE LIST: $ignore_file\n";
                 }
 
-                $output_data[$j++] = "\n\nTOP $summary_cap VISITED HOSTS\n\n";
+                print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
                 foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
-                        $output_data[$j++] = "$key\t$top_hosts{$key}\t".percent_of($top_hosts{$key}, $line_cnt)."%\n";
-                        $i++;
-                        last if ($i == $summary_cap);
+                        print OUTFILE "$key\t$top_hosts{$key}\t".percent_of($top_hosts{$key}, $line_cnt)."%\n";
+                        $count++;
+                        last if ($count == $summary_cap);
                 }
 
-                $i = 0;
-                $output_data[$j++] = "\n\nTOP $summary_cap TOP TALKERS\n\n";
+                $count = 0;
+                print OUTFILE "\n\nTOP $summary_cap TOP TALKERS\n\n";
                 foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
-                        $output_data[$j++] = "$key\t$top_talkers{$key}\t".percent_of($top_talkers{$key}, $line_cnt)."%\n";
-                        $i++;
-                        last if ($i == $summary_cap);
+                        print OUTFILE "$key\t$top_talkers{$key}\t".percent_of($top_talkers{$key}, $line_cnt)."%\n";
+                        $count++;
+                        last if ($count == $summary_cap);
                 }
         }
 
         if ($filetype) {
-                $i = 0;
-                $output_data[$j++] = "\n\nTOP $summary_cap FILE EXTENSIONS\n\n";
+                $count = 0;
+                print OUTFILE "\n\nTOP $summary_cap FILE EXTENSIONS\n\n";
                 foreach $key (sort { $filetypes{$b} <=> $filetypes{$a} } keys %filetypes) {
-                        $output_data[$j++] = "$key\t$filetypes{$key}\t".percent_of($filetypes{$key}, $ext_cnt)."%\n";
-                        $i++;
-                        last if ($i == $summary_cap);
+                        print OUTFILE "$key\t$filetypes{$key}\t".percent_of($filetypes{$key}, $ext_cnt)."%\n";
+                        $count++;
+                        last if ($count == $summary_cap);
                 }
         }
 
         if ($check_host) {
-                $output_data[$j++] = "\n\nIP SUMMARY FOR $check_host\n\n";
+                print OUTFILE "\n\nIP SUMMARY FOR $check_host\n\n";
                 foreach $key (sort { $host_hits{$b} <=> $host_hits{$a} } keys %host_hits) {
-                        $output_data[$j++] = "$key\t$host_hits{$key}\t".percent_of($host_hits{$key}, $host_cnt)."%\n";
+                        print OUTFILE "$key\t$host_hits{$key}\t".percent_of($host_hits{$key}, $host_cnt)."%\n";
                 }
         }
 
         if ($check_ip) {
-                $output_data[$j++] = "\n\nHOST SUMMARY FOR $check_ip\n\n";
+                print OUTFILE "\n\nHOST SUMMARY FOR $check_ip\n\n";
                 foreach $key (sort { $ip_hits{$b} <=> $ip_hits{$a} } keys %ip_hits) {
-                        $output_data[$j++] = "$key\t$ip_hits{$key}\t".percent_of($ip_hits{$key}, $ip_cnt)."%\n";
+                        print OUTFILE "$key\t$ip_hits{$key}\t".percent_of($ip_hits{$key}, $ip_cnt)."%\n";
                 }
         }
 
         if ($hitlist_file) {
-                $output_data[$j++] = "\n\nURI CONTENT CHECKS\n";
-                $output_data[$j++] = "FILTER FILE: $hitlist_file\n\n";
+                print OUTFILE "\n\nURI CONTENT CHECKS\n";
+                print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
                 if (scalar(@hits) > 0) {
                         foreach (@hits) {
-                               $output_data[$j++] = "$_\n";
+                               print OUTFILE "$_\n";
                         }
                 } else {
-                        $output_data[$j++] = "No matching records found\n";
+                        print OUTFILE "No matching records found\n";
                 }
+        }
+
+        close(OUTFILE);
+}
+
+# -----------------------------------------------------------------------------
+# Create subfile for each host tagged in content checks
+# -----------------------------------------------------------------------------
+sub write_host_subfiles {
+        my $curr_line;
+        my $local_ip;
+
+        foreach $curr_line (@hits) {
+                my @records;
+
+                @records = split(/$PATTERN/, $curr_line);
+                $local_ip = $records[1];
+
+                open(HOSTFILE, ">$extended_hosts/$local_ip.txt") || die "\nError: cannot open $extended_hosts/$local_ip.txt - $!\n";
+                print HOSTFILE "$curr_line\n";
+                close(HOSTFILE);
         }
 }
 
 # -----------------------------------------------------------------------------
 # Print output to correct medium/send email
 # -----------------------------------------------------------------------------
-sub print_output {
+sub send_email {
         my $output;
-        my $curr_line;
-        my $local_ip;
         my $msg;
+        my $output_filename = basename($output_file);
 
-        # Create a reference to output medium
-        if ($output_file) {
-                open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
-                $output = *OUTFILE{IO};
-        } else {
-                $output = *STDOUT{IO};
-        }
-        foreach (@output_data) {
-                print $output "$_";
-        }
-        if ($output_file) { close(OUTFILE); }
+        $msg = MIME::Lite->new(
+                From    => 'admin@corban.edu',
+                To      => "$email_addr",
+                Subject => 'HTTPry Report - ' . localtime(),
+                Type    => 'multipart/mixed'
+                );
 
-        # Create subfile for each host tagged in content checks
-        if ($extended_hosts) {
-                foreach $curr_line (@hits) {
-                        my @records;
+        $msg->attach(
+                Type => 'TEXT',
+                Data => 'HTTPry report for ' . localtime()
+                );
 
-                        @records = split(/$PATTERN/, $curr_line);
-                        $local_ip = $records[1];
+        $msg->attach(
+                Type        => 'TEXT',
+                Path        => "$output_file",
+                Filename    => "$output_filename",
+                Disposition => 'attachment'
+                );
 
-                        open(HOSTFILE, ">>$extended_hosts/$local_ip.txt") || die "\nError: cannot open $extended_hosts/$local_ip.txt - $!\n";
-                        print HOSTFILE "$curr_line\n";
-                        close(HOSTFILE);
-                }
-        }
-
-        # Send email if requested
-        if ($email_addr && $output_file) { # If output file exists, send it as an attachment
-                $msg = MIME::Lite->new(
-                        From    => 'admin@corban.edu',
-                        To      => "$email_addr",
-                        Subject => 'HTTPry Report - ' . localtime(),
-                        Type    => 'multipart/mixed'
-                        );
-
-                $msg->attach(
-                        Type => 'TEXT',
-                        Data => 'HTTPry report for ' . localtime()
-                        );
-
-                $msg->attach(
-                        Type        => 'TEXT',
-                        Path        => "$output_file",
-                        Filename    => "$output_file",
-                        Disposition => 'attachment'
-                        );
-
-                $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
-                #open(EMAIL, "|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
-                #print EMAIL $msg->as_string;
-                #close(EMAIL);
-        } elsif ($email_addr && !$output_file) { # If no output file, put report text directly into email body
-                my $email_body = "";
-
-                foreach (@output_data) {
-                        $email_body .= $_;
-                }
-
-                $msg = MIME::Lite->new(
-                        From    => 'admin@corban.edu',
-                        To      => "$email_addr",
-                        Subject => 'HTTPry Report - ' . localtime(),
-                        Type    => 'TEXT',
-                        Data    => "$email_body"
-                        );
-
-                $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
-                #open(EMAIL, "|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
-                #print EMAIL $msg->as_string;
-                #close(EMAIL);
-        }
+        $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
+        #open(EMAIL, "|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
+        #print EMAIL $msg->as_string;
+        #close(EMAIL);
 }
 
 # -----------------------------------------------------------------------------
@@ -416,13 +394,19 @@ sub get_arguments {
         $filetype = 0 unless ($filetype = $opts{f});
         $extended_hosts = 0 unless ($extended_hosts = $opts{x});
 
-        if (!$hitlist_file && $extended_hosts) {
-                $extended_hosts = 0;
+        # Check for required options
+        if (!$output_file) {
+                print "\nError: no output file provided!\n";
+                &print_usage();
         }
-
         if (!$log_summary && !$hitlist_file && !$check_ip && !$check_host && !$filetype) {
                 print "\nError: no processing option selected!\n";
                 &print_usage();
+        }
+
+        # Ignore unnecessary options to prevent side effects
+        if (!$hitlist_file && $extended_hosts) {
+                $extended_hosts = 0;
         }
 }
 
@@ -432,7 +416,7 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-fs] [-c count] [-l file] [-o file]
+Usage: $PROG_NAME [-fhs] [-c count] [-l file] [-o file]
         [-e email] [-g file] [-x dir] [input files]
 USAGE
 }
