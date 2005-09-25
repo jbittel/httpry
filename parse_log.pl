@@ -24,11 +24,12 @@ my $SUMMARY_CAP = 15; # Default value, can be overridden with -c
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %top_hosts;
-my %top_talkers;
-my %ip_hits;
-my %host_hits;
-my %filetypes;
+my %top_hosts = ();
+my %top_talkers = ();
+my %ip_hits = ();
+my %host_hits = ();
+my %filetypes = ();
+my %content_hits = ();
 my $total_line_cnt = 0;
 my $line_cnt = 0;
 my $ip_cnt = 0;
@@ -237,6 +238,7 @@ sub filetype_check {
 # -----------------------------------------------------------------------------
 sub write_output_file {
         my $key;
+        my $subkey;
         my $count = 0;
 
         open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
@@ -298,15 +300,49 @@ sub write_output_file {
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
                 if (scalar(@hits) > 0) {
-                        foreach (@hits) {
-                               print OUTFILE "$_\n";
+                        &build_content_hits();
+
+                        foreach $key (sort keys %content_hits) {
+                                print "$key\n";
+                                foreach $subkey (sort keys %{ $content_hits{$key} }) {
+                                        print "\t$subkey\t$content_hits{$key}->{$subkey}\n";
+                                }
+                                print "\n";
                         }
                 } else {
                         print OUTFILE "No matching records found\n";
                 }
+
         }
 
         close(OUTFILE);
+}
+
+# -----------------------------------------------------------------------------
+# Build summary for all hosts tagged in content checks
+# -----------------------------------------------------------------------------
+sub build_content_hits {
+        my $curr_line;
+        my $src_ip;
+        my $dst_hostname;
+
+        foreach $curr_line (@hits) {
+                my @records;
+
+                @records = split(/$PATTERN/, $curr_line);
+                $src_ip = $records[1];
+                $dst_hostname = $records[3];
+
+                if (exists($content_hits{$src_ip})) {
+                        if (exists($content_hits{$src_ip}->{$dst_hostname})) {
+                                $content_hits{$src_ip}->{$dst_hostname} += 1;
+                        } else {
+                                $content_hits{$src_ip}->{$dst_hostname} = 1;
+                        }
+                } else {
+                        $content_hits{$src_ip} = { $dst_hostname => 1 };
+                }
+        }
 }
 
 # -----------------------------------------------------------------------------
@@ -314,15 +350,15 @@ sub write_output_file {
 # -----------------------------------------------------------------------------
 sub write_host_subfiles {
         my $curr_line;
-        my $local_ip;
+        my $src_ip;
 
         foreach $curr_line (@hits) {
                 my @records;
 
                 @records = split(/$PATTERN/, $curr_line);
-                $local_ip = $records[1];
+                $src_ip = $records[1];
 
-                open(HOSTFILE, ">$extended_hosts/$local_ip.txt") || die "\nError: cannot open $extended_hosts/$local_ip.txt - $!\n";
+                open(HOSTFILE, ">$extended_hosts/$src_ip.txt") || die "\nError: cannot open $extended_hosts/$src_ip.txt - $!\n";
                 print HOSTFILE "$curr_line\n";
                 close(HOSTFILE);
         }
