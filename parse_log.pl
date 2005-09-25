@@ -55,7 +55,7 @@ my $hitlist_file;
 my $ignore_file;
 my $output_file;
 my @input_files;
-my $extended_hosts;
+my $host_detail;
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -63,7 +63,7 @@ my $extended_hosts;
 &get_arguments();
 &parse_logfiles();
 &write_output_file();
-if ($extended_hosts) {
+if ($host_detail) {
         &write_host_subfiles();
 }
 if ($email_addr) {
@@ -122,81 +122,34 @@ sub parse_logfiles {
                         }
 
                         if ($filetype && ($uri =~ /\.(\w{3,4}?)$/)) {
-                                filetype_check($1);
+                                $ext_cnt++;
+                                $filetypes{$1}++;
                         }
 
                         if ($log_summary) {
-                                &do_summary($hostname, $src_ip);
+                                $line_cnt++; # Increment line counter
+                                $top_hosts{$hostname}++;
+                                $top_talkers{$src_ip}++;
                         }
 
                         if ($check_ip && ($check_ip eq $src_ip)) {
-                                &ip_check($hostname);
+                                $ip_cnt++; # Increment IP counter
+                                $ip_hits{$hostname}++;
                         }
 
                         if ($check_host && ($check_host eq $hostname)) {
-                                &host_check($src_ip);
+                                $host_cnt++; # Increment IP counter
+                                $host_hits{$src_ip}++;
                         }
 
                         if ($hitlist_file) {
-                                &content_check($hostname, $uri, $curr_line);
+                                &content_check($hostname, $uri, \$curr_line);
                         }
                 }
 
                 close(INFILE);
         }
         $end_time = (times)[0];
-}
-
-# -----------------------------------------------------------------------------
-# Collect summary information on logfile
-# -----------------------------------------------------------------------------
-sub do_summary {
-        my $hostname = shift;
-        my $src_ip = shift;
-
-        $line_cnt++; # Increment line counter
-
-        if (exists($top_hosts{$hostname})) {
-                $top_hosts{$hostname} += 1;
-        } else {
-                $top_hosts{$hostname} = 1;
-        }
-
-        if (exists($top_talkers{$src_ip})) {
-                $top_talkers{$src_ip} += 1;
-        } else {
-                $top_talkers{$src_ip} = 1;
-        }
-}
-
-# -----------------------------------------------------------------------------
-# Log all hosts a particular IP has visited
-# -----------------------------------------------------------------------------
-sub ip_check {
-        my $hostname = shift;
-
-        $ip_cnt++; # Increment IP counter
-
-        if (exists($ip_hits{$hostname})) {
-                $ip_hits{$hostname} += 1;
-        } else {
-                $ip_hits{$hostname} = 1;
-        }
-}
-
-# -----------------------------------------------------------------------------
-# Log all IPs that have visited a particular host
-# -----------------------------------------------------------------------------
-sub host_check {
-        my $ip = shift;
-
-        $host_cnt++; # Increment IP counter
-
-        if (exists($host_hits{$ip})) {
-                $host_hits{$ip} += 1;
-        } else {
-                $host_hits{$ip} = 1;
-        }
 }
 
 # -----------------------------------------------------------------------------
@@ -213,28 +166,13 @@ sub content_check {
         foreach $word (@hitlist) {
                 chomp $word;
                 if (($hostname =~ /$word/i) || ($uri =~ /$word/i)) {
-                        push @hits, $curr_line;
+                        push @hits, $$curr_line;
                 }
         }
 }
 
 # -----------------------------------------------------------------------------
-# Log all requested filename extensions
-# -----------------------------------------------------------------------------
-sub filetype_check {
-        my $extension = shift;
-
-        $ext_cnt++;
-
-        if (exists($filetypes{$extension})) {
-                $filetypes{$extension} += 1;
-        } else {
-                $filetypes{$extension} = 1;
-        }
-}
-
-# -----------------------------------------------------------------------------
-# Build array of output data to prepare for printing
+# Write collected information to specified output file
 # -----------------------------------------------------------------------------
 sub write_output_file {
         my $key;
@@ -303,16 +241,15 @@ sub write_output_file {
                         &build_content_hits();
 
                         foreach $key (sort keys %content_hits) {
-                                print "$key\n";
+                                print OUTFILE "$key\n";
                                 foreach $subkey (sort keys %{ $content_hits{$key} }) {
-                                        print "\t$subkey\t$content_hits{$key}->{$subkey}\n";
+                                        print OUTFILE "\t$subkey\t$content_hits{$key}->{$subkey}\n";
                                 }
-                                print "\n";
+                                print OUTFILE "\n";
                         }
                 } else {
                         print OUTFILE "No matching records found\n";
                 }
-
         }
 
         close(OUTFILE);
@@ -325,7 +262,10 @@ sub build_content_hits {
         my $curr_line;
         my $src_ip;
         my $dst_hostname;
+        my $key;
+        my $subkey;
 
+        # Build multi-dimensional hash of all hosts, hostnames and access counts
         foreach $curr_line (@hits) {
                 my @records;
 
@@ -333,14 +273,19 @@ sub build_content_hits {
                 $src_ip = $records[1];
                 $dst_hostname = $records[3];
 
-                if (exists($content_hits{$src_ip})) {
-                        if (exists($content_hits{$src_ip}->{$dst_hostname})) {
-                                $content_hits{$src_ip}->{$dst_hostname} += 1;
-                        } else {
-                                $content_hits{$src_ip}->{$dst_hostname} = 1;
+                $content_hits{$src_ip}->{$dst_hostname}++;
+        }
+
+        # Prune hash tree to remove all small and empty values
+        foreach $key (keys %content_hits) {
+                foreach $subkey (keys %{ $content_hits{$key} }) {
+                        if ($content_hits{$key}->{$subkey} <= 1) {
+                                delete $content_hits{$key}->{$subkey};
                         }
-                } else {
-                        $content_hits{$src_ip} = { $dst_hostname => 1 };
+                }
+
+                if (scalar keys(%{ $content_hits{$key} }) == 0) {
+                        delete $content_hits{$key};
                 }
         }
 }
@@ -358,14 +303,14 @@ sub write_host_subfiles {
                 @records = split(/$PATTERN/, $curr_line);
                 $src_ip = $records[1];
 
-                open(HOSTFILE, ">$extended_hosts/$src_ip.txt") || die "\nError: cannot open $extended_hosts/$src_ip.txt - $!\n";
+                open(HOSTFILE, ">>$host_detail/$src_ip.txt") || die "\nError: cannot open $host_detail/$src_ip.txt - $!\n";
                 print HOSTFILE "$curr_line\n";
                 close(HOSTFILE);
         }
 }
 
 # -----------------------------------------------------------------------------
-# Print output to correct medium/send email
+# Send email to specified address and attach output file
 # -----------------------------------------------------------------------------
 sub send_email {
         my $output;
@@ -392,9 +337,6 @@ sub send_email {
                 );
 
         $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
-        #open(EMAIL, "|$SENDMAIL") || die "\nError: Cannot open $SENDMAIL - $!\n";
-        #print EMAIL $msg->as_string;
-        #close(EMAIL);
 }
 
 # -----------------------------------------------------------------------------
@@ -411,7 +353,7 @@ sub percent_of {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('c:e:fg:i:l:o:st:hx:', \%opts) or &print_usage();
+        getopts('c:d:e:fg:i:l:o:st:h', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -420,15 +362,15 @@ sub get_arguments {
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
         $summary_cap = $SUMMARY_CAP unless ($summary_cap = $opts{c});
-        $output_file = 0 unless ($output_file = $opts{o});
-        $hitlist_file = 0 unless ($hitlist_file = $opts{l});
-        $ignore_file = 0 unless ($ignore_file = $opts{g});
-        $log_summary = 0 unless ($log_summary = $opts{s});
-        $check_ip = 0 unless ($check_ip = $opts{i});
-        $check_host = 0 unless ($check_host = $opts{t});
+        $host_detail = 0 unless ($host_detail = $opts{d});
         $email_addr = 0 unless ($email_addr = $opts{e});
         $filetype = 0 unless ($filetype = $opts{f});
-        $extended_hosts = 0 unless ($extended_hosts = $opts{x});
+        $ignore_file = 0 unless ($ignore_file = $opts{g});
+        $check_ip = 0 unless ($check_ip = $opts{i});
+        $hitlist_file = 0 unless ($hitlist_file = $opts{l});
+        $output_file = 0 unless ($output_file = $opts{o});
+        $log_summary = 0 unless ($log_summary = $opts{s});
+        $check_host = 0 unless ($check_host = $opts{t});
 
         # Check for required options
         if (!$output_file) {
@@ -439,11 +381,6 @@ sub get_arguments {
                 print "\nError: no processing option selected!\n";
                 &print_usage();
         }
-
-        # Ignore unnecessary options to prevent side effects
-        if (!$hitlist_file && $extended_hosts) {
-                $extended_hosts = 0;
-        }
 }
 
 # -----------------------------------------------------------------------------
@@ -452,7 +389,7 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-fhs] [-c count] [-l file] [-o file]
-        [-e email] [-g file] [-x dir] [input files]
+Usage: $PROG_NAME [-fhs] [-c count] [-d dir] [-e email] [-g file]
+        [-i ip] [-l file] [-o file] [-t hostname] [input files]
 USAGE
 }
