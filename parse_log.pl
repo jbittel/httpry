@@ -266,6 +266,7 @@ sub build_content_hits {
         my $subkey;
 
         # Build multi-dimensional hash of all hosts, hostnames and access counts
+        # based on all the records tagged in the content checks
         foreach $curr_line (@hits) {
                 my @records;
 
@@ -295,16 +296,18 @@ sub build_content_hits {
 # -----------------------------------------------------------------------------
 sub write_host_subfiles {
         my $curr_line;
-        my $src_ip;
+        my $key;
 
-        foreach $curr_line (@hits) {
-                my @records;
+        foreach $key (keys %content_hits) {
+                open(HOSTFILE, ">>$host_detail/$key.txt") || die "\nError: cannot open $host_detail/$key.txt - $!\n";
+ 
+                foreach $curr_line (@hits) {
+                        my @record;
 
-                @records = split(/$PATTERN/, $curr_line);
-                $src_ip = $records[1];
-
-                open(HOSTFILE, ">>$host_detail/$src_ip.txt") || die "\nError: cannot open $host_detail/$src_ip.txt - $!\n";
-                print HOSTFILE "$curr_line\n";
+                        @record = split(/$PATTERN/, $curr_line);
+                        print HOSTFILE "$curr_line\n" if  ($record[1] eq $key);
+                }
+ 
                 close(HOSTFILE);
         }
 }
@@ -372,13 +375,17 @@ sub get_arguments {
         $log_summary = 0 unless ($log_summary = $opts{s});
         $check_host = 0 unless ($check_host = $opts{t});
 
-        # Check for required options
+        # Check for required options and combinations
         if (!$output_file) {
-                print "\nError: no output file provided!\n";
+                print "\nError: no output file provided\n";
+                &print_usage();
+        }
+        if (!$hitlist_file && $host_detail) {
+                print "\nError: cannot build host detail files without hitlist file\n";
                 &print_usage();
         }
         if (!$log_summary && !$hitlist_file && !$check_ip && !$check_host && !$filetype) {
-                print "\nError: no processing option selected!\n";
+                print "\nError: no processing option selected\n";
                 &print_usage();
         }
 }
