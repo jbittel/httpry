@@ -127,18 +127,18 @@ sub parse_logfiles {
                         }
 
                         if ($log_summary) {
-                                $line_cnt++; # Increment line counter
+                                $line_cnt++;
                                 $top_hosts{$hostname}++;
                                 $top_talkers{$src_ip}++;
                         }
 
                         if ($check_ip && ($check_ip eq $src_ip)) {
-                                $ip_cnt++; # Increment IP counter
+                                $ip_cnt++;
                                 $ip_hits{$hostname}++;
                         }
 
                         if ($check_host && ($check_host eq $hostname)) {
-                                $host_cnt++; # Increment IP counter
+                                $host_cnt++;
                                 $host_hits{$src_ip}++;
                         }
 
@@ -280,7 +280,7 @@ sub build_content_hits {
         # Prune hash tree to remove all small and empty values
         foreach $key (keys %content_hits) {
                 foreach $subkey (keys %{ $content_hits{$key} }) {
-                        if ($content_hits{$key}->{$subkey} <= 1) {
+                        if ($content_hits{$key}->{$subkey} <= 2) {
                                 delete $content_hits{$key}->{$subkey};
                         }
                 }
@@ -300,14 +300,14 @@ sub write_host_subfiles {
 
         foreach $key (keys %content_hits) {
                 open(HOSTFILE, ">>$host_detail/$key.txt") || die "\nError: cannot open $host_detail/$key.txt - $!\n";
- 
+
                 foreach $curr_line (@hits) {
                         my @record;
 
                         @record = split(/$PATTERN/, $curr_line);
                         print HOSTFILE "$curr_line\n" if  ($record[1] eq $key);
                 }
- 
+
                 close(HOSTFILE);
         }
 }

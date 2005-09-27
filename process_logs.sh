@@ -11,14 +11,15 @@
 # different directory, restart httpry and then process the new log
 # file. This demonstrates the majority of the functionality included
 # in these different tools, and should help in modifying them to
-# your particular use.
+# your particular use.  Note that this file is merely an example of
+# how to automate this process; most of these programs have additional
+# options that are not shown here.
 #
 
 # --------------------
 # --- MODIFY THESE ---
 # --------------------
-# Change these values to reflect
-# your particular setup
+# Change these values to reflect your particular setup.
 
 tools_dir=""  # Change this to the location of the perl tool scripts
 logs_dir=""   # Change this to where you want to store your logs
@@ -49,7 +50,7 @@ httpry -d -u $user -o $logs_dir/$log_fn
 
 # Process new log file data
 if [ -e "$logs_dir/$parse_fn" ]; then
-        perl $tools_dir/parse_log.pl -fs -l $tools_dir/$offense_fn -o $logs_dir/$parse_fn.txt -c 20 -e $email_addr $logs_dir/$parse_fn
+        perl $tools_dir/parse_log.pl -s -l $tools_dir/$offense_fn -o $logs_dir/$parse_fn.txt -c 20 -e $email_addr $logs_dir/$parse_fn
 fi
 
 # Change ownership of logs directory.
