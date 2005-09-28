@@ -240,7 +240,14 @@ sub write_output_file {
                 if (scalar(@hits) > 0) {
                         &build_content_hits();
 
-                        foreach $key (sort keys %content_hits) {
+                        foreach $key (map $_->[0],
+                                      sort {
+                                              $a->[1] <=> $b->[1] or # Sort IPs in true numeric order
+                                              $a->[2] <=> $b->[2] or
+                                              $a->[3] <=> $b->[3] or
+                                              $a->[4] <=> $b->[4]
+                                      }
+                                      map [$_, split /\./], keys %content_hits) {
                                 print OUTFILE "$key\n";
                                 foreach $subkey (sort keys %{ $content_hits{$key} }) {
                                         print OUTFILE "\t$subkey\t$content_hits{$key}->{$subkey}\n";
@@ -266,7 +273,6 @@ sub build_content_hits {
         my $subkey;
 
         # Build multi-dimensional hash of all hosts, hostnames and access counts
-        # based on all the records tagged in the content checks
         foreach $curr_line (@hits) {
                 my @records;
 

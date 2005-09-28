@@ -116,15 +116,13 @@ sub purge_dir {
 
         # Sort all compressed archives in the directory according
         # to the date in the filename
-        @logs = map { $_->[0] }
-                sort { $a->[3] <=> $b->[3] # Sort by year...
-                                ||
-                       $a->[1] <=> $b->[1] # ...then by month...
-                                ||
-                       $a->[2] <=> $b->[2] # ...and finally day
+        @logs = map $_->[0],
+                sort {
+                        $a->[3] <=> $b->[3] or # Sort by year...
+                        $a->[1] <=> $b->[1] or # ...then by month...
+                        $a->[2] <=> $b->[2]    # ...and finally day
                 }
-                map { [ $_, /(\d+)-(\d+)-(\d+)/ ] }
-                grep /\.tar.gz$/, @dir_list;
+                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /\.tar.gz$/, @dir_list;
 
         # Delete oldest archives from directory if the total
         # number of files is above the provided purge limit
@@ -153,7 +151,12 @@ sub get_arguments {
 
         $input_file = 0 unless ($input_file = $opts{i});
         $purge_limit = 0 unless ($purge_limit = $opts{p});
-        die "\nError: Need output directory\n" unless ($output_dir = $opts{d});
+        $output_dir = 0 unless ($output_dir = $opts{d});
+
+        if (!$output_dir) {
+                print "\nError: no output directory provided\n";
+                &print_usage();
+        }
 }
 
 # -----------------------------------------------------------------------------
