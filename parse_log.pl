@@ -11,6 +11,7 @@ use strict;
 use Getopt::Std;
 use File::Basename;
 use MIME::Lite;
+use Socket qw(inet_ntoa inet_aton);
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -240,14 +241,9 @@ sub write_output_file {
                 if (scalar(@hits) > 0) {
                         &build_content_hits();
 
-                        foreach $key (map $_->[0],
-                                      sort {
-                                              $a->[1] <=> $b->[1] or # Sort IPs in true numeric order
-                                              $a->[2] <=> $b->[2] or
-                                              $a->[3] <=> $b->[3] or
-                                              $a->[4] <=> $b->[4]
-                                      }
-                                      map [$_, split /\./], keys %content_hits) {
+                        foreach $key (map { inet_ntoa $_ }
+                                      sort
+                                      map { inet_aton $_ } keys %content_hits) {
                                 print OUTFILE "$key\n";
                                 foreach $subkey (sort keys %{ $content_hits{$key} }) {
                                         print OUTFILE "\t$subkey\t$content_hits{$key}->{$subkey}\n";
@@ -322,7 +318,6 @@ sub write_host_subfiles {
 # Send email to specified address and attach output file
 # -----------------------------------------------------------------------------
 sub send_email {
-        my $output;
         my $msg;
         my $output_filename = basename($output_file);
 
