@@ -71,7 +71,7 @@ of the available options. However, this is merely an abbreviated description
 meant for quick reference and not an understanding of program behavior. This
 section describes these options in greater detail.
 
-httpry [-dhp] [-c count] [-f file] [-i interface] [-l filter] [-o file] [-r dir]
+httpry [-dhpv] [-c count] [-f file] [-i interface] [-l filter] [-o file] [-r dir]
        [-u user]
 
 -c <count> :
@@ -91,8 +91,7 @@ does not require the program to be run as root, as no access to the NIC is
 required.
 
 -h :
-Displays the program name, version and a brief description of these options,
-after which the program terminates.
+Displays a brief description of these options, after which the program terminates.
 
 -i <interface> :
 Specifies an ethernet interface for the program to listen on.
@@ -124,6 +123,9 @@ particularly useful when running in daemon mode. Note that you still need root
 privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
 
+-v :
+Displays the program name and version number, after which the program terminates.
+
 
 ----------------------
 IV. KNOWN ISSUES
@@ -147,6 +149,7 @@ version 0.0.6
    - Fix: standardized error and status message strings
    + Add: ability to specify running directory (-r)
    - Fix: fixed an incorrect array initilization
+   = Chg: split version and help information into two commands (-v and -h)
 
 version 0.0.5
    + Initial "official" release

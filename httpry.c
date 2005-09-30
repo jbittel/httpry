@@ -57,7 +57,8 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 void runas_daemon(char *run_dir);
 void handle_signal(int sig);
 void cleanup_exit();
-void display_usage();
+void display_version();
+void display_help();
 
 /* Gather information about local network device */
 void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
@@ -368,12 +369,28 @@ void cleanup_exit() {
         return;
 }
 
+/* Display program version information */
+void display_version() {
+        info("%s version %s\n", PROG_NAME, PROG_VER);
+
+        exit(EXIT_SUCCESS);
+}
+
 /* Display help/usage information */
-void display_usage() {
-        info("\n%s version %s\n"
-             "Usage: %s [-dhp] [-c count] [-f file] [-i interface]\n"
-             "        [-l filter] [-o file] [-r dir ] [-u user]\n",
-             PROG_NAME, PROG_VER, PROG_NAME);
+void display_help() {
+        info("Usage: %s [-dhpv] [-c count] [-f file] [-i interface]\n"
+             "        [-l filter] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
+        info("  -c ... number of packets to capture\n"
+             "  -d ... run as daemon\n"
+             "  -f ... input file to read from\n"
+             "  -h ... print help information\n"
+             "  -i ... set interface to listen on\n"
+             "  -l ... pcap style capture filter\n"
+             "  -o ... output file to write into\n"
+             "  -p ... disable promiscuous mode\n"
+             "  -r ... set running directory\n"
+             "  -u ... set process owner\n"
+             "  -v ... display version information\n");
 
         exit(EXIT_SUCCESS);
 }
@@ -398,12 +415,12 @@ int main(int argc, char *argv[]) {
         char *run_dir    = NULL;
 
         // Process command line arguments
-        while ((arg = getopt(argc, argv, "c:df:hi:l:o:pr:u:")) != -1) {
+        while ((arg = getopt(argc, argv, "c:df:hi:l:o:pr:u:v")) != -1) {
                 switch (arg) {
                         case 'c': pkt_count = atoi(optarg); break;
                         case 'd': daemon_mode = 1; break;
                         case 'f': use_infile = optarg; break;
-                        case 'h': display_usage(); break;
+                        case 'h': display_help(); break;
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
                         case 'o': if (freopen(optarg, "a", stdout) == NULL) {
@@ -414,15 +431,16 @@ int main(int argc, char *argv[]) {
                         case 'p': set_promisc = 0; break;
                         case 'r': run_dir = optarg; break;
                         case 'u': new_user = optarg; break;
+                        case 'v': display_version(); break;
 
                         case '?': if (isprint(optopt)) {
                                           warn("Unknown parameter '-%c'\n", optopt);
-                                          display_usage();
+                                          display_help();
                                   } else {
                                           warn("Unknown parameter\n");
-                                          display_usage();
+                                          display_help();
                                   }
-                        default:  display_usage(); // Shouldn't be reached
+                        default:  display_help(); // Shouldn't be reached
                 }
         }
 

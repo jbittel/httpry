@@ -32,8 +32,7 @@ does not require the program to be run as root, as no access to the NIC is
 required.
 .TP
 \fB-h\fR
-Displays the program name, version and a brief description of these options,
-after which the program terminates.
+Displays a brief description of these options, after which the program terminates.
 .TP
 \fB-i\fR interface
 Specifies an ethernet interface for the program to listen on.
@@ -64,6 +63,9 @@ Allows an alternate user to take ownership of the process. This is
 particularly useful when running in daemon mode. Note that you still need root
 privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
+.TP
+\fB-v\fR
+Displays the program name and version number, after which the program terminates.
 .SH BUGS
 See the included README file for an up-to-date list of known issues.
 .SH AUTHOR
