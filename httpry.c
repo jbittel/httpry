@@ -376,7 +376,7 @@ void display_version() {
         exit(EXIT_SUCCESS);
 }
 
-/* Display help/usage information */
+/* Display program help/usage information */
 void display_help() {
         info("Usage: %s [-dhpv] [-c count] [-f file] [-i interface]\n"
              "        [-l filter] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
@@ -423,16 +423,11 @@ int main(int argc, char *argv[]) {
                         case 'h': display_help(); break;
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
-                        case 'o': if (freopen(optarg, "a", stdout) == NULL) {
-                                          log("Cannot reopen output stream to '%s'\n", optarg);
-                                          die("Cannot reopen output stream to '%s'\n", optarg);
-                                  }
-                                  use_outfile = 1; break;
+                        case 'o': use_outfile = 1; break;
                         case 'p': set_promisc = 0; break;
                         case 'r': run_dir = optarg; break;
                         case 'u': new_user = optarg; break;
                         case 'v': display_version(); break;
-
                         case '?': if (isprint(optopt)) {
                                           warn("Unknown parameter '-%c'\n", optopt);
                                           display_help();
@@ -457,6 +452,12 @@ int main(int argc, char *argv[]) {
         }
 
         // General program setup
+	if (use_outfile) {
+		if (freopen(optarg, "a", stdout) == NULL) {
+        		log("Cannot reopen output stream to '%s'\n", optarg);
+                	die("Cannot reopen output stream to '%s'\n", optarg);
+	        }
+	}
         if (!capfilter) {
                 capfilter = default_capfilter;
         }

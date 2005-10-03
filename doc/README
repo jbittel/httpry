@@ -17,10 +17,10 @@ I. ABOUT
 ----------------------
 
 httpry is a tool designed for displaying and logging HTTP traffic. It is not
-designed to perform analysis itself, but instead to capture, parse and log the
+intended to perform analysis itself, but instead to capture, parse and/or log the
 traffic for later analysis. It can be run in real-time displaying the traffic as
 it is parsed, or as a daemon process that logs to an output file. It is written
-to be as lightweight and flexible as possible, so that it can be adapted to many
+to be as lightweight and flexible as possible, so that it can be easily adapted to
 different applications.
 
 "How is this tool useful?" you may ask. Well, here's a few ideas that have
@@ -148,7 +148,7 @@ version 0.0.6
    = Chg: error/log/warn message printing pushed into function macros
    - Fix: standardized error and status message strings
    + Add: ability to specify running directory (-r)
-   - Fix: fixed an incorrect array initilization
+   - Fix: fixed an incorrect array initialisation
    = Chg: split version and help information into two commands (-v and -h)
 
 version 0.0.5
@@ -173,9 +173,10 @@ program version number I'm targeting to focus on that particular option.
 * Configurable subset of HTTP traffic to parse/output (.7)
 * More extensive disassembly of the HTTP protocol (.7)
 * Viewable packet capture statistics
-* Option to fallback on rDNS when Host: unavailable
+* Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Option to dump raw packets that are logged
+* Option to display extensive data from the packet header
 
 
 ----------------------
@@ -183,5 +184,11 @@ VII. CREDITS/THANKS
 ----------------------
 
 Thanks:
-   p0f
-   Dug Song
+   Dug Song:                            whose tool /urlsnarf/ gave me some
+   (http://monkey.org/~dugsong/dsniff/) great insights into how to properly
+                                        parse HTTP packet contents
+
+   Michal Zalewski:                       for the excellent program /p0f/ which
+   (http://lcamtuf.coredump.cx/p0f.shtml) gave me inspiration for this project
+                                          and an idea for the direction I'd like
+                                          this code to eventually take
