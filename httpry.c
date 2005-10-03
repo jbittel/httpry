@@ -423,7 +423,11 @@ int main(int argc, char *argv[]) {
                         case 'h': display_help(); break;
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
-                        case 'o': use_outfile = 1; break;
+                        case 'o': if (freopen(optarg, "a", stdout) == NULL) {
+        		                log("Cannot reopen output stream to '%s'\n", optarg);
+                	                die("Cannot reopen output stream to '%s'\n", optarg);
+	                          }
+                                  use_outfile = 1; break;
                         case 'p': set_promisc = 0; break;
                         case 'r': run_dir = optarg; break;
                         case 'u': new_user = optarg; break;
@@ -452,12 +456,6 @@ int main(int argc, char *argv[]) {
         }
 
         // General program setup
-	if (use_outfile) {
-		if (freopen(optarg, "a", stdout) == NULL) {
-        		log("Cannot reopen output stream to '%s'\n", optarg);
-                	die("Cannot reopen output stream to '%s'\n", optarg);
-	        }
-	}
         if (!capfilter) {
                 capfilter = default_capfilter;
         }
