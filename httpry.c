@@ -404,15 +404,15 @@ int main(int argc, char *argv[]) {
 
         // Command line flags/options
         int arg;
-        int pkt_count    = -1; // Loop forever unless overridden
-        int daemon_mode  = 0;
-        char *use_infile = NULL;
-        char *interface  = NULL;
-        char *capfilter  = NULL;
-        int use_outfile  = 0;
-        int set_promisc  = 1; // Default to promiscuous mode for the NIC
-        char *new_user   = NULL;
-        char *run_dir    = NULL;
+        int pkt_count     = -1; // Loop forever unless overridden
+        int daemon_mode   = 0;
+        char *use_infile  = NULL;
+        char *interface   = NULL;
+        char *capfilter   = NULL;
+        char *use_outfile = NULL;
+        int set_promisc   = 1; // Default to promiscuous mode for the NIC
+        char *new_user    = NULL;
+        char *run_dir     = NULL;
 
         // Process command line arguments
         while ((arg = getopt(argc, argv, "c:df:hi:l:o:pr:u:v")) != -1) {
@@ -423,11 +423,7 @@ int main(int argc, char *argv[]) {
                         case 'h': display_help(); break;
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
-                        case 'o': if (freopen(optarg, "a", stdout) == NULL) {
-        		                log("Cannot reopen output stream to '%s'\n", optarg);
-                	                die("Cannot reopen output stream to '%s'\n", optarg);
-	                          }
-                                  use_outfile = 1; break;
+                        case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
                         case 'r': run_dir = optarg; break;
                         case 'u': new_user = optarg; break;
@@ -445,7 +441,7 @@ int main(int argc, char *argv[]) {
 
         // Test for error and warn conditions
         if ((getuid() != 0) && !use_infile) {
-                die("Root privs required to access the NIC\n");
+                die("Root priviledges required to access the NIC\n");
         }
         if (daemon_mode && !use_outfile) {
                 die("Daemon mode requires an output file\n");
@@ -456,6 +452,12 @@ int main(int argc, char *argv[]) {
         }
 
         // General program setup
+        if (use_outfile) {
+                if (freopen(use_outfile, "a", stdout) == NULL) {
+                        log("Cannot re-open output stream to '%s'\n", use_outfile);
+                        die("Cannot re-open output stream to '%s'\n", use_outfile);
+        	}
+        }
         if (!capfilter) {
                 capfilter = default_capfilter;
         }
