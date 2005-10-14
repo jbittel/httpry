@@ -3,9 +3,6 @@
 #
 # process_logs.sh 6/29/2005
 #
-# Copyright (c) 2005, Jason Bittel. All rights reserved.
-# See included LICENSE file for specific licensing information
-#
 # Example shell script for orchestrating the included tools. This
 # is designed to stop the httpry service, move the log file to a
 # different directory, restart httpry and then process the new log

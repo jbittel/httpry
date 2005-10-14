@@ -3,7 +3,7 @@
 #
 # rotate_log.pl 6/27/2005
 #
-# Copyright (c) 2005, Jason Bittel. All rights reserved.
+# Copyright (c) 2005, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
 #
 
@@ -65,7 +65,7 @@ sub compress_files {
         my $filename;
         my $dir;
 
-        $dir = `pwd`; # Danger, not portable
+        $dir = `pwd`;
         chdir($output_dir); # Must be in local dir for relative paths in tar file
 
         foreach $log_file (grep /\.log$/, @dir_list) {
@@ -94,7 +94,7 @@ sub move_file {
         if (-e $input_file) {
                 # Create destination filename
                 $mday = (localtime)[3];
-                $mon = (localtime)[4] + 1;
+                $mon  = (localtime)[4] + 1;
                 $year = (localtime)[5] + 1900;
 
                 if (! -e $output_dir) {

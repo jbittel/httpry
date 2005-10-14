@@ -1,9 +1,6 @@
 #
 # Makefile 8/12/2005
 #
-# Copyright (c) 2005, Jason Bittel. All rights reserved.
-# See included LICENSE file for specific licensing information
-#
 # This is hopefully a universal makefile for httpry. It currently has only
 # been tested under Linux and FreeBSD. If you should compile and use the
 # program under a different OS, please let me know.

@@ -3,7 +3,7 @@
 #
 # parse_log.pl 6/25/2005
 #
-# Copyright (c) 2005, Jason Bittel. All rights reserved.
+# Copyright (c) 2005, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
 #
 
@@ -42,7 +42,7 @@ my @hits;
 my @hitlist;
 my $ignore_hosts = "";
 my $summary_cap;
-my $start_time;  # Start tick for timing code
+
 my $end_time;    # End tick for timing code
 
 # Command line arguments
@@ -154,7 +154,7 @@ sub parse_logfiles {
 }
 
 # -----------------------------------------------------------------------------
-# Search fields for offensive content
+# Search fields for specified content
 # -----------------------------------------------------------------------------
 sub content_check {
         my $hostname = shift;
@@ -184,6 +184,7 @@ sub write_output_file {
 
         if ($log_summary) {
                 print OUTFILE "\n\nSUMMARY STATS\n\n";
+                print OUTFILE "Generated:\t" . localtime() . "\n";
                 print OUTFILE "Total files:\t$file_cnt\n";
                 print OUTFILE "Total size:\t$size_cnt MB\n";
                 print OUTFILE "Total lines:\t$total_line_cnt\n";
