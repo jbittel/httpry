@@ -21,6 +21,7 @@ my $PROG_NAME = "parse_log.pl";
 my $PROG_VER = "0.0.5";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $SUMMARY_CAP = 15; # Default value, can be overridden with -c
+my $PRUNE_LIMIT = 5;  # When pruning content hits tree, discard hits below this value
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -42,8 +43,8 @@ my @hits;
 my @hitlist;
 my $ignore_hosts = "";
 my $summary_cap;
-
-my $end_time;    # End tick for timing code
+my $start_time; # Start tick for timing code
+my $end_time;   # End tick for timing code
 
 # Command line arguments
 my %opts;
@@ -283,7 +284,7 @@ sub build_content_hits {
         # Prune hash tree to remove all small and empty values
         foreach $key (keys %content_hits) {
                 foreach $subkey (keys %{ $content_hits{$key} }) {
-                        if ($content_hits{$key}->{$subkey} <= 2) {
+                        if ($content_hits{$key}->{$subkey} <= $PRUNE_LIMIT) {
                                 delete $content_hits{$key}->{$subkey};
                         }
                 }
@@ -299,16 +300,16 @@ sub build_content_hits {
 # -----------------------------------------------------------------------------
 sub write_host_subfiles {
         my $curr_line;
-        my $key;
+        my $ip;
 
-        foreach $key (keys %content_hits) {
-                open(HOSTFILE, ">>$host_detail/$key.txt") || die "\nError: cannot open $host_detail/$key.txt - $!\n";
+        foreach $ip (keys %content_hits) {
+                open(HOSTFILE, ">>$host_detail/$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
 
                 foreach $curr_line (@hits) {
                         my @record;
 
                         @record = split(/$PATTERN/, $curr_line);
-                        print HOSTFILE "$curr_line\n" if  ($record[1] eq $key);
+                        print HOSTFILE "$curr_line\n" if ($record[1] eq $ip);
                 }
 
                 close(HOSTFILE);

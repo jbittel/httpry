@@ -10,6 +10,7 @@
         -||-  HTTPry 0.0.6  -||-
 
   HTTP logging and information display tool
+      Jason Bittel <jbittel@corban.edu>
 
 
 ----------------------
@@ -176,7 +177,7 @@ program version number I'm targeting to focus on that particular option.
 * Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Option to dump raw packets that are logged
-* Option to display extensive data from the packet header
+* Option to display extensive data from the hw/ip/tcp packet headers
 
 
 ----------------------

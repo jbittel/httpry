@@ -16,18 +16,18 @@
 # --------------------
 # --- MODIFY THESE ---
 # --------------------
-# Change these values to reflect your particular setup.
+# Change these values to reflect your particular setup
 
-tools_dir=""  # Change this to the location of the perl tool scripts
-logs_dir=""   # Change this to where you want to store your logs
-email_addr="" # Email address used by parse_log.pl reports
-user=""       # User to run httpry as
-group=""      # Group of the above user
+tools_dir=""     # Change this to the location of the perl tool scripts
+logs_dir=""      # Change this to where you want to store your logs
+email_addr=""    # Email address used by parse_log.pl reports
+user=""          # User to run httpry as
+group=""         # Group of the above user
+log_fn="out.log" # Default file name for active log file
+offense_fn=""    # File name of content checks file; put in tools dir
 
 # --------------------
 
-log_fn="out.log"                  # Default file name for active log file
-offense_fn="offensive.txt"        # File name of content checks file; put in tools dir
 parse_fn="`date +%-m-%-d-%Y`.log" # This is the default format used by rotate_log.pl
 
 # Stop the httpry service if it is running

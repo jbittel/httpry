@@ -97,6 +97,7 @@ sub move_file {
                 $mon  = (localtime)[4] + 1;
                 $year = (localtime)[5] + 1900;
 
+                # Create destination folder
                 if (! -e $output_dir) {
                         mkdir $output_dir;
                 }
@@ -148,7 +149,6 @@ sub get_arguments {
         # Copy command line arguments to internal variables
         $compress = 1 if ($opts{c});
         $del_text = 1 if ($opts{t});
-
         $input_file = 0 unless ($input_file = $opts{i});
         $purge_limit = 0 unless ($purge_limit = $opts{p});
         $output_dir = 0 unless ($output_dir = $opts{d});

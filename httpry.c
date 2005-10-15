@@ -79,8 +79,8 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
 
         // Retrieve network information
         if (pcap_lookupnet(*dev, net, &mask, errbuf) == -1) {
-                log("Cannot find network info: %s\n", errbuf);
-                die("Cannot find network info: %s\n", errbuf);
+                log("Cannot find network info for '%s': %s\n", *dev, errbuf);
+                die("Cannot find network info for '%s': %s\n", *dev, errbuf);
         }
 
         return;

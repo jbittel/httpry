@@ -1,8 +1,8 @@
 #
 # Makefile 8/12/2005
 #
-# This is hopefully a universal makefile for httpry. It currently has only
-# been tested under Linux and FreeBSD. If you should compile and use the
+# This is a universal makefile for httpry. It currently has only been
+# tested under Linux and FreeBSD. If you should compile and use the
 # program under a different OS, please let me know.
 #
 
