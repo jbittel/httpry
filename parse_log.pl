@@ -58,6 +58,7 @@ my $ignore_file;
 my $output_file;
 my @input_files;
 my $host_detail;
+my $convert_hex;
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -114,6 +115,14 @@ sub parse_logfiles {
                         $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
                         next if $curr_line eq "";
                         $total_line_cnt++;
+
+                        if ($convert_hex) {
+                                # Some URIs use a %25XX nomenclature (for some odd reason), so
+                                # we need to decode '%25' to '%' first so the next s/// will
+                                # correctly decode the '%XX'; find out why this is
+                                $curr_line =~ s/%25/%/g;
+                                $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+                        }
 
                         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
 
@@ -359,7 +368,7 @@ sub percent_of {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('c:d:e:fg:i:l:o:st:h', \%opts) or &print_usage();
+        getopts('c:d:e:fg:i:l:o:st:hx', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -377,6 +386,7 @@ sub get_arguments {
         $output_file = 0 unless ($output_file = $opts{o});
         $log_summary = 0 unless ($log_summary = $opts{s});
         $check_host = 0 unless ($check_host = $opts{t});
+        $convert_hex = 0 unless ($convert_hex = $opts{x});
 
         # Check for required options and combinations
         if (!$output_file) {
@@ -399,7 +409,7 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-fhs] [-c count] [-d dir] [-e email] [-g file]
+Usage: $PROG_NAME [-fhsx] [-c count] [-d dir] [-e email] [-g file]
         [-i ip] [-l file] [-o file] [-t hostname] [input files]
 USAGE
 }
