@@ -117,9 +117,9 @@ sub parse_logfiles {
                         $total_line_cnt++;
 
                         if ($convert_hex) {
-                                # Some URIs use a %25XX nomenclature (for some odd reason), so
+                                # Some URIs use a %25XX ('%') nomenclature (for some odd reason), so
                                 # we need to decode '%25' to '%' first so the next s/// will
-                                # correctly decode the '%XX'; find out why this is
+                                # correctly decode the '%XX'; need to find out why this is
                                 $curr_line =~ s/%25/%/g;
                                 $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
                         }
@@ -132,7 +132,7 @@ sub parse_logfiles {
                                 next if ($ignore_hosts =~ /$src_ip/);
                         }
 
-                        if ($filetype && ($uri =~ /\.(\w{3,4}?)$/)) {
+                        if ($filetype && ($uri =~ /\.(\w{2,4}?)$/)) {
                                 $ext_cnt++;
                                 $filetypes{$1}++;
                         }
