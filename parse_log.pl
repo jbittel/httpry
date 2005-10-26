@@ -74,7 +74,7 @@ if ($email_addr) {
 }
 
 # -----------------------------------------------------------------------------
-# Core engine, parses all input file based on options provided
+# Core parsing engine, processes all input files based on options provided
 # -----------------------------------------------------------------------------
 sub parse_logfiles {
         my $curr_line; # Current line in input file
