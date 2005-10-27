@@ -32,16 +32,40 @@ my @input_files;
 # -----------------------------------------------------------------------------
 &get_arguments();
 
-$start_time = (times)[0];
 &parse_flows();
-$end_time = (times)[0];
+
 print "Execution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n";
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
 # -----------------------------------------------------------------------------
 sub parse_flows {
+        my $curr_line; # Current line in input file
+        my $curr_file; # Current input file
+        my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
 
+        $start_time = (times)[0];
+        foreach $curr_file (@input_files) {
+                unless(open(INFILE, "$curr_file")) {
+                        print "\nError: Cannot open $curr_file - $!\n";
+                        next;
+                }
+
+                foreach $curr_line (<INFILE>) {
+                        chomp $curr_line;
+                        $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
+                        next if $curr_line eq "";
+
+                        ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+
+                        #next if (!$hostname or !$src_ip or !$uri);
+
+                        # Let's make magic happen here, baby
+                }
+
+                close(INFILE);
+        }
+        $end_time = (times)[0];
 }
 
 # -----------------------------------------------------------------------------
