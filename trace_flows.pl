@@ -9,6 +9,7 @@
 
 use strict;
 use Getopt::Std;
+use Date::Calc qw(Delta_DHMS);
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -16,25 +17,33 @@ use Getopt::Std;
 my $PATTERN = "\t";
 my $PROG_NAME = "trace_flows.pl";
 my $PROG_VER = "0.0.1";
+my $FLOW_TIMEOUT = 5; # Timeout for flows, in minutes
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
+my %flow_info = ();
+my %flow_data = ();
 my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing code
+
+my $key;
+my $subkey;
 
 # Command line arguments
 my %opts;
 my @input_files;
+my $output_file;
+my $flow_timeout;
 
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-
+if (-e $output_file) { unlink $output_file };
 &parse_flows();
 
-print "Execution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n";
+print "\nExecution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n";
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
@@ -43,6 +52,12 @@ sub parse_flows {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
+        my $flow_key;
+        my $flow_id = 0;
+        my @curr_time;
+        my @end_time;
+        my @time_diff;
+        my $key;
 
         $start_time = (times)[0];
         foreach $curr_file (@input_files) {
@@ -58,21 +73,108 @@ sub parse_flows {
 
                         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
 
-                        #next if (!$hostname or !$src_ip or !$uri);
+                        next if (!$src_ip or !$dst_ip or !$hostname);
+                        $flow_key = $src_ip.'-'.$dst_ip;
 
                         # Let's make magic happen here, baby
+                        if (!exists $flow_info{$flow_key}) {
+                                print "New flow #$flow_id\n";
+                                $flow_info{$flow_key}->{"id"} = $flow_id++;
+                                $flow_info{$flow_key}->{"src_ip"} = $src_ip;
+                                $flow_info{$flow_key}->{"dst_ip"} = $dst_ip;
+                                $flow_info{$flow_key}->{"hostname"} = $hostname;
+                                $flow_info{$flow_key}->{"start_time"} = $timestamp;
+                                $flow_info{$flow_key}->{"end_time"} = $timestamp;
+                                $flow_info{$flow_key}->{"length"} = 1;
+
+                                push( @{$flow_data{$flow_key}}, $timestamp.$PATTERN.$uri);
+                        } else {
+                                $flow_info{$flow_key}->{"end_time"} = $timestamp;
+                                $flow_info{$flow_key}->{"length"}++;
+
+                                push( @{$flow_data{$flow_key}}, $timestamp.$PATTERN.$uri);
+                        }
+
+                        # Parse current record time [08/13/2005 04:40:22]
+                        $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
+                        @curr_time = ($3, $1, $2, $4, $5, $6);
+
+                        # Timeout old flows
+                        foreach $key (keys %flow_info) {
+                                $flow_info{$key}->{"end_time"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
+                                @end_time = ($3, $1, $2, $4, $5, $6);
+
+                                @time_diff = Delta_DHMS(@end_time, @curr_time);
+                                if ($time_diff[2] > $flow_timeout) {
+                                        &timeout_flow($key);
+                                }
+                        }
                 }
 
                 close(INFILE);
+
+                # Clean up remaining flows that didn't time out
+                foreach $key (keys %flow_info) {
+                        &timeout_flow($key);
+                }
         }
         $end_time = (times)[0];
+}
+
+# -----------------------------------------------------------------------------
+# Handle end of flow duties: flush to disk and delete
+# -----------------------------------------------------------------------------
+sub timeout_flow {
+        my $flow_key = shift;
+
+        print "Flow $flow_info{$flow_key}->{'id'} concluded\n";
+        &print_flow($flow_key);
+
+        delete $flow_info{$flow_key};
+        delete $flow_data{$flow_key};
+}
+
+# -----------------------------------------------------------------------------
+# Print flow to output file along with header/footer lines
+# -----------------------------------------------------------------------------
+sub print_flow {
+        my $flow_key = shift;
+        my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
+        my $key;
+        my $line;
+
+        open(OUTFILE, ">>$output_file") || die "\nError: cannot open $output_file - $!\n";
+
+        # Is all this header data really necessary?
+        print OUTFILE ">>> $flow_info{$flow_key}->{'id'}!$flow_info{$flow_key}->{'length'} ";
+        print OUTFILE '>' x (74 - length($flow_info{$flow_key}->{'id'}.$flow_info{$flow_key}->{'length'})) . "\n";
+        #print length($flow_key);
+        #print "\n";
+
+#        foreach $key (keys %{ $flow_info{$flow_key} }) {
+#                print "$flow_info{$flow_key}->{$key}, ";
+#        }
+#        print ">>>\n";
+
+        $src_ip = $flow_info{$flow_key}->{"src_ip"};
+        $dst_ip = $flow_info{$flow_key}->{"dst_ip"};
+        $hostname = $flow_info{$flow_key}->{"hostname"};
+        foreach $line ( @{$flow_data{$flow_key}} ) {
+                ($timestamp, $uri) = split(/$PATTERN/, $line);
+
+                print OUTFILE "$timestamp\t$src_ip\t$dst_ip\t$hostname\t$uri\n";
+        }
+
+        print OUTFILE '<' x 80 . "\n";
+
+        close(OUTFILE);
 }
 
 # -----------------------------------------------------------------------------
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('h', \%opts) or &print_usage();
+        getopts('ho:t:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -80,6 +182,14 @@ sub get_arguments {
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
+        $flow_timeout = $FLOW_TIMEOUT unless ($flow_timeout = $opts{t});
+        $output_file = 0 unless ($output_file = $opts{o});
+
+        # Check for required options and combinations
+        if (!$output_file) {
+                print "\nError: no output file provided\n";
+                &print_usage();
+        }
 }
 
 # -----------------------------------------------------------------------------
@@ -88,6 +198,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-h]
+Usage: $PROG_NAME [-h] [-o file] [-t timeout]
 USAGE
 }
