@@ -18,6 +18,7 @@ my $PATTERN = "\t";
 my $PROG_NAME = "trace_flows.pl";
 my $PROG_VER = "0.0.1";
 my $FLOW_TIMEOUT = 5; # Timeout for flows, in minutes
+my $DEBUG = 1;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -43,7 +44,7 @@ my $flow_timeout;
 if (-e $output_file) { unlink $output_file };
 &parse_flows();
 
-print "\nExecution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n";
+print "\nExecution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n" if $DEBUG;
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
@@ -78,7 +79,7 @@ sub parse_flows {
 
                         # Let's make magic happen here, baby
                         if (!exists $flow_info{$flow_key}) {
-                                print "New flow #$flow_id\n";
+                                print "New flow #$flow_id\n" if $DEBUG;
                                 $flow_info{$flow_key}->{"id"} = $flow_id++;
                                 $flow_info{$flow_key}->{"src_ip"} = $src_ip;
                                 $flow_info{$flow_key}->{"dst_ip"} = $dst_ip;
@@ -127,7 +128,17 @@ sub parse_flows {
 sub timeout_flow {
         my $flow_key = shift;
 
-        print "Flow $flow_info{$flow_key}->{'id'} concluded\n";
+        # Discard brief flows
+        if ($flow_info{$flow_key}->{'length'} <= 1) {
+                print "Flow $flow_info{$flow_key}->{'id'} discarded\n" if $DEBUG;
+
+                delete $flow_info{$flow_key};
+                delete $flow_data{$flow_key};
+
+                return;
+        }
+
+        print "Flow $flow_info{$flow_key}->{'id'} concluded\n" if $DEBUG;
         &print_flow($flow_key);
 
         delete $flow_info{$flow_key};
@@ -142,12 +153,17 @@ sub print_flow {
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
         my $key;
         my $line;
+        my $metadata;
 
         open(OUTFILE, ">>$output_file") || die "\nError: cannot open $output_file - $!\n";
 
         # Is all this header data really necessary?
-        print OUTFILE ">>> $flow_info{$flow_key}->{'id'}!$flow_info{$flow_key}->{'length'} ";
-        print OUTFILE '>' x (74 - length($flow_info{$flow_key}->{'id'}.$flow_info{$flow_key}->{'length'})) . "\n";
+        $metadata = sprintf("%d!%d!%s!%s", $flow_info{$flow_key}->{'id'},
+                                           $flow_info{$flow_key}->{'length'},
+                                           $flow_info{$flow_key}->{'start_time'},
+                                           $flow_info{$flow_key}->{'end_time'});
+        #print OUTFILE ">>> $flow_info{$flow_key}->{'id'}!$flow_info{$flow_key}->{'length'} ";
+        print OUTFILE ">>> $metadata " . '>' x (75 - length($metadata)) . "\n";
         #print length($flow_key);
         #print "\n";
 
