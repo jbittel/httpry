@@ -18,7 +18,7 @@ my $PATTERN = "\t";
 my $PROG_NAME = "trace_flows.pl";
 my $PROG_VER = "0.0.1";
 my $FLOW_TIMEOUT = 5; # Timeout for flows, in minutes
-my $DEBUG = 1;
+my $DEBUG = 0; # Debug flag for helpful print messages
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -44,7 +44,7 @@ my $flow_timeout;
 if (-e $output_file) { unlink $output_file };
 &parse_flows();
 
-print "\nExecution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n" if $DEBUG;
+print "\nExecution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n";
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
@@ -84,32 +84,38 @@ sub parse_flows {
                                 $flow_info{$flow_key}->{"src_ip"} = $src_ip;
                                 $flow_info{$flow_key}->{"dst_ip"} = $dst_ip;
                                 $flow_info{$flow_key}->{"hostname"} = $hostname;
-                                $flow_info{$flow_key}->{"start_time"} = $timestamp;
-                                $flow_info{$flow_key}->{"end_time"} = $timestamp;
+                                $flow_info{$flow_key}->{"start_time"} = $timestamp; # Encode in epoch seconds (Mktime())
+                                $flow_info{$flow_key}->{"end_time"} = $timestamp; # Encode in epoch seconds
                                 $flow_info{$flow_key}->{"length"} = 1;
 
-                                push( @{$flow_data{$flow_key}}, $timestamp.$PATTERN.$uri);
+                                @{$flow_data{$flow_key}}[0] = $timestamp.$PATTERN.$uri;
+                                #$#{$flow_data{$flow_key}} = 1000;
                         } else {
-                                $flow_info{$flow_key}->{"end_time"} = $timestamp;
-                                $flow_info{$flow_key}->{"length"}++;
+                                $flow_info{$flow_key}->{"end_time"} = $timestamp; # Encode in epoch seconds
+                                #$flow_info{$flow_key}->{"length"}++;
 
-                                push( @{$flow_data{$flow_key}}, $timestamp.$PATTERN.$uri);
+                                @{$flow_data{$flow_key}}[$flow_info{$flow_key}->{"length"}++] = $timestamp.$PATTERN.$uri;
                         }
 
+                        # Return this in epoch seconds
                         # Parse current record time [08/13/2005 04:40:22]
                         $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
                         @curr_time = ($3, $1, $2, $4, $5, $6);
 
                         # Timeout old flows
                         foreach $key (keys %flow_info) {
+                                print ".";
+                                # No need to parse, already in epoch seconds
                                 $flow_info{$key}->{"end_time"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
                                 @end_time = ($3, $1, $2, $4, $5, $6);
 
+                                # Simply subtract values and /60 to get this value
                                 @time_diff = Delta_DHMS(@end_time, @curr_time);
                                 if ($time_diff[2] > $flow_timeout) {
                                         &timeout_flow($key);
                                 }
                         }
+                        print "\n";
                 }
 
                 close(INFILE);
@@ -123,7 +129,7 @@ sub parse_flows {
 }
 
 # -----------------------------------------------------------------------------
-# Handle end of flow duties: flush to disk and delete
+# Handle end of flow duties: flush to disk and delete hash entry
 # -----------------------------------------------------------------------------
 sub timeout_flow {
         my $flow_key = shift;
@@ -157,7 +163,7 @@ sub print_flow {
 
         open(OUTFILE, ">>$output_file") || die "\nError: cannot open $output_file - $!\n";
 
-        # Is all this header data really necessary?
+        # Print flow header line
         $metadata = sprintf("%d!%d!%s!%s", $flow_info{$flow_key}->{'id'},
                                            $flow_info{$flow_key}->{'length'},
                                            $flow_info{$flow_key}->{'start_time'},
@@ -172,6 +178,7 @@ sub print_flow {
 #        }
 #        print ">>>\n";
 
+        # Print flow data lines
         $src_ip = $flow_info{$flow_key}->{"src_ip"};
         $dst_ip = $flow_info{$flow_key}->{"dst_ip"};
         $hostname = $flow_info{$flow_key}->{"hostname"};
@@ -181,6 +188,7 @@ sub print_flow {
                 print OUTFILE "$timestamp\t$src_ip\t$dst_ip\t$hostname\t$uri\n";
         }
 
+        # Print flow footer line
         print OUTFILE '<' x 80 . "\n";
 
         close(OUTFILE);
