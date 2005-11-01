@@ -9,16 +9,18 @@
 
 use strict;
 use Getopt::Std;
-use Date::Calc qw(Delta_DHMS);
+use Time::Local;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
 my $PATTERN = "\t";
 my $PROG_NAME = "trace_flows.pl";
-my $PROG_VER = "0.0.1";
+my $PROG_VER = "0.0.2";
 my $FLOW_TIMEOUT = 5; # Timeout for flows, in minutes
+my $FLOW_DISCARD = 1; # Discard flows below this length
 my $DEBUG = 0; # Debug flag for helpful print messages
+my $DEBUG2 = 0; # Debug flag for even more helpful print messages
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -28,14 +30,12 @@ my %flow_data = ();
 my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing code
 
-my $key;
-my $subkey;
-
 # Command line arguments
 my %opts;
 my @input_files;
 my $output_file;
 my $flow_timeout;
+my $flow_discard;
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -55,10 +55,8 @@ sub parse_flows {
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
         my $flow_key;
         my $flow_id = 0;
-        my @curr_time;
-        my @end_time;
-        my @time_diff;
         my $key;
+        my $epochstamp;
 
         $start_time = (times)[0];
         foreach $curr_file (@input_files) {
@@ -77,6 +75,10 @@ sub parse_flows {
                         next if (!$src_ip or !$dst_ip or !$hostname);
                         $flow_key = $src_ip.'-'.$dst_ip;
 
+                        # Convert timestamp of current record to epoch seconds
+                        $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
+                        $epochstamp = timelocal($6, $5, $4, $2, $1, $3);
+
                         # Let's make magic happen here, baby
                         if (!exists $flow_info{$flow_key}) {
                                 print "New flow #$flow_id\n" if $DEBUG;
@@ -84,38 +86,30 @@ sub parse_flows {
                                 $flow_info{$flow_key}->{"src_ip"} = $src_ip;
                                 $flow_info{$flow_key}->{"dst_ip"} = $dst_ip;
                                 $flow_info{$flow_key}->{"hostname"} = $hostname;
-                                $flow_info{$flow_key}->{"start_time"} = $timestamp; # Encode in epoch seconds (Mktime())
-                                $flow_info{$flow_key}->{"end_time"} = $timestamp; # Encode in epoch seconds
+                                $flow_info{$flow_key}->{"start_time"} = $timestamp;
+                                $flow_info{$flow_key}->{"end_time"} = $timestamp;
+                                $flow_info{$flow_key}->{"start_epoch"} = $epochstamp;
+                                $flow_info{$flow_key}->{"end_epoch"} = $epochstamp;
                                 $flow_info{$flow_key}->{"length"} = 1;
 
-                                @{$flow_data{$flow_key}}[0] = $timestamp.$PATTERN.$uri;
+                                push(@{$flow_data{$flow_key}}, $timestamp.$PATTERN.$uri);
                                 #$#{$flow_data{$flow_key}} = 1000;
                         } else {
-                                $flow_info{$flow_key}->{"end_time"} = $timestamp; # Encode in epoch seconds
-                                #$flow_info{$flow_key}->{"length"}++;
+                                $flow_info{$flow_key}->{"end_time"} = $timestamp;
+                                $flow_info{$flow_key}->{"end_epoch"} = $epochstamp;
+                                $flow_info{$flow_key}->{"length"}++;
 
-                                @{$flow_data{$flow_key}}[$flow_info{$flow_key}->{"length"}++] = $timestamp.$PATTERN.$uri;
+                                push(@{$flow_data{$flow_key}}, $timestamp.$PATTERN.$uri);
                         }
-
-                        # Return this in epoch seconds
-                        # Parse current record time [08/13/2005 04:40:22]
-                        $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
-                        @curr_time = ($3, $1, $2, $4, $5, $6);
 
                         # Timeout old flows
                         foreach $key (keys %flow_info) {
-                                print ".";
-                                # No need to parse, already in epoch seconds
-                                $flow_info{$key}->{"end_time"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
-                                @end_time = ($3, $1, $2, $4, $5, $6);
-
-                                # Simply subtract values and /60 to get this value
-                                @time_diff = Delta_DHMS(@end_time, @curr_time);
-                                if ($time_diff[2] > $flow_timeout) {
+                                print "." if $DEBUG2;
+                                if (($epochstamp - $flow_info{$key}->{"end_epoch"}) / 60 > $flow_timeout) {
                                         &timeout_flow($key);
                                 }
                         }
-                        print "\n";
+                        print "\n" if $DEBUG2;
                 }
 
                 close(INFILE);
@@ -137,7 +131,6 @@ sub timeout_flow {
         # Discard brief flows
         if ($flow_info{$flow_key}->{'length'} <= 1) {
                 print "Flow $flow_info{$flow_key}->{'id'} discarded\n" if $DEBUG;
-
                 delete $flow_info{$flow_key};
                 delete $flow_data{$flow_key};
 
@@ -168,15 +161,7 @@ sub print_flow {
                                            $flow_info{$flow_key}->{'length'},
                                            $flow_info{$flow_key}->{'start_time'},
                                            $flow_info{$flow_key}->{'end_time'});
-        #print OUTFILE ">>> $flow_info{$flow_key}->{'id'}!$flow_info{$flow_key}->{'length'} ";
         print OUTFILE ">>> $metadata " . '>' x (75 - length($metadata)) . "\n";
-        #print length($flow_key);
-        #print "\n";
-
-#        foreach $key (keys %{ $flow_info{$flow_key} }) {
-#                print "$flow_info{$flow_key}->{$key}, ";
-#        }
-#        print ">>>\n";
 
         # Print flow data lines
         $src_ip = $flow_info{$flow_key}->{"src_ip"};
@@ -198,7 +183,7 @@ sub print_flow {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('ho:t:', \%opts) or &print_usage();
+        getopts('d:ho:t:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -207,6 +192,7 @@ sub get_arguments {
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
         $flow_timeout = $FLOW_TIMEOUT unless ($flow_timeout = $opts{t});
+        $flow_discard = $FLOW_DISCARD unless ($flow_discard = $opts{d});
         $output_file = 0 unless ($output_file = $opts{o});
 
         # Check for required options and combinations
