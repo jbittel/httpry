@@ -9,7 +9,7 @@
 
 use strict;
 use Getopt::Std;
-use Time::Local;
+use Time::Local qw(timelocal);
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -17,7 +17,7 @@ use Time::Local;
 my $PATTERN = "\t";
 my $PROG_NAME = "trace_flows.pl";
 my $PROG_VER = "0.0.2";
-my $FLOW_TIMEOUT = 5; # Timeout for flows, in minutes
+my $FLOW_TIMEOUT = 300; # Timeout for flows, in seconds
 my $FLOW_DISCARD = 1; # Discard flows below this length
 my $DEBUG = 0; # Debug flag for helpful print messages
 my $DEBUG2 = 0; # Debug flag for even more helpful print messages
@@ -77,7 +77,7 @@ sub parse_flows {
 
                         # Convert timestamp of current record to epoch seconds
                         $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
-                        $epochstamp = timelocal($6, $5, $4, $2, $1, $3);
+                        $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
                         # Let's make magic happen here, baby
                         if (!exists $flow_info{$flow_key}) {
@@ -105,7 +105,7 @@ sub parse_flows {
                         # Timeout old flows
                         foreach $key (keys %flow_info) {
                                 print "." if $DEBUG2;
-                                if (($epochstamp - $flow_info{$key}->{"end_epoch"}) / 60 > $flow_timeout) {
+                                if (($epochstamp - $flow_info{$key}->{"end_epoch"}) > $flow_timeout) {
                                         &timeout_flow($key);
                                 }
                         }
