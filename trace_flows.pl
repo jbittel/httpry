@@ -25,8 +25,6 @@ my $FLOW_DISCARD = 5; # Discard flows below this length
 # -----------------------------------------------------------------------------
 my %flow_info = ();
 my %flow_data = ();
-my $start_time; # Start tick for timing code
-my $end_time;   # End tick for timing code
 
 # Command line arguments
 my %opts;
@@ -44,8 +42,6 @@ my $flow_one2many;
 if (-e $output_file) { unlink $output_file };
 &parse_flows();
 
-print "\nExecution time was ".sprintf("%.2f", $end_time - $start_time)." secs\n";
-
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
 # -----------------------------------------------------------------------------
@@ -57,7 +53,6 @@ sub parse_flows {
         my $key;
         my $epochstamp;
 
-        $start_time = (times)[0];
         foreach $curr_file (@input_files) {
                 unless(open(INFILE, "$curr_file")) {
                         print "\nError: Cannot open $curr_file - $!\n";
@@ -83,6 +78,7 @@ sub parse_flows {
 
                         # Let's make magic happen here, baby
                         if (!exists $flow_info{$flow_key}) {
+                                $flow_info{$flow_key}->{"src_ip"} = $src_ip;
                                 $flow_info{$flow_key}->{"start_time"} = $timestamp;
                                 $flow_info{$flow_key}->{"end_time"} = $timestamp;
                                 $flow_info{$flow_key}->{"start_epoch"} = $epochstamp;
@@ -114,7 +110,6 @@ sub parse_flows {
                         &timeout_flow($key);
                 }
         }
-        $end_time = (times)[0];
 }
 
 # -----------------------------------------------------------------------------
@@ -148,9 +143,10 @@ sub print_flow {
         open(OUTFILE, ">>$output_file") || die "\nError: cannot open $output_file - $!\n";
 
         # Print flow header line
-        $metadata = sprintf("%d!%s!%s", $flow_info{$flow_key}->{'length'},
-                                        $flow_info{$flow_key}->{'start_time'},
-                                        $flow_info{$flow_key}->{'end_time'});
+        $metadata = sprintf("%s!%d!%s!%s", $flow_info{$flow_key}->{'src_ip'},
+                                           $flow_info{$flow_key}->{'length'},
+                                           $flow_info{$flow_key}->{'start_time'},
+                                           $flow_info{$flow_key}->{'end_time'});
         print OUTFILE ">>> $metadata " . '>' x (75 - length($metadata)) . "\n";
 
         # Print flow data lines
@@ -187,8 +183,8 @@ sub get_arguments {
                 print "\nError: no output file provided\n";
                 &print_usage();
         }
-        if (!$flow_one2one && !$flow_one2many) {
-                print "\nWarning: no flow output type specified, defaulting to one-to-many\n";
+        if ((!$flow_one2one && !$flow_one2many) || ($flow_one2one && $flow_one2many)) {
+                print "\nWarning: invalid flow output type specified, defaulting to one-to-many\n";
                 $flow_one2many = 1;
         }
 }
