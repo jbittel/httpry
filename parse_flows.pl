@@ -9,7 +9,7 @@
 
 use strict;
 use Getopt::Std;
-use Mime::Lite;
+use MIME::Lite;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -24,7 +24,7 @@ my $SENDMAIL = "/usr/lib/sendmail -i -t";
 # -----------------------------------------------------------------------------
 my %flow_info = ();
 my @flow_data;
-my @hitlis
+my @hitlist;
 my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing codet;
 
@@ -36,8 +36,8 @@ my $flow_min_len = 99999;
 my $flow_max_len = 0;
 my $file_cnt = 0;
 my $size_cnt = 0;
-my $tagged_cnt = 0;
-my $total_tagged_cnt = 0;
+my $tagged_lines_cnt = 0;
+my $tagged_flows_cnt = 0;
 
 # Command line arguments
 my %opts;
@@ -47,6 +47,7 @@ my $hitlist_file;
 my $flows_summary;
 my $convert_hex;
 my $host_detail;
+my $email_addr;
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -54,7 +55,6 @@ my $host_detail;
 &get_arguments();
 &parse_flows();
 &write_summary_file() if $flows_summary;
-&write_host_subfiles() if $host_detail;
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
@@ -97,9 +97,9 @@ sub parse_flows {
                                 $flow_info{"length"} = $2;
                                 $flow_info{"start_time"} = $3;
                                 $flow_info{"end_time"} = $4;
-                                
+
                                 @flow_data = ();
-                                $tagged_line_cnt = 0;
+                                $tagged_lines_cnt = 0;
 
                                 if ($flow_info{"length"} < $flow_min_len) {
                                         $flow_min_len = $flow_info{"length"};
@@ -110,17 +110,21 @@ sub parse_flows {
                                 $flow_cnt++;
                                 $flow_line_cnt += $flow_info{"length"};
                         } elsif ($curr_line =~ /^<<</) { # End of flow marker
-                                if ($tagged_line_cnt > 5) {
-                                        # Probably just do a function call here
+                                if ($tagged_lines_cnt > 1) {
+                                        $tagged_flows_cnt++;
+                                        $flow_info{"tagged"} = $tagged_lines_cnt;
+
+                                        &write_host_subfile($flow_info{"ip"}) if $host_detail;
+                                        # Populate data hash for summary
                                 }
                         } else {
                                 push(@flow_data, $curr_line);
-                                
-                                ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
 
                                 if ($hitlist_file) {
-                                        if (&content_check($hostname, $uri, \$curr_line)) {
-                                                $tagged_line_cnt++;
+                                        ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+
+                                        if (&content_check($hostname, $uri)) {
+                                                $tagged_lines_cnt++;
                                         }
                                 }
                         }
@@ -148,9 +152,30 @@ sub write_summary_file {
         print OUTFILE "Total lines:\t$total_line_cnt\n";
         print OUTFILE "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
 
-        # Add flow summary statistics here
+        print OUTFILE "\n\nFLOW STATS\n\n";
+        print OUTFILE "Count:\t$flow_cnt\n";
+        print OUTFILE "Lines:\t$flow_line_cnt\n";
+        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/";
+        print OUTFILE sprintf("%d", $flow_line_cnt / $flow_cnt)."\n";
+        print OUTFILE "Tagged:\t$tagged_flows_cnt\n";
 
         close(OUTFILE);
+}
+
+# -----------------------------------------------------------------------------
+#
+# -----------------------------------------------------------------------------
+sub write_host_subfile {
+        my $ip = shift;
+
+        open(HOSTFILE, ">>$host_detail/$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
+
+        foreach (@flow_data) {
+                print HOSTFILE "$_\n";
+        }
+        print HOSTFILE '=' x 80 . "\n";
+
+        close(HOSTFILE);
 }
 
 # -----------------------------------------------------------------------------
@@ -159,7 +184,6 @@ sub write_summary_file {
 sub content_check {
         my $hostname = shift;
         my $uri = shift;
-        my $curr_line = shift;
         my $word;
 
         $hostname = quotemeta($hostname);
@@ -206,7 +230,7 @@ sub send_email {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('d:l:o:s:x', \%opts) or &print_usage();
+        getopts('d:e:l:o:sx', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -219,12 +243,15 @@ sub get_arguments {
         $flows_summary = 0 unless ($flows_summary = $opts{s});
         $convert_hex = 0 unless ($convert_hex = $opts{x});
         $host_detail = 0 unless ($host_detail = $opts{d});
+        $email_addr = 0 unless ($email_addr = $opts{e});
 
         # Check for required options and combinations
         if (!$output_file) {
                 print "\nError: no output file provided\n";
                 &print_usage();
         }
+
+        # -d requires -l
 }
 
 # -----------------------------------------------------------------------------
