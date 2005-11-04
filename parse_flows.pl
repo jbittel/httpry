@@ -9,6 +9,7 @@
 
 use strict;
 use Getopt::Std;
+use Mime::Lite;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -16,22 +17,44 @@ use Getopt::Std;
 my $PATTERN = "\t";
 my $PROG_NAME = "parse_flows.pl";
 my $PROG_VER = "0.0.1";
+my $SENDMAIL = "/usr/lib/sendmail -i -t";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %flow_info = ();
+my @flow_data;
+my @hitlis
+my $start_time; # Start tick for timing code
+my $end_time;   # End tick for timing codet;
+
+# Counters
+my $total_line_cnt = 0;
+my $flow_cnt = 0;
+my $flow_line_cnt = 0;
+my $flow_min_len = 99999;
+my $flow_max_len = 0;
+my $file_cnt = 0;
+my $size_cnt = 0;
+my $tagged_cnt = 0;
+my $total_tagged_cnt = 0;
 
 # Command line arguments
 my %opts;
 my @input_files;
 my $output_file;
+my $hitlist_file;
+my $flows_summary;
+my $convert_hex;
+my $host_detail;
 
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
 &parse_flows();
+&write_summary_file() if $flows_summary;
+&write_host_subfiles() if $host_detail;
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
@@ -41,35 +64,149 @@ sub parse_flows {
         my $curr_file; # Current input file
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
 
+        if ($hitlist_file) {
+                open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
+                        @hitlist = <HITLIST>;
+                close(HITLIST);
+        }
+
+        $start_time = (times)[0];
         foreach $curr_file (@input_files) {
                 unless(open(INFILE, "$curr_file")) {
                         print "\nError: Cannot open $curr_file - $!\n";
                         next;
                 }
 
+                $file_cnt++;
+                $size_cnt += int((stat(INFILE))[7] / 1000000);
+
                 foreach $curr_line (<INFILE>) {
                         chomp $curr_line;
+                        $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
                         next if $curr_line eq "";
+                        $total_line_cnt++;
 
-                        if ($curr_line =~ /^>>>/) {
-                                # Parse metadata
-                        } elsif ($curr_line =~ /^<<</) {
-                                # Flush current flow to disk
+                        if ($convert_hex) {
+                                $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+                                $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+                        }
+
+                        if ($curr_line =~ /^>>>/) { # Start of flow marker
+                                $curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*)/;
+                                $flow_info{"ip"} = $1;
+                                $flow_info{"length"} = $2;
+                                $flow_info{"start_time"} = $3;
+                                $flow_info{"end_time"} = $4;
+                                
+                                @flow_data = ();
+                                $tagged_line_cnt = 0;
+
+                                if ($flow_info{"length"} < $flow_min_len) {
+                                        $flow_min_len = $flow_info{"length"};
+                                }
+                                if ($flow_info{"length"} > $flow_max_len) {
+                                        $flow_max_len = $flow_info{"length"};
+                                }
+                                $flow_cnt++;
+                                $flow_line_cnt += $flow_info{"length"};
+                        } elsif ($curr_line =~ /^<<</) { # End of flow marker
+                                if ($tagged_line_cnt > 5) {
+                                        # Probably just do a function call here
+                                }
                         } else {
-                                # Add current line to buffer array
+                                push(@flow_data, $curr_line);
+                                
                                 ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+
+                                if ($hitlist_file) {
+                                        if (&content_check($hostname, $uri, \$curr_line)) {
+                                                $tagged_line_cnt++;
+                                        }
+                                }
                         }
                 }
 
                 close(INFILE);
         }
+        $end_time = (times)[0];
+}
+
+# -----------------------------------------------------------------------------
+# Write collected information to specified output file
+# -----------------------------------------------------------------------------
+sub write_summary_file {
+        my $key;
+        my $subkey;
+        my $count = 0;
+
+        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
+
+        print OUTFILE "\n\nSUMMARY STATS\n\n";
+        print OUTFILE "Generated:\t" . localtime() . "\n";
+        print OUTFILE "Total files:\t$file_cnt\n";
+        print OUTFILE "Total size:\t$size_cnt MB\n";
+        print OUTFILE "Total lines:\t$total_line_cnt\n";
+        print OUTFILE "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
+
+        # Add flow summary statistics here
+
+        close(OUTFILE);
+}
+
+# -----------------------------------------------------------------------------
+# Search fields for specified content; returns true if match occurs
+# -----------------------------------------------------------------------------
+sub content_check {
+        my $hostname = shift;
+        my $uri = shift;
+        my $curr_line = shift;
+        my $word;
+
+        $hostname = quotemeta($hostname);
+        $uri = quotemeta($uri);
+        foreach $word (@hitlist) {
+                chomp $word;
+                if (($hostname =~ /$word/i) || ($uri =~ /$word/i)) {
+                        return 1;
+                }
+        }
+
+        return 0;
+}
+# -----------------------------------------------------------------------------
+# Send email to specified address and attach output file
+# -----------------------------------------------------------------------------
+sub send_email {
+        my $msg;
+        my $output_filename = basename($output_file);
+
+        $msg = MIME::Lite->new(
+                From    => 'admin@corban.edu',
+                To      => "$email_addr",
+                Subject => 'HTTPry Report - ' . localtime(),
+                Type    => 'multipart/mixed'
+                );
+
+        $msg->attach(
+                Type => 'TEXT',
+                Data => 'HTTPry report for ' . localtime()
+                );
+
+        $msg->attach(
+                Type        => 'TEXT',
+                Path        => "$output_file",
+                Filename    => "$output_filename",
+                Disposition => 'attachment'
+                );
+
+        $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
 }
 
 # -----------------------------------------------------------------------------
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('o:', \%opts) or &print_usage();
+        getopts('d:l:o:s:x', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -78,6 +215,10 @@ sub get_arguments {
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
         $output_file = 0 unless ($output_file = $opts{o});
+        $hitlist_file = 0 unless ($hitlist_file = $opts{l});
+        $flows_summary = 0 unless ($flows_summary = $opts{s});
+        $convert_hex = 0 unless ($convert_hex = $opts{x});
+        $host_detail = 0 unless ($host_detail = $opts{d});
 
         # Check for required options and combinations
         if (!$output_file) {
@@ -92,6 +233,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-1hm] [-d discard] [-o file] [-t timeout]
+Usage: $PROG_NAME [-hsx] [-l file] [-o file]
 USAGE
 }

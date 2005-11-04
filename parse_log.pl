@@ -178,6 +178,7 @@ sub content_check {
                 chomp $word;
                 if (($hostname =~ /$word/i) || ($uri =~ /$word/i)) {
                         push @hits, $$curr_line;
+                        return;
                 }
         }
 }
