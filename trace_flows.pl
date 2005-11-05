@@ -195,6 +195,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-1hm] [-d discard] [-o file] [-t timeout]
+Usage: $PROG_NAME [-1hm] [-d discard] [-o file] [-t timeout] [input files]
 USAGE
 }

@@ -10,6 +10,7 @@
 use strict;
 use Getopt::Std;
 use MIME::Lite;
+use Socket qw(inet_ntoa inet_aton);
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -18,11 +19,13 @@ my $PATTERN = "\t";
 my $PROG_NAME = "parse_flows.pl";
 my $PROG_VER = "0.0.1";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
+my $TAGGED_LIMIT = 5;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %flow_info = ();
+my %content_hits = ();
 my @flow_data;
 my @hitlist;
 my $start_time; # Start tick for timing code
@@ -38,6 +41,7 @@ my $file_cnt = 0;
 my $size_cnt = 0;
 my $tagged_lines_cnt = 0;
 my $tagged_flows_cnt = 0;
+my $total_tagged_lines_cnt = 0;
 
 # Command line arguments
 my %opts;
@@ -92,7 +96,7 @@ sub parse_flows {
                         }
 
                         if ($curr_line =~ /^>>>/) { # Start of flow marker
-                                $curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*)/;
+                                $curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*) >/;
                                 $flow_info{"ip"} = $1;
                                 $flow_info{"length"} = $2;
                                 $flow_info{"start_time"} = $3;
@@ -110,12 +114,13 @@ sub parse_flows {
                                 $flow_cnt++;
                                 $flow_line_cnt += $flow_info{"length"};
                         } elsif ($curr_line =~ /^<<</) { # End of flow marker
-                                if ($tagged_lines_cnt > 1) {
+                                if ($tagged_lines_cnt > $TAGGED_LIMIT) {
                                         $tagged_flows_cnt++;
+                                        $total_tagged_lines_cnt += $tagged_lines_cnt;
                                         $flow_info{"tagged"} = $tagged_lines_cnt;
 
                                         &write_host_subfile($flow_info{"ip"}) if $host_detail;
-                                        # Populate data hash for summary
+                                        push(@{$content_hits{$flow_info{"ip"}}}, "$flow_info{'start_time'}->$flow_info{'end_time'} $flow_info{'length'}/$tagged_lines_cnt");
                                 }
                         } else {
                                 push(@flow_data, $curr_line);
@@ -136,12 +141,11 @@ sub parse_flows {
 }
 
 # -----------------------------------------------------------------------------
-# Write collected information to specified output file
+# Write summary information to specified output file
 # -----------------------------------------------------------------------------
 sub write_summary_file {
         my $key;
-        my $subkey;
-        my $count = 0;
+        my $flow;
 
         open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
 
@@ -153,17 +157,35 @@ sub write_summary_file {
         print OUTFILE "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
 
         print OUTFILE "\n\nFLOW STATS\n\n";
-        print OUTFILE "Count:\t$flow_cnt\n";
-        print OUTFILE "Lines:\t$flow_line_cnt\n";
-        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/";
-        print OUTFILE sprintf("%d", $flow_line_cnt / $flow_cnt)."\n";
-        print OUTFILE "Tagged:\t$tagged_flows_cnt\n";
+        print OUTFILE "Flow count:\t$flow_cnt\n";
+        print OUTFILE "Flow lines:\t$flow_line_cnt\n";
+        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/".sprintf("%d", $flow_line_cnt / $flow_cnt)."\n";
+        print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
+        
+        if ($hitlist_file) {
+                print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
+                print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
+                if ($total_tagged_lines_cnt > 0) {
+                        foreach $key (map { inet_ntoa $_ }
+                                      sort
+                                      map { inet_aton $_ } keys %content_hits) {
+                                print OUTFILE "$key\n";
+                                foreach $flow (@{$content_hits{$key}}) {
+                                        print OUTFILE "\t$flow\n";
+                                }
+                                print OUTFILE "\n";
+                        }
+                } else {
+                        print OUTFILE "No tagged flows found\n";
+                }
+        }
+        
         close(OUTFILE);
 }
 
 # -----------------------------------------------------------------------------
-#
+# Write detail subfile for specified client ip
 # -----------------------------------------------------------------------------
 sub write_host_subfile {
         my $ip = shift;
@@ -260,6 +282,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-hsx] [-l file] [-o file]
+Usage: $PROG_NAME [-hsx] [-d dir] [-l file] [-o file] [input files]
 USAGE
 }
