@@ -336,13 +336,13 @@ sub send_email {
         $msg = MIME::Lite->new(
                 From    => 'admin@corban.edu',
                 To      => "$email_addr",
-                Subject => 'HTTPry Report - ' . localtime(),
+                Subject => 'HTTPry Log Report - ' . localtime(),
                 Type    => 'multipart/mixed'
                 );
 
         $msg->attach(
                 Type => 'TEXT',
-                Data => 'HTTPry report for ' . localtime()
+                Data => 'HTTPry log report for ' . localtime()
                 );
 
         $msg->attach(

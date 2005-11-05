@@ -86,7 +86,6 @@ sub parse_flows {
                                 $flow_info{$flow_key}->{"length"} = 1;
 
                                 push(@{$flow_data{$flow_key}}, $curr_line);
-                                #$#{$flow_data{$flow_key}} = 1000;
                         } else {
                                 $flow_info{$flow_key}->{"end_time"} = $timestamp;
                                 $flow_info{$flow_key}->{"end_epoch"} = $epochstamp;

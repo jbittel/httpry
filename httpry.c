@@ -380,12 +380,13 @@ void display_version() {
 void display_help() {
         info("Usage: %s [-dhpv] [-c count] [-f file] [-i interface]\n"
              "        [-l filter] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
-        info("  -c ... number of packets to capture\n"
+        info("  -c ... specify config file\n"
              "  -d ... run as daemon\n"
              "  -f ... input file to read from\n"
              "  -h ... print help information\n"
              "  -i ... set interface to listen on\n"
              "  -l ... pcap style capture filter\n"
+             "  -n ... number of packets to capture\n"
              "  -o ... output file to write into\n"
              "  -p ... disable promiscuous mode\n"
              "  -r ... set running directory\n"
@@ -413,16 +414,20 @@ int main(int argc, char *argv[]) {
         int set_promisc   = 1; // Default to promiscuous mode for the NIC
         char *new_user    = NULL;
         char *run_dir     = NULL;
+        char *config_file = NULL;
+
+        // Check for config file option
 
         // Process command line arguments
-        while ((arg = getopt(argc, argv, "c:df:hi:l:o:pr:u:v")) != -1) {
+        while ((arg = getopt(argc, argv, "c:df:hi:l:n:o:pr:u:v")) != -1) {
                 switch (arg) {
-                        case 'c': pkt_count = atoi(optarg); break;
+                        case 'c': config_file = optarg; break;
                         case 'd': daemon_mode = 1; break;
                         case 'f': use_infile = optarg; break;
                         case 'h': display_help(); break;
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
+                        case 'n': pkt_count = atoi(optarg); break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
                         case 'r': run_dir = optarg; break;
@@ -449,6 +454,9 @@ int main(int argc, char *argv[]) {
         if (!daemon_mode && run_dir) {
                 warn("Run directory is only used in daemon mode...ignored\n");
                 run_dir = NULL;
+        }
+        if (pkt_count < 1) {
+                die("Invalid -n value: must be greater than 0\n");
         }
 
         // General program setup

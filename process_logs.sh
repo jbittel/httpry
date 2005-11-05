@@ -39,7 +39,7 @@ fi
 
 # Compress/move/purge log files
 if [ -e "$tools_dir/$log_fn" ]; then
-        perl $tools_dir/rotate_log.pl -c -t -i $logs_dir/$log_fn -d $logs_dir
+        perl $tools_dir/rotate_log.pl -ct -i $logs_dir/$log_fn -d $logs_dir
 fi
 
 # Start the httpry service
@@ -47,7 +47,9 @@ httpry -d -u $user -o $logs_dir/$log_fn
 
 # Process new log file data
 if [ -e "$logs_dir/$parse_fn" ]; then
-        perl $tools_dir/parse_log.pl -s -l $tools_dir/$offense_fn -o $logs_dir/$parse_fn.txt -c 20 -e $email_addr $logs_dir/$parse_fn
+        perl $tools_dir/parse_log.pl -s -o $logs_dir/$parse_fn.txt -c 20 -e $email_addr $logs_dir/$parse_fn
+        perl $tools_dir/trace_flows.pl -m -o $logs_dir/$parse_fn.flows $logs_dir/$parse_fn
+        perl $tools_dir/parse_flows.pl -sx -l $tools_dir/$offense_fn -d $logs_dir -o $logs_dir/$parse_fn.txt -e $email_addr $logs_dir/$parse_fn
 fi
 
 # Change ownership of logs directory.

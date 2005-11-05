@@ -17,15 +17,14 @@ use Socket qw(inet_ntoa inet_aton);
 # -----------------------------------------------------------------------------
 my $PATTERN = "\t";
 my $PROG_NAME = "parse_flows.pl";
-my $PROG_VER = "0.0.1";
+my $PROG_VER = "0.0.2";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $TAGGED_LIMIT = 5;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %flow_info = ();
-my %content_hits = ();
+my %content_hits = (); # Summary of all tagged flows
 my @flow_data;
 my @hitlist;
 my $start_time; # Start tick for timing code
@@ -35,7 +34,7 @@ my $end_time;   # End tick for timing codet;
 my $total_line_cnt = 0;
 my $flow_cnt = 0;
 my $flow_line_cnt = 0;
-my $flow_min_len = 99999;
+my $flow_min_len = 999999;
 my $flow_max_len = 0;
 my $file_cnt = 0;
 my $size_cnt = 0;
@@ -67,6 +66,7 @@ sub parse_flows {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
+        my ($ip, $flow_len, $start_time, $end_time, $tagged);
 
         if ($hitlist_file) {
                 open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
@@ -90,39 +90,40 @@ sub parse_flows {
                         next if $curr_line eq "";
                         $total_line_cnt++;
 
-                        if ($convert_hex) {
-                                $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-                                $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-                        }
+                        if ($curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*) >/) { # Start of flow marker
+                                $ip = $1;
+                                $flow_len = $2;
+                                $start_time = $3;
+                                $end_time = $4;
 
-                        if ($curr_line =~ /^>>>/) { # Start of flow marker
-                                $curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*) >/;
-                                $flow_info{"ip"} = $1;
-                                $flow_info{"length"} = $2;
-                                $flow_info{"start_time"} = $3;
-                                $flow_info{"end_time"} = $4;
-
+                                # Set up variables for new flow
                                 @flow_data = ();
                                 $tagged_lines_cnt = 0;
-
-                                if ($flow_info{"length"} < $flow_min_len) {
-                                        $flow_min_len = $flow_info{"length"};
-                                }
-                                if ($flow_info{"length"} > $flow_max_len) {
-                                        $flow_max_len = $flow_info{"length"};
-                                }
                                 $flow_cnt++;
-                                $flow_line_cnt += $flow_info{"length"};
+                                $flow_line_cnt += $flow_len;
+
+                                # Set minimum/maximum flow length
+                                if ($flow_len < $flow_min_len) {
+                                        $flow_min_len = $flow_len;
+                                }
+                                if ($flow_len > $flow_max_len) {
+                                        $flow_max_len = $flow_len;
+                                }
                         } elsif ($curr_line =~ /^<<</) { # End of flow marker
                                 if ($tagged_lines_cnt > $TAGGED_LIMIT) {
                                         $tagged_flows_cnt++;
                                         $total_tagged_lines_cnt += $tagged_lines_cnt;
-                                        $flow_info{"tagged"} = $tagged_lines_cnt;
+                                        $tagged = $tagged_lines_cnt;
 
-                                        &write_host_subfile($flow_info{"ip"}) if $host_detail;
-                                        push(@{$content_hits{$flow_info{"ip"}}}, "$flow_info{'start_time'}->$flow_info{'end_time'} $flow_info{'length'}/$tagged_lines_cnt");
+                                        &write_host_subfile($ip) if $host_detail;
+                                        push(@{$content_hits{$ip}}, "[$start_time]->[$end_time] ($flow_len/$tagged_lines_cnt)");
                                 }
-                        } else {
+                        } else { # Flow data line
+                                if ($convert_hex) {
+                                        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+                                        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+                                }
+
                                 push(@flow_data, $curr_line);
 
                                 if ($hitlist_file) {
@@ -154,14 +155,15 @@ sub write_summary_file {
         print OUTFILE "Total files:\t$file_cnt\n";
         print OUTFILE "Total size:\t$size_cnt MB\n";
         print OUTFILE "Total lines:\t$total_line_cnt\n";
-        print OUTFILE "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
+        print OUTFILE "Total time:\t" . sprintf("%.2f", $end_time - $start_time) . " secs\n";
 
         print OUTFILE "\n\nFLOW STATS\n\n";
         print OUTFILE "Flow count:\t$flow_cnt\n";
         print OUTFILE "Flow lines:\t$flow_line_cnt\n";
-        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/".sprintf("%d", $flow_line_cnt / $flow_cnt)."\n";
+        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
         print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
-        
+        print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
+
         if ($hitlist_file) {
                 print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
@@ -180,7 +182,7 @@ sub write_summary_file {
                         print OUTFILE "No tagged flows found\n";
                 }
         }
-        
+
         close(OUTFILE);
 }
 
@@ -192,10 +194,11 @@ sub write_host_subfile {
 
         open(HOSTFILE, ">>$host_detail/$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
 
+        print HOSTFILE '>' x 80 . "\n";
         foreach (@flow_data) {
                 print HOSTFILE "$_\n";
         }
-        print HOSTFILE '=' x 80 . "\n";
+        print HOSTFILE '<' x 80 . "\n";
 
         close(HOSTFILE);
 }
@@ -219,6 +222,7 @@ sub content_check {
 
         return 0;
 }
+
 # -----------------------------------------------------------------------------
 # Send email to specified address and attach output file
 # -----------------------------------------------------------------------------
@@ -229,13 +233,13 @@ sub send_email {
         $msg = MIME::Lite->new(
                 From    => 'admin@corban.edu',
                 To      => "$email_addr",
-                Subject => 'HTTPry Report - ' . localtime(),
+                Subject => 'HTTPry Flow Report - ' . localtime(),
                 Type    => 'multipart/mixed'
                 );
 
         $msg->attach(
                 Type => 'TEXT',
-                Data => 'HTTPry report for ' . localtime()
+                Data => 'HTTPry flow report for ' . localtime()
                 );
 
         $msg->attach(
@@ -260,20 +264,22 @@ sub get_arguments {
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
-        $output_file = 0 unless ($output_file = $opts{o});
-        $hitlist_file = 0 unless ($hitlist_file = $opts{l});
-        $flows_summary = 0 unless ($flows_summary = $opts{s});
-        $convert_hex = 0 unless ($convert_hex = $opts{x});
         $host_detail = 0 unless ($host_detail = $opts{d});
         $email_addr = 0 unless ($email_addr = $opts{e});
+        $hitlist_file = 0 unless ($hitlist_file = $opts{l});
+        $output_file = 0 unless ($output_file = $opts{o});
+        $flows_summary = 0 unless ($flows_summary = $opts{s});
+        $convert_hex = 0 unless ($convert_hex = $opts{x});
 
         # Check for required options and combinations
         if (!$output_file) {
                 print "\nError: no output file provided\n";
                 &print_usage();
         }
-
-        # -d requires -l
+        if ($host_detail && !$hitlist_file) {
+                print "\nWarning: -d requires -l, ignoring\n";
+                $host_detail = 0;
+        }
 }
 
 # -----------------------------------------------------------------------------
