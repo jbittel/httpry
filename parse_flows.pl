@@ -65,8 +65,8 @@ my $email_addr;
 sub parse_flows {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
-        my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
-        my ($ip, $flow_len, $start_time, $end_time, $tagged);
+        my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);   # Log record fields
+        my ($ip, $flow_len, $start_time, $end_time, $tagged); # Flow detail information
 
         if ($hitlist_file) {
                 open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
