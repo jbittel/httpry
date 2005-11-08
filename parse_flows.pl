@@ -9,6 +9,7 @@
 
 use strict;
 use Getopt::Std;
+use File::Basename;
 use MIME::Lite;
 use Socket qw(inet_ntoa inet_aton);
 
@@ -58,6 +59,7 @@ my $email_addr;
 &get_arguments();
 &parse_flows();
 &write_summary_file() if $flows_summary;
+&send_email() if $email_addr;
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
@@ -66,7 +68,7 @@ sub parse_flows {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);   # Log record fields
-        my ($ip, $flow_len, $start_time, $end_time, $tagged); # Flow detail information
+        my ($ip, $flow_len, $flow_start, $flow_end, $tagged); # Flow detail information
 
         if ($hitlist_file) {
                 open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
@@ -93,8 +95,8 @@ sub parse_flows {
                         if ($curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*) >/) { # Start of flow marker
                                 $ip = $1;
                                 $flow_len = $2;
-                                $start_time = $3;
-                                $end_time = $4;
+                                $flow_start = $3;
+                                $flow_end = $4;
 
                                 # Set up variables for new flow
                                 @flow_data = ();
@@ -116,7 +118,7 @@ sub parse_flows {
                                         $tagged = $tagged_lines_cnt;
 
                                         &write_host_subfile($ip) if $host_detail;
-                                        push(@{$content_hits{$ip}}, "[$start_time]->[$end_time] ($flow_len/$tagged_lines_cnt)");
+                                        push(@{$content_hits{$ip}}, "[$flow_start]->[$flow_end] ($flow_len/$tagged_lines_cnt)");
                                 }
                         } else { # Flow data line
                                 if ($convert_hex) {
