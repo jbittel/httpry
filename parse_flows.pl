@@ -118,7 +118,7 @@ sub parse_flows {
                                         $tagged = $tagged_lines_cnt;
 
                                         &write_host_subfile($ip) if $host_detail;
-                                        push(@{$content_hits{$ip}}, "[$flow_start]->[$flow_end] ($flow_len/$tagged_lines_cnt)");
+                                        push(@{$content_hits{$ip}}, "[$flow_start]->[$flow_end]\t$tagged_lines_cnt/$flow_len\t".percent_of($tagged_lines_cnt, $flow_len)."%");
                                 }
                         } else { # Flow data line
                                 if ($convert_hex) {
@@ -252,6 +252,16 @@ sub send_email {
                 );
 
         $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
+}
+
+# -----------------------------------------------------------------------------
+# Calculate ratio information
+# -----------------------------------------------------------------------------
+sub percent_of {
+        my $subset = shift;
+        my $total = shift;
+
+        return sprintf("%.1f", ($subset / $total) * 100);
 }
 
 # -----------------------------------------------------------------------------

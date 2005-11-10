@@ -154,7 +154,9 @@ sub parse_logfiles {
                         }
 
                         if ($hitlist_file) {
-                                &content_check($hostname, $uri, \$curr_line);
+                                if (&content_check($hostname, $uri)) {
+                                        push @hits, $curr_line;
+                                }
                         }
                 }
 
@@ -169,7 +171,6 @@ sub parse_logfiles {
 sub content_check {
         my $hostname = shift;
         my $uri = shift;
-        my $curr_line = shift;
         my $word;
 
         $hostname = quotemeta($hostname);
@@ -177,10 +178,11 @@ sub content_check {
         foreach $word (@hitlist) {
                 chomp $word;
                 if (($hostname =~ /$word/i) || ($uri =~ /$word/i)) {
-                        push @hits, $$curr_line;
-                        return;
+                        return 1;
                 }
         }
+
+        return 0;
 }
 
 # -----------------------------------------------------------------------------

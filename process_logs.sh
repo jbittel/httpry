@@ -49,7 +49,7 @@ httpry -d -u $user -o $logs_dir/$log_fn
 if [ -e "$logs_dir/$parse_fn" ]; then
         perl $tools_dir/parse_log.pl -s -o $logs_dir/$parse_fn.txt -c 20 -e $email_addr $logs_dir/$parse_fn
         perl $tools_dir/trace_flows.pl -m -o $logs_dir/$parse_fn.flows $logs_dir/$parse_fn
-        perl $tools_dir/parse_flows.pl -sx -l $tools_dir/$offense_fn -d $logs_dir -o $logs_dir/$parse_fn.txt -e $email_addr $logs_dir/$parse_fn
+        perl $tools_dir/parse_flows.pl -sx -l $tools_dir/$offense_fn -d $logs_dir -o $logs_dir/$parse_fn.txt -e $email_addr $logs_dir/$parse_fn.flows
 fi
 
 # Change ownership of logs directory.
