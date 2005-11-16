@@ -117,10 +117,7 @@ sub parse_logfiles {
                         $total_line_cnt++;
 
                         if ($convert_hex) {
-                                # Some URIs use a %25XX ('%') nomenclature (for some odd reason), so
-                                # we need to decode '%25' to '%' first so the next s/// will
-                                # correctly decode the '%XX'; need to find out why this is
-                                $curr_line =~ s/%25/%/g;
+                                $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
                                 $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
                         }
 
@@ -155,6 +152,7 @@ sub parse_logfiles {
 
                         if ($hitlist_file) {
                                 if (&content_check($hostname, $uri)) {
+                                        $content_hits{$src_ip}->{$hostname}++;
                                         push @hits, $curr_line;
                                 }
                         }
@@ -197,7 +195,7 @@ sub write_output_file {
 
         if ($log_summary) {
                 print OUTFILE "\n\nSUMMARY STATS\n\n";
-                print OUTFILE "Generated:\t" . localtime() . "\n";
+                print OUTFILE "Generated:\t".localtime()."\n";
                 print OUTFILE "Total files:\t$file_cnt\n";
                 print OUTFILE "Total size:\t$size_cnt MB\n";
                 print OUTFILE "Total lines:\t$total_line_cnt\n";
@@ -253,8 +251,9 @@ sub write_output_file {
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
                 if (scalar(@hits) > 0) {
-                        &build_content_hits();
+                        &prune_content_hits();
 
+                        # Print sorted list of IP addresses and hostnames
                         foreach $key (map { inet_ntoa $_ }
                                       sort
                                       map { inet_aton $_ } keys %content_hits) {
@@ -273,27 +272,12 @@ sub write_output_file {
 }
 
 # -----------------------------------------------------------------------------
-# Build summary for all hosts tagged in content checks
+# Prune content hits hash tree to remove all small and empty values
 # -----------------------------------------------------------------------------
-sub build_content_hits {
-        my $curr_line;
-        my $src_ip;
-        my $dst_hostname;
+sub prune_content_hits {
         my $key;
         my $subkey;
 
-        # Build multi-dimensional hash of all hosts, hostnames and access counts
-        foreach $curr_line (@hits) {
-                my @records;
-
-                @records = split(/$PATTERN/, $curr_line);
-                $src_ip = $records[1];
-                $dst_hostname = $records[3];
-
-                $content_hits{$src_ip}->{$dst_hostname}++;
-        }
-
-        # Prune hash tree to remove all small and empty values
         foreach $key (keys %content_hits) {
                 foreach $subkey (keys %{ $content_hits{$key} }) {
                         if ($content_hits{$key}->{$subkey} <= $PRUNE_LIMIT) {

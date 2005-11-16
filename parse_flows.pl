@@ -39,7 +39,6 @@ my $flow_min_len = 999999;
 my $flow_max_len = 0;
 my $file_cnt = 0;
 my $size_cnt = 0;
-my $tagged_lines_cnt = 0;
 my $tagged_flows_cnt = 0;
 my $total_tagged_lines_cnt = 0;
 
@@ -68,7 +67,7 @@ sub parse_flows {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);   # Log record fields
-        my ($ip, $flow_len, $flow_start, $flow_end, $tagged); # Flow detail information
+        my ($ip, $flow_len, $flow_start, $flow_end, $tagged_lines); # Flow detail information
 
         if ($hitlist_file) {
                 open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
@@ -92,7 +91,7 @@ sub parse_flows {
                         next if $curr_line eq "";
                         $total_line_cnt++;
 
-                        if ($curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*) >/) { # Start of flow marker
+                        if ($curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*) >/) { # Start of flow marker + metadata
                                 $ip = $1;
                                 $flow_len = $2;
                                 $flow_start = $3;
@@ -100,7 +99,7 @@ sub parse_flows {
 
                                 # Set up variables for new flow
                                 @flow_data = ();
-                                $tagged_lines_cnt = 0;
+                                $tagged_lines = 0;
                                 $flow_cnt++;
                                 $flow_line_cnt += $flow_len;
 
@@ -112,13 +111,12 @@ sub parse_flows {
                                         $flow_max_len = $flow_len;
                                 }
                         } elsif ($curr_line =~ /^<<</) { # End of flow marker
-                                if ($tagged_lines_cnt > $TAGGED_LIMIT) {
+                                if ($tagged_lines > $TAGGED_LIMIT) {
                                         $tagged_flows_cnt++;
-                                        $total_tagged_lines_cnt += $tagged_lines_cnt;
-                                        $tagged = $tagged_lines_cnt;
+                                        $total_tagged_lines_cnt += $tagged_lines;
 
                                         &write_host_subfile($ip) if $host_detail;
-                                        push(@{$content_hits{$ip}}, "[$flow_start]->[$flow_end]\t$tagged_lines_cnt/$flow_len\t".percent_of($tagged_lines_cnt, $flow_len)."%");
+                                        push(@{$content_hits{$ip}}, "[$flow_start]->[$flow_end]\t$tagged_lines/$flow_len\t".percent_of($tagged_lines, $flow_len)."%");
                                 }
                         } else { # Flow data line
                                 if ($convert_hex) {
@@ -132,7 +130,7 @@ sub parse_flows {
                                         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
 
                                         if (&content_check($hostname, $uri)) {
-                                                $tagged_lines_cnt++;
+                                                $tagged_lines++;
                                         }
                                 }
                         }
@@ -141,51 +139,6 @@ sub parse_flows {
                 close(INFILE);
         }
         $end_time = (times)[0];
-}
-
-# -----------------------------------------------------------------------------
-# Write summary information to specified output file
-# -----------------------------------------------------------------------------
-sub write_summary_file {
-        my $key;
-        my $flow;
-
-        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
-
-        print OUTFILE "\n\nSUMMARY STATS\n\n";
-        print OUTFILE "Generated:\t" . localtime() . "\n";
-        print OUTFILE "Total files:\t$file_cnt\n";
-        print OUTFILE "Total size:\t$size_cnt MB\n";
-        print OUTFILE "Total lines:\t$total_line_cnt\n";
-        print OUTFILE "Total time:\t" . sprintf("%.2f", $end_time - $start_time) . " secs\n";
-
-        print OUTFILE "\n\nFLOW STATS\n\n";
-        print OUTFILE "Flow count:\t$flow_cnt\n";
-        print OUTFILE "Flow lines:\t$flow_line_cnt\n";
-        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
-        print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
-        print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
-
-        if ($hitlist_file) {
-                print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
-                print OUTFILE "FILTER FILE: $hitlist_file\n\n";
-
-                if ($total_tagged_lines_cnt > 0) {
-                        foreach $key (map { inet_ntoa $_ }
-                                      sort
-                                      map { inet_aton $_ } keys %content_hits) {
-                                print OUTFILE "$key\n";
-                                foreach $flow (@{$content_hits{$key}}) {
-                                        print OUTFILE "\t$flow\n";
-                                }
-                                print OUTFILE "\n";
-                        }
-                } else {
-                        print OUTFILE "No tagged flows found\n";
-                }
-        }
-
-        close(OUTFILE);
 }
 
 # -----------------------------------------------------------------------------
@@ -223,6 +176,51 @@ sub content_check {
         }
 
         return 0;
+}
+
+# -----------------------------------------------------------------------------
+# Write summary information to specified output file
+# -----------------------------------------------------------------------------
+sub write_summary_file {
+        my $key;
+        my $flow;
+
+        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
+
+        print OUTFILE "\n\nSUMMARY STATS\n\n";
+        print OUTFILE "Generated:\t".localtime()."\n";
+        print OUTFILE "Total files:\t$file_cnt\n";
+        print OUTFILE "Total size:\t$size_cnt MB\n";
+        print OUTFILE "Total lines:\t$total_line_cnt\n";
+        print OUTFILE "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
+
+        print OUTFILE "\n\nFLOW STATS\n\n";
+        print OUTFILE "Flow count:\t$flow_cnt\n";
+        print OUTFILE "Flow lines:\t$flow_line_cnt\n";
+        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/".sprintf("%d", $flow_line_cnt / $flow_cnt)."\n";
+        print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
+        print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
+
+        if ($hitlist_file) {
+                print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
+                print OUTFILE "FILTER FILE: $hitlist_file\n\n";
+
+                if ($total_tagged_lines_cnt > 0) {
+                        foreach $key (map { inet_ntoa $_ }
+                                      sort
+                                      map { inet_aton $_ } keys %content_hits) {
+                                print OUTFILE "$key\n";
+                                foreach $flow (@{$content_hits{$key}}) {
+                                        print OUTFILE "\t$flow\n";
+                                }
+                                print OUTFILE "\n";
+                        }
+                } else {
+                        print OUTFILE "No tagged flows found\n";
+                }
+        }
+
+        close(OUTFILE);
 }
 
 # -----------------------------------------------------------------------------
