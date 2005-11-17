@@ -378,8 +378,8 @@ void display_version() {
 
 /* Display program help/usage information */
 void display_help() {
-        info("Usage: %s [-dhpv] [-c count] [-f file] [-i interface]\n"
-             "        [-l filter] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
+        info("Usage: %s [-dhpv] [-c file] [-f file] [-i interface]\n"
+             "        [-l filter] [-n count] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
         info("  -c ... specify config file\n"
              "  -d ... run as daemon\n"
              "  -f ... input file to read from\n"
@@ -402,6 +402,7 @@ int main(int argc, char *argv[]) {
         bpf_u_int32 net;
         pcap_t *pcap_hnd; // Opened pcap device handle
         char default_capfilter[] = DEFAULT_CAPFILTER;
+        FILE *config_file;
 
         // Command line flags/options
         int arg;
@@ -414,14 +415,12 @@ int main(int argc, char *argv[]) {
         int set_promisc   = 1; // Default to promiscuous mode for the NIC
         char *new_user    = NULL;
         char *run_dir     = NULL;
-        char *config_file = NULL;
-
-        // Check for config file option
+        char *use_config  = NULL;
 
         // Process command line arguments
         while ((arg = getopt(argc, argv, "c:df:hi:l:n:o:pr:u:v")) != -1) {
                 switch (arg) {
-                        case 'c': config_file = optarg; break;
+                        case 'c': use_config = optarg; break;
                         case 'd': daemon_mode = 1; break;
                         case 'f': use_infile = optarg; break;
                         case 'h': display_help(); break;
@@ -442,6 +441,20 @@ int main(int argc, char *argv[]) {
                                   }
                         default:  display_help(); // Shouldn't be reached
                 }
+        }
+
+        // Open config file and read settings
+        if (use_config) {
+                if (config_file = fopen(use_config, "r") == NULL) {
+                        log("Cannot open config file '%s'\n", use_config);
+                        warn("Cannot open config file '%s'\n", use_config);
+                }
+                
+                // fscanf()
+
+                // only set if value tests false to prevent overwriting arguments
+
+                fclose(config_file);
         }
 
         // Test for error and warn conditions
