@@ -14,17 +14,8 @@
 #define _BSD_SOURCE 1 /* Needed for Linux/BSD compatibility */
 #define TO_MS 0
 #define MAX_TIME_LEN 20
-#define RUN_DIR "/"
-#define PID_FILE "/var/run/httpry.pid"
-#define NULL_FILE "/dev/null"
-#define DEFAULT_CAPFILTER "tcp dst port 80"
-#define DELIM "\r\n"
+#define MAX_CONFIG_LEN 1024
 #define SPACE_CHAR '\x20'
-#define GET_REQUEST "GET "
-#define HEAD_REQUEST "HEAD "
-#define PID_LEN 10
-#define PROG_NAME "httpry"
-#define PROG_VER "0.0.6"
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -41,6 +32,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "httpry.h"
+#include "config.h"
 
 /* Macros for logging/displaying status messages */
 #define info(x...) fprintf(stderr, x)
@@ -277,8 +269,8 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 /* Run program as a daemon process */
 void runas_daemon(char *run_dir) {
         int child_pid;
-        int pid_file;
-        char pid[PID_LEN];
+        FILE *pid_file;
+//        char pid[PID_LEN];
 
         if (getppid() == 1) return; // We're already a daemon
 
@@ -309,24 +301,25 @@ void runas_daemon(char *run_dir) {
         if (chdir(run_dir) == -1) {
                 log("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
                 warn("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
-                chdir(RUN_DIR);
+                if (chdir(RUN_DIR) == -1) {
+                        log("Cannot change run directory to '%s'\n", RUN_DIR);
+                        warn("Cannot change run directory to '%s'\n", RUN_DIR);
+                }
         }
 
         // Open/create pid file
-        pid_file = open(PID_FILE, O_RDWR|O_CREAT, 0640);
-        if (pid_file < 0) {
+        if ((pid_file = fopen(PID_FILE, "w")) == NULL) {
                 log("Cannot open PID file '%s'\n", PID_FILE);
                 warn("Cannot open PID file '%s'\n", PID_FILE);
         }
-        if (lockf(pid_file, F_TLOCK, 0) < 0) {
-                log("Cannot lock PID file '%s'\n", PID_FILE);
-                warn("Cannot lock PID file '%s'\n", PID_FILE);
-        }
+//        if (lockf(pid_file, F_TLOCK, 0) < 0) {
+//                log("Cannot lock PID file '%s'\n", PID_FILE);
+//                warn("Cannot lock PID file '%s'\n", PID_FILE);
+//        }
 
         // Write pid into file
-        snprintf(pid, PID_LEN, "%d\n", getpid());
-        write(pid_file, pid, strlen(pid));
-        close(pid_file);
+        fprintf(pid_file, "%d\n", getpid());
+        fclose(pid_file);
 
         // Configure daemon signal handling
         signal(SIGCHLD, SIG_IGN);
@@ -403,6 +396,11 @@ int main(int argc, char *argv[]) {
         pcap_t *pcap_hnd; // Opened pcap device handle
         char default_capfilter[] = DEFAULT_CAPFILTER;
         FILE *config_file;
+        char buf[MAX_CONFIG_LEN];
+        char *line;
+        char name[MAX_CONFIG_LEN];
+        char value[MAX_CONFIG_LEN];
+        int line_count = 0;
 
         // Command line flags/options
         int arg;
@@ -445,17 +443,31 @@ int main(int argc, char *argv[]) {
 
         // Open config file and read settings
         if (use_config) {
-                if (config_file = fopen(use_config, "r") == NULL) {
+                if ((config_file = fopen(use_config, "r")) == NULL) {
                         log("Cannot open config file '%s'\n", use_config);
                         warn("Cannot open config file '%s'\n", use_config);
                 }
-                
-                // fscanf()
+
+                while ((line = fgets(buf, sizeof(buf), config_file))) {
+                        line_count++;
+                        if (strlen(line) <= 1) continue; // Skip blank lines
+                        if (*line == '#') continue; // Skip comments
+
+                        printf("%s\n", line);
+
+                        if (sscanf(line, "%s=%s\n", name, value) != 2) {
+                                die("Bad data in config file at line %d\n", line_count);
+                        }
+
+                        printf("Found %s and %s\n", name, value);
+                }
 
                 // only set if value tests false to prevent overwriting arguments
 
                 fclose(config_file);
         }
+
+        exit(EXIT_SUCCESS);
 
         // Test for error and warn conditions
         if ((getuid() != 0) && !use_infile) {
@@ -468,7 +480,7 @@ int main(int argc, char *argv[]) {
                 warn("Run directory is only used in daemon mode...ignored\n");
                 run_dir = NULL;
         }
-        if (pkt_count < 1) {
+        if ((pkt_count < 1) && (pkt_count != -1)) {
                 die("Invalid -n value: must be greater than 0\n");
         }
 
