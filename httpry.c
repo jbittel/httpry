@@ -396,10 +396,11 @@ int main(int argc, char *argv[]) {
         pcap_t *pcap_hnd; // Opened pcap device handle
         char default_capfilter[] = DEFAULT_CAPFILTER;
         FILE *config_file;
-        char buf[MAX_CONFIG_LEN];
+        char buf[MAX_CONFIG_LENGTH];
         char *line;
-        char name[MAX_CONFIG_LEN];
-        char value[MAX_CONFIG_LEN];
+        char *name;
+        char *value;
+        char *newline;
         int line_count = 0;
 
         // Command line flags/options
@@ -445,7 +446,7 @@ int main(int argc, char *argv[]) {
         if (use_config) {
                 if ((config_file = fopen(use_config, "r")) == NULL) {
                         log("Cannot open config file '%s'\n", use_config);
-                        warn("Cannot open config file '%s'\n", use_config);
+                        die("Cannot open config file '%s'\n", use_config);
                 }
 
                 while ((line = fgets(buf, sizeof(buf), config_file))) {
@@ -453,16 +454,35 @@ int main(int argc, char *argv[]) {
                         if (strlen(line) <= 1) continue; // Skip blank lines
                         if (*line == '#') continue; // Skip comments
 
-                        printf("%s\n", line);
+                        name = line;
 
-                        if (sscanf(line, "%s=%s\n", name, value) != 2) {
+                        if ((value = strchr(line, '=')) == NULL) {
                                 die("Bad data in config file at line %d\n", line_count);
                         }
+                        *value++ = '\0';
 
-                        printf("Found %s and %s\n", name, value);
+                        if ((newline = strchr(value, '\n')) == NULL) {
+                                die("Bad data in config file at line %d\n", line_count);
+                        }
+                        *newline = '\0';
+
+                        if (!strlen(value)) continue; // Skip empty values
+                        printf("Found %s and %s...\n", name, value);
+
+                        // Test parsed name/value pairs and set values accordingly
+                        // Only set if value tests false to prevent overwriting arguments
+                        if (!strcmp(name, "daemon")) {
+                                if (daemon_mode == 0) daemon_mode = atoi(value);
+                                printf("Set daemon_mode [%s] to %d\n", name, atoi(value));
+                        }
+
+                        // Guess we have to create variables to copy these into as *line disappears
+                        
+                        //else  if (!strcmp(name, "daemon")) {
+                        //        if (use_infile == NULL) use_infile = atoi(value);
+                        //        printf("Set daemon_mode [%s] to %d\n", name, atoi(value));
+                        //}
                 }
-
-                // only set if value tests false to prevent overwriting arguments
 
                 fclose(config_file);
         }
