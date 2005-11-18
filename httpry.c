@@ -470,14 +470,17 @@ int main(int argc, char *argv[]) {
                         printf("Found %s and %s...\n", name, value);
 
                         // Test parsed name/value pairs and set values accordingly
-                        // Only set if value tests false to prevent overwriting arguments
+                        // Only set if value is not set to prevent overwriting arguments
                         if (!strcmp(name, "daemon")) {
                                 if (daemon_mode == 0) daemon_mode = atoi(value);
                                 printf("Set daemon_mode [%s] to %d\n", name, atoi(value));
+                        } else if (!strcmp(name, "promisc")) {
+                                if (set_promisc == 0) set_promisc = atoi(value);
+                                printf("Set set_promisc [%s] to %d\n", name, atoi(value));
                         }
 
                         // Guess we have to create variables to copy these into as *line disappears
-                        
+
                         //else  if (!strcmp(name, "daemon")) {
                         //        if (use_infile == NULL) use_infile = atoi(value);
                         //        printf("Set daemon_mode [%s] to %d\n", name, atoi(value));
