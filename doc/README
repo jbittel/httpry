@@ -75,10 +75,10 @@ section describes these options in greater detail.
 httpry [-dhpv] [-c count] [-f file] [-i interface] [-l filter] [-o file] [-r dir]
        [-u user]
 
--c <count> :
-Specifies a number of packets to capture, following which the
-program will terminate. Note that this is a count of total captured packets, not
-of parsed HTTP packets.
+-c <file> :
+Provides a configuration file to read settings from at initilization. These
+settings can be overridden by command line arguments. See the included example
+configuration file to see the available options and proper syntax.
 
 -d :
 Runs the program as a daemon process. All program status output will be
@@ -103,6 +103,11 @@ interfaces and select the first one that it finds.
 Allows the default capture filter to be overridden by a filter
 that follows the tcpdump format. Useful for capturing traffic on non-standard
 ports or to/from specific hosts.
+
+-n <count> :
+Specifies a number of packets to capture, following which the
+program will terminate. Note that this is a count of total captured packets, not
+of parsed HTTP packets.
 
 -o <file> :
 Provides an output file for writing parsed packet data. Running the
@@ -140,6 +145,11 @@ putting workaround information into a section like this, but if there really are
 V. CHANGELOG
 ----------------------
 
+version 0.0.7
+   + Add: option to read settings from a config file (-c)
+   = Chg: changed packet count switch (-c) to -n
+   - Fix: fixed bug in packet count check
+
 version 0.0.6
    + Add: ability to change process owner (-u)
    + Add: additional error checking when entering daemon mode
@@ -170,7 +180,6 @@ program version number I'm targeting to focus on that particular option.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
-* Ability to read settings from a config file (.7)
 * Configurable subset of HTTP traffic to parse/output (.7)
 * More extensive disassembly of the HTTP protocol (.7)
 * Viewable packet capture statistics

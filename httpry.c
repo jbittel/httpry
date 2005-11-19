@@ -14,7 +14,7 @@
 #define _BSD_SOURCE 1 /* Needed for Linux/BSD compatibility */
 #define TO_MS 0
 #define MAX_TIME_LEN 20
-#define MAX_CONFIG_LEN 1024
+#define MAX_CONFIG_LEN 512
 #define SPACE_CHAR '\x20'
 
 #include <ctype.h>
@@ -57,7 +57,7 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
         char errbuf[PCAP_ERRBUF_SIZE]; // Pcap error string
         bpf_u_int32 mask;              // Network mask
 
-        if (interface == NULL) {
+        if (strlen(interface) == 0) {
                 // Search for network device
                 *dev = pcap_lookupdev(errbuf);
                 if (dev == NULL) {
@@ -312,10 +312,6 @@ void runas_daemon(char *run_dir) {
                 log("Cannot open PID file '%s'\n", PID_FILE);
                 warn("Cannot open PID file '%s'\n", PID_FILE);
         }
-//        if (lockf(pid_file, F_TLOCK, 0) < 0) {
-//                log("Cannot lock PID file '%s'\n", PID_FILE);
-//                warn("Cannot lock PID file '%s'\n", PID_FILE);
-//        }
 
         // Write pid into file
         fprintf(pid_file, "%d\n", getpid());
@@ -396,24 +392,24 @@ int main(int argc, char *argv[]) {
         pcap_t *pcap_hnd; // Opened pcap device handle
         char default_capfilter[] = DEFAULT_CAPFILTER;
         FILE *config_file;
-        char buf[MAX_CONFIG_LENGTH];
+        char buf[MAX_CONFIG_LEN];
         char *line;
         char *name;
         char *value;
-        char *newline;
         int line_count = 0;
 
         // Command line flags/options
-        int arg;
-        int pkt_count     = -1; // Loop forever unless overridden
-        int daemon_mode   = 0;
-        char *use_infile  = NULL;
-        char *interface   = NULL;
-        char *capfilter   = NULL;
-        char *use_outfile = NULL;
-        int set_promisc   = 1; // Default to promiscuous mode for the NIC
-        char *new_user    = NULL;
-        char *run_dir     = NULL;
+        int  arg;
+        int  pkt_count     = -1; // Loop forever unless overridden
+        int  daemon_mode   = 0;  // Not a daemon by default
+        char infile[MAX_CONFIG_LEN];
+        int  use_infile    = 0;
+        char interface[MAX_CONFIG_LEN];
+        char capfilter[MAX_CONFIG_LEN];
+        char use_outfile[MAX_CONFIG_LEN];
+        int  set_promisc   = 1; // Default to promiscuous mode for the NIC
+        char new_user[MAX_CONFIG_LEN];
+        char run_dir[MAX_CONFIG_LEN];
         char *use_config  = NULL;
 
         // Process command line arguments
@@ -421,15 +417,15 @@ int main(int argc, char *argv[]) {
                 switch (arg) {
                         case 'c': use_config = optarg; break;
                         case 'd': daemon_mode = 1; break;
-                        case 'f': use_infile = optarg; break;
+                        case 'f': use_infile = 1; strncpy(infile, optarg, MAX_CONFIG_LEN); break;
                         case 'h': display_help(); break;
-                        case 'i': interface = optarg; break;
-                        case 'l': capfilter = optarg; break;
+                        case 'i': strncpy(interface, optarg, MAX_CONFIG_LEN); break;
+                        case 'l': strncpy(capfilter, optarg, MAX_CONFIG_LEN); break;
                         case 'n': pkt_count = atoi(optarg); break;
-                        case 'o': use_outfile = optarg; break;
+                        case 'o': strncpy(use_outfile, optarg, MAX_CONFIG_LEN); break;
                         case 'p': set_promisc = 0; break;
-                        case 'r': run_dir = optarg; break;
-                        case 'u': new_user = optarg; break;
+                        case 'r': strncpy(run_dir, optarg, MAX_CONFIG_LEN); break;
+                        case 'u': strncpy(new_user, optarg, MAX_CONFIG_LEN); break;
                         case 'v': display_version(); break;
                         case '?': if (isprint(optopt)) {
                                           warn("Unknown parameter '-%c'\n", optopt);
@@ -455,82 +451,84 @@ int main(int argc, char *argv[]) {
                         if (*line == '#') continue; // Skip comments
 
                         name = line;
-
-                        if ((value = strchr(line, '=')) == NULL) {
+                        if ((value = strchr(line, SPACE_CHAR)) == NULL) {
                                 die("Bad data in config file at line %d\n", line_count);
                         }
                         *value++ = '\0';
 
-                        if ((newline = strchr(value, '\n')) == NULL) {
+                        if ((line = strchr(value, '\n')) == NULL) {
                                 die("Bad data in config file at line %d\n", line_count);
                         }
-                        *newline = '\0';
+                        *line = '\0';
 
                         if (!strlen(value)) continue; // Skip empty values
-                        printf("Found %s and %s...\n", name, value);
+                        //printf("Found %s %s...\n", name, value);
 
                         // Test parsed name/value pairs and set values accordingly
                         // Only set if value is not set to prevent overwriting arguments
-                        if (!strcmp(name, "daemon")) {
+                        if (!strcmp(name, "DaemonMode")) {
                                 if (daemon_mode == 0) daemon_mode = atoi(value);
-                                printf("Set daemon_mode [%s] to %d\n", name, atoi(value));
-                        } else if (!strcmp(name, "promisc")) {
+                        } else if (!strcmp(name, "InputFile")) {
+                                if (use_infile) strncpy(infile, value, MAX_CONFIG_LEN);
+                        } else if (!strcmp(name, "Interface")) {
+                                if (strlen(interface) == 0) strncpy(interface, value, MAX_CONFIG_LEN);
+                        } else if (!strcmp(name, "CaptureFilter")) {
+                                if (strlen(capfilter) == 0) strncpy(capfilter, value, MAX_CONFIG_LEN);
+                        } else if (!strcmp(name, "PacketCount")) {
+                                if (pkt_count == -1) pkt_count = atoi(value);
+                        } else if (!strcmp(name, "OutputFile")) {
+                                if (strlen(use_outfile)) strncpy(use_outfile, value, MAX_CONFIG_LEN);
+                        } else if (!strcmp(name, "PromiscuousMode")) {
                                 if (set_promisc == 0) set_promisc = atoi(value);
-                                printf("Set set_promisc [%s] to %d\n", name, atoi(value));
+                        } else if (!strcmp(name, "RunDir")) {
+                                if (strlen(run_dir) == 0) strncpy(run_dir, value, MAX_CONFIG_LEN);
+                        } else if (!strcmp(name, "User")) {
+                                if (strlen(new_user) == 0) strncpy(new_user, value, MAX_CONFIG_LEN);
                         }
-
-                        // Guess we have to create variables to copy these into as *line disappears
-
-                        //else  if (!strcmp(name, "daemon")) {
-                        //        if (use_infile == NULL) use_infile = atoi(value);
-                        //        printf("Set daemon_mode [%s] to %d\n", name, atoi(value));
-                        //}
                 }
 
                 fclose(config_file);
         }
 
-        exit(EXIT_SUCCESS);
+        //exit(EXIT_SUCCESS);
 
         // Test for error and warn conditions
         if ((getuid() != 0) && !use_infile) {
                 die("Root priviledges required to access the NIC\n");
         }
-        if (daemon_mode && !use_outfile) {
+        if (daemon_mode && !strlen(use_outfile)) {
                 die("Daemon mode requires an output file\n");
-        }
-        if (!daemon_mode && run_dir) {
-                warn("Run directory is only used in daemon mode...ignored\n");
-                run_dir = NULL;
         }
         if ((pkt_count < 1) && (pkt_count != -1)) {
                 die("Invalid -n value: must be greater than 0\n");
         }
 
         // General program setup
-        if (use_outfile) {
+        if (strlen(use_outfile)) {
                 if (freopen(use_outfile, "a", stdout) == NULL) {
                         log("Cannot re-open output stream to '%s'\n", use_outfile);
                         die("Cannot re-open output stream to '%s'\n", use_outfile);
         	}
         }
-        if (!capfilter) {
-                capfilter = default_capfilter;
+        if (!strlen(capfilter)) {
+                strncpy(capfilter, default_capfilter, MAX_CONFIG_LEN);
         }
-        if (!run_dir) {
-                run_dir = RUN_DIR;
+        if (!strlen(run_dir)) {
+                strncpy(run_dir, RUN_DIR, MAX_CONFIG_LEN);
         }
         signal(SIGINT, handle_signal);
 
         // Set up packet capture
         if (!use_infile) {
                 get_dev_info(&dev, &net, interface);
+                pcap_hnd = open_dev(dev, set_promisc, NULL);
+        } else {
+                pcap_hnd = open_dev(dev, set_promisc, infile);
         }
-        pcap_hnd = open_dev(dev, set_promisc, use_infile);
         set_filter(pcap_hnd, capfilter, net);
 
         if (daemon_mode) runas_daemon(run_dir);
-        if (new_user) change_user(new_user);
+        if (strlen(new_user)) change_user(new_user);
 
         get_packets(pcap_hnd, pkt_count);
 
