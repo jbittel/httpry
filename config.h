@@ -14,7 +14,7 @@
 */
 
 #define PROG_NAME "httpry"
-#define PROG_VER "0.0.6"
+#define PROG_VER "0.0.7"
 
 /* Directory to switch to when running in daemon mode
    Can be overridden with -r */
