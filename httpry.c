@@ -41,6 +41,7 @@
 #define die(x...) { fprintf(stderr, "Error: " x); cleanup_exit(EXIT_FAILURE); }
 #define log_die(x...) { log(x); die(x); }
 
+/* Function declarations */
 void parse_config(char *filename);
 void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
 pcap_t* open_dev(char *dev, int promisc, char *fname);
@@ -51,10 +52,11 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 void runas_daemon(char *run_dir);
 void handle_signal(int sig);
 void cleanup_exit(int exit_value);
+char* safe_strdup(char *curr_str);
 void display_version();
 void display_help();
 
-// Program flags/options, set by arguments or config file
+/* Program flags/options, set by arguments or config file */
 static int  pkt_count    = -1;
 static int  daemon_mode  = 0;
 static char *use_infile  = NULL;
@@ -85,12 +87,13 @@ void parse_config(char *filename) {
                 if (strlen(line) <= 1) continue; // Skip blank lines
                 if (*line == '#') continue;      // Skip comments
 
+                // Search for name/value pairs in the format 'Name Value'
                 name = line;
-                if ((value = strchr(line, '=')) == NULL) {
+                if ((value = strchr(line, SPACE_CHAR)) == NULL) {
                         die("Bad data in config file at line %d\n", line_count);
                 }
                 *value++ = '\0';
-
+                
                 if ((line = strchr(value, '\n')) == NULL) {
                         die("Bad data in config file at line %d\n", line_count);
                 }
@@ -102,43 +105,22 @@ void parse_config(char *filename) {
                 // Only set if value is default to prevent overwriting arguments
                 if (!strcmp(name, "DaemonMode") && !daemon_mode) {
                         daemon_mode = atoi(value);
-                        printf("Set daemon_mode to %d\n", daemon_mode);
                 } else if (!strcmp(name, "InputFile") && !use_infile) {
-                        if ((use_infile = strdup(value)) == NULL) {
-                                log_die("Cannot allocate memory for config string\n");
-                        }
-                        printf("Set use_infile to %s\n", use_infile);
+                        use_infile = safe_strdup(value);
                 } else if (!strcmp(name, "Interface") && !interface) {
-                        if ((interface = strdup(value)) == NULL) {
-                                log_die("Cannot allocate memory for config string\n");
-                        }
-                        printf("Set interface to %s\n", interface);
+                        interface = safe_strdup(value);
                 } else if (!strcmp(name, "CaptureFilter") && !capfilter) {
-                        if ((capfilter = strdup(value)) == NULL) {
-                                log_die("Cannot allocate memory for config string\n");
-                        }
-                        printf("Set capfilter to %s\n", capfilter);
+                        capfilter = safe_strdup(value);
                 } else if (!strcmp(name, "PacketCount") && (pkt_count == -1)) {
                         pkt_count = atoi(value);
-                        printf("Set pkt_count to %d\n", pkt_count);
                 } else if (!strcmp(name, "OutputFile") && !use_outfile) {
-                        if ((use_outfile = strdup(value)) == NULL) {
-                                log_die("Cannot allocate memory for config string\n");
-                        }
-                        printf("Set use_outfile to %s\n", use_outfile);
+                        use_outfile = safe_strdup(value);
                 } else if (!strcmp(name, "PromiscuousMode") && set_promisc) {
                         set_promisc = atoi(value);
-                        printf("Set set_promisc to %d\n", set_promisc);
                 } else if (!strcmp(name, "RunDir") && !run_dir) {
-                        if ((run_dir = strdup(value)) == NULL) {
-                                log_die("Cannot allocate memory for config string\n");
-                        }
-                        printf("Set run_dir to %s\n", run_dir);
+                        run_dir = safe_strdup(value);
                 } else if (!strcmp(name, "User") && !new_user) {
-                        if ((new_user = strdup(value)) == NULL) {
-                                log_die("Cannot allocate memory for config string\n");
-                        }
-                        printf("Set new_user to %s\n", new_user);
+                        new_user = safe_strdup(value);
                 }
         }
 
@@ -156,7 +138,7 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
                 // Search for network device
                 *dev = pcap_lookupdev(errbuf);
                 if (dev == NULL) {
-                        log_die("Cannot find capture device: %s\n", errbuf);
+                        log_die("Cannot find capture device '%s'\n", errbuf);
                 }
         } else {
                 // Use network interface from user parameter
@@ -283,8 +265,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         payload = (u_char *)(pkt + size_eth + size_ip + (tcp->th_off * 4));
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
-        if (size_data == 0) // Bail early if no data to parse
-                return;
+        if (size_data == 0) return; // Bail early if no data to parse
 
         // Copy packet payload to editable buffer
         if ((data = malloc(size_data + 1)) == NULL) {
@@ -427,15 +408,18 @@ void cleanup_exit(int exit_value) {
         fflush(NULL);
         remove(PID_FILE); // If daemon, we need this gone
 
-        // Reclaim memory
-        if (use_config && use_infile) free(use_infile);
-        if (use_config && interface) free(interface);
-        if (use_config && capfilter) free(capfilter);
-        if (use_config && use_outfile) free(use_outfile);
-        if (use_config && new_user) free(new_user);
-        if (use_config && run_dir) free(run_dir);
-
         exit(exit_value);
+}
+
+/* Centralize error checking for string duplication */
+char* safe_strdup(char *curr_str) {
+        char *new_str;
+        
+        if ((new_str = strdup(curr_str)) == NULL) {
+                log_die("Cannot duplicate string '%s'\n", curr_str);
+        }
+
+        return new_str;
 }
 
 /* Display program version information */
@@ -471,22 +455,23 @@ int main(int argc, char *argv[]) {
         bpf_u_int32 net;
         pcap_t *pcap_hnd; // Opened pcap device handle
         char default_capfilter[] = DEFAULT_CAPFILTER;
+        char default_rundir[] = RUN_DIR;
         int arg;
 
         // Process command line arguments
         while ((arg = getopt(argc, argv, "c:df:hi:l:n:o:pr:u:v")) != -1) {
                 switch (arg) {
-                        case 'c': use_config = optarg; break;
+                        case 'c': use_config = safe_strdup(optarg); break;
                         case 'd': daemon_mode = 1; break;
-                        case 'f': use_infile = optarg; break;
+                        case 'f': use_infile = safe_strdup(optarg); break;
                         case 'h': display_help(); break;
-                        case 'i': interface = optarg; break;
-                        case 'l': capfilter = optarg; break;
+                        case 'i': interface = safe_strdup(optarg); break;
+                        case 'l': capfilter = safe_strdup(optarg); break;
                         case 'n': pkt_count = atoi(optarg); break;
-                        case 'o': use_outfile = optarg; break;
+                        case 'o': use_outfile = safe_strdup(optarg); break;
                         case 'p': set_promisc = 0; break;
-                        case 'r': run_dir = optarg; break;
-                        case 'u': new_user = optarg; break;
+                        case 'r': run_dir = safe_strdup(optarg); break;
+                        case 'u': new_user = safe_strdup(optarg); break;
                         case 'v': display_version(); break;
                         case '?': if (isprint(optopt)) {
                                           warn("Unknown parameter '-%c'\n", optopt);
@@ -515,11 +500,11 @@ int main(int argc, char *argv[]) {
         // General program setup
         if (use_outfile) {
                 if (freopen(use_outfile, "a", stdout) == NULL) {
-                        log_die("Cannot re-open output stream to '%s'\n", use_outfile);
+                        log_die("Cannot reopen output stream to '%s'\n", use_outfile);
         	}
         }
-        if (!capfilter) capfilter = default_capfilter;
-        if (!run_dir) run_dir = RUN_DIR;
+        if (!capfilter) capfilter = safe_strdup(default_capfilter);
+        if (!run_dir) run_dir = safe_strdup(default_rundir);
         signal(SIGINT, handle_signal);
 
         // Set up packet capture
@@ -529,6 +514,15 @@ int main(int argc, char *argv[]) {
 
         if (daemon_mode) runas_daemon(run_dir);
         if (new_user) change_user(new_user);
+
+        // Clean up allocated memory before main loop
+        if (use_config)  free(use_config);
+        if (use_infile)  free(use_infile);
+        if (interface)   free(interface);
+        if (capfilter)   free(capfilter);
+        if (use_outfile) free(use_outfile);
+        if (run_dir)     free(run_dir);
+        if (new_user)    free(new_user);
 
         get_packets(pcap_hnd, pkt_count);
 
