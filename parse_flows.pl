@@ -51,6 +51,7 @@ my $flows_summary;
 my $convert_hex;
 my $host_detail;
 my $email_addr;
+my $watch_file;
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -68,12 +69,6 @@ sub parse_flows {
         my $curr_file; # Current input file
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);   # Log record fields
         my ($ip, $flow_len, $flow_start, $flow_end, $tagged_lines); # Flow detail information
-
-        if ($hitlist_file) {
-                open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
-                        @hitlist = <HITLIST>;
-                close(HITLIST);
-        }
 
         $start_time = (times)[0];
         foreach $curr_file (@input_files) {
@@ -111,11 +106,15 @@ sub parse_flows {
                                         $flow_max_len = $flow_len;
                                 }
                         } elsif ($curr_line =~ /^<<</) { # End of flow marker
+                                if ($watch_file && &watching_ip($ip)) {
+                                        &write_host_subfile("$host_detail/watching_$ip.txt");
+                                }
+                        
                                 if ($tagged_lines > $TAGGED_LIMIT) {
                                         $tagged_flows_cnt++;
                                         $total_tagged_lines_cnt += $tagged_lines;
 
-                                        &write_host_subfile($ip) if $host_detail;
+                                        &write_host_subfile("$host_detail/$ip.txt") if $host_detail;
                                         push(@{$content_hits{$ip}}, "[$flow_start]->[$flow_end]\t$tagged_lines/$flow_len\t".percent_of($tagged_lines, $flow_len)."%");
                                 }
                         } else { # Flow data line
@@ -145,9 +144,9 @@ sub parse_flows {
 # Write detail subfile for specified client ip
 # -----------------------------------------------------------------------------
 sub write_host_subfile {
-        my $ip = shift;
+        my $path = shift;
 
-        open(HOSTFILE, ">>$host_detail/$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
+        open(HOSTFILE, ">>$path") || die "\nError: cannot open $path - $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
         foreach (@flow_data) {
@@ -253,6 +252,19 @@ sub send_email {
 }
 
 # -----------------------------------------------------------------------------
+# Scan list of IP addresses and see if current IP is being watched
+# -----------------------------------------------------------------------------
+sub watching_ip {
+        my $ip = shift;
+
+        foreach (@watch_list) {
+                if ($ip eq $_) return 1;
+        }
+
+        return 0;
+}
+
+# -----------------------------------------------------------------------------
 # Calculate ratio information
 # -----------------------------------------------------------------------------
 sub percent_of {
@@ -266,7 +278,7 @@ sub percent_of {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('d:e:l:o:sx', \%opts) or &print_usage();
+        getopts('d:e:l:o:sw:x', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -279,6 +291,7 @@ sub get_arguments {
         $hitlist_file = 0 unless ($hitlist_file = $opts{l});
         $output_file = 0 unless ($output_file = $opts{o});
         $flows_summary = 0 unless ($flows_summary = $opts{s});
+        $watch_file = 0 unless ($hitlist_file = $opts{w});
         $convert_hex = 0 unless ($convert_hex = $opts{x});
 
         # Check for required options and combinations
@@ -289,6 +302,18 @@ sub get_arguments {
         if ($host_detail && !$hitlist_file) {
                 print "\nWarning: -d requires -l, ignoring\n";
                 $host_detail = 0;
+        }
+
+        # Read in option files
+        if ($hitlist_file) {
+                open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
+                        @hitlist = <HITLIST>;
+                close(HITLIST);
+        }
+        if ($watch_file) {
+                open(WATCH, "$watch_file") || die "\nError: Cannot open $watch_file - $!\n";
+                        @watch_list = <WATCH>;
+                close(WATCH);
         }
 }
 

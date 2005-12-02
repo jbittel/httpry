@@ -51,8 +51,8 @@ void get_packets(pcap_t *pcap_hnd, int pkt_count);
 void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 void runas_daemon(char *run_dir);
 void handle_signal(int sig);
-void cleanup_exit(int exit_value);
 char* safe_strdup(char *curr_str);
+void cleanup_exit(int exit_value);
 void display_version();
 void display_help();
 
@@ -403,14 +403,6 @@ void handle_signal(int sig) {
         return;
 }
 
-/* Clean up/flush opened filehandles on exit */
-void cleanup_exit(int exit_value) {
-        fflush(NULL);
-        remove(PID_FILE); // If daemon, we need this gone
-
-        exit(exit_value);
-}
-
 /* Centralize error checking for string duplication */
 char* safe_strdup(char *curr_str) {
         char *new_str;
@@ -420,6 +412,14 @@ char* safe_strdup(char *curr_str) {
         }
 
         return new_str;
+}
+
+/* Clean up/flush opened filehandles on exit */
+void cleanup_exit(int exit_value) {
+        fflush(NULL);
+        remove(PID_FILE); // If daemon, we need this gone
+
+        exit(exit_value);
 }
 
 /* Display program version information */
