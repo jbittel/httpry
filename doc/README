@@ -134,16 +134,7 @@ Displays the program name and version number, after which the program terminates
 
 
 ----------------------
-IV. KNOWN ISSUES
-----------------------
-
-You know, these sections sometimes bug me (no pun intended). I mean, I can understand
-putting workaround information into a section like this, but if there really are
-"issues" with the software, wouldn't it be better to fix them and *then* release?
-
-
-----------------------
-V. CHANGELOG
+IV. CHANGELOG
 ----------------------
 
 version 0.0.7
@@ -151,7 +142,8 @@ version 0.0.7
    = Chg: changed packet count switch (-c) to -n
    - Fix: fixed bug in packet count check
    = Chg: cleaned up initialization routines in main()
-   + Add: added config.h for setting compile time variable defaults
+   + Add: added config.h for setting compile time program defaults
+   + Add: option to display extended packet information (-x)
 
 version 0.0.6
    + Add: ability to change process owner (-u)
@@ -172,7 +164,7 @@ All previous releases were internal pre-release builds
 
 
 ----------------------
-VI. FUTURE IDEAS
+V. FUTURE IDEAS
 ----------------------
 
 These are ideas that have occurred to me while working on this project as
@@ -189,11 +181,10 @@ program version number I'm targeting to focus on that particular option.
 * Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Option to dump raw packets that are logged
-* Option to display extensive data from the hw/ip/tcp packet headers (.8)
 
 
 ----------------------
-VII. CREDITS/THANKS
+VI. CREDITS/THANKS
 ----------------------
 
 Thanks:

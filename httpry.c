@@ -67,6 +67,7 @@ static int  set_promisc  = 1;
 static char *new_user    = NULL;
 static char *run_dir     = NULL;
 static char *use_config  = NULL;
+static int extended_info = 0;
 
 /* Read options in from config file */
 void parse_config(char *filename) {
@@ -93,7 +94,7 @@ void parse_config(char *filename) {
                         die("Bad data in config file at line %d\n", line_count);
                 }
                 *value++ = '\0';
-                
+
                 if ((line = strchr(value, '\n')) == NULL) {
                         die("Bad data in config file at line %d\n", line_count);
                 }
@@ -121,6 +122,11 @@ void parse_config(char *filename) {
                         run_dir = safe_strdup(value);
                 } else if (!strcmp(name, "User") && !new_user) {
                         new_user = safe_strdup(value);
+                } else if (!strcmp(name, "ExtendedInfo") && !extended_info) {
+                        extended_info = atoi(value);
+                } else {
+                        warn("Config file option '%s' not recognized...skipping", name);
+                        continue;
                 }
         }
 
@@ -321,7 +327,9 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
         // Print data to stdout/output file
-        printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.hostname, http.uri);
+        printf("%s\t%s\t%s\t%s\t%s", ts, saddr, daddr, http.hostname, http.uri);
+        if (extended_info) printf("\t%d\t%d", tcp->th_sport, tcp->th_dport);
+        printf("\n");
 
         free(data);
 
@@ -406,7 +414,7 @@ void handle_signal(int sig) {
 /* Centralize error checking for string duplication */
 char* safe_strdup(char *curr_str) {
         char *new_str;
-        
+
         if ((new_str = strdup(curr_str)) == NULL) {
                 log_die("Cannot duplicate string '%s'\n", curr_str);
         }
@@ -431,7 +439,7 @@ void display_version() {
 
 /* Display program help/usage information */
 void display_help() {
-        info("Usage: %s [-dhpv] [-c file] [-f file] [-i interface]\n"
+        info("Usage: %s [-dhpvx] [-c file] [-f file] [-i interface]\n"
              "        [-l filter] [-n count] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
         info("  -c ... specify config file\n"
              "  -d ... run as daemon\n"
@@ -444,7 +452,8 @@ void display_help() {
              "  -p ... disable promiscuous mode\n"
              "  -r ... set running directory\n"
              "  -u ... set process owner\n"
-             "  -v ... display version information\n");
+             "  -v ... display version information\n"
+             "  -x ... print extended packet information\n");
 
         exit(EXIT_SUCCESS);
 }
@@ -459,7 +468,7 @@ int main(int argc, char *argv[]) {
         int arg;
 
         // Process command line arguments
-        while ((arg = getopt(argc, argv, "c:df:hi:l:n:o:pr:u:v")) != -1) {
+        while ((arg = getopt(argc, argv, "c:df:hi:l:n:o:pr:u:vx")) != -1) {
                 switch (arg) {
                         case 'c': use_config = safe_strdup(optarg); break;
                         case 'd': daemon_mode = 1; break;
@@ -473,6 +482,7 @@ int main(int argc, char *argv[]) {
                         case 'r': run_dir = safe_strdup(optarg); break;
                         case 'u': new_user = safe_strdup(optarg); break;
                         case 'v': display_version(); break;
+                        case 'x': extended_info = 1; break;
                         case '?': if (isprint(optopt)) {
                                           warn("Unknown parameter '-%c'\n", optopt);
                                           display_help();
