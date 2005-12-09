@@ -299,7 +299,7 @@ sub write_host_subfiles {
         my $ip;
 
         foreach $ip (keys %content_hits) {
-                open(HOSTFILE, ">>$host_detail/$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
+                open(HOSTFILE, ">>$host_detail/detail_$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
 
                 foreach $curr_line (@hits) {
                         my @record;

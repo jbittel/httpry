@@ -114,7 +114,7 @@ sub parse_flows {
                                         $tagged_flows_cnt++;
                                         $total_tagged_lines_cnt += $tagged_lines;
 
-                                        &write_host_subfile("$host_detail/$ip.txt") if $host_detail;
+                                        &write_host_subfile("$host_detail/detail_$ip.txt") if $host_detail;
                                         push(@{$content_hits{$ip}}, "[$flow_start]->[$flow_end]\t$tagged_lines/$flow_len\t".percent_of($tagged_lines, $flow_len)."%");
                                 }
                         } else { # Flow data line
