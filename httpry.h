@@ -23,6 +23,8 @@ struct http_hdr {
         char *uri;
         char *version;
         char *hostname;
+        char *referer;
+        char *user_agent;
 };
 
 /* These structs are pulled directly from the FreeBSD 5.3 source. They are

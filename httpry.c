@@ -311,6 +311,10 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         while ((req_header = strtok(NULL, DELIM)) != NULL) {
                 if (strncmp(req_header, "Host: ", 6) == 0) {
                         http.hostname = req_header + 6;
+                } else if (strncmp(req_header, "Referer: ", 9) == 0) {
+                        http.referer = req_header + 9;
+                } else if (strncmp(req_header, "User-Agent: ", 12) == 0) {
+                        http.user_agent = req_header + 12;
                 }
         }
 
@@ -327,9 +331,12 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
         // Print data to stdout/output file
-        printf("%s\t%s\t%s\t%s\t%s", ts, saddr, daddr, http.hostname, http.uri);
-        if (extended_info) printf("\t%d\t%d", tcp->th_sport, tcp->th_dport);
-        printf("\n");
+        if (!extended_info) {
+                printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.hostname, http.uri);
+        } else {
+                printf("%s\t%s:%d\t%s:%d\t%s\t%s\t", ts, saddr, ntohs(tcp->th_sport), daddr, ntohs(tcp->th_dport), http.hostname, http.uri);
+                printf("%s\t%s\n", http.referer, http.user_agent);
+        }
 
         free(data);
 
