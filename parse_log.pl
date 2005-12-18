@@ -81,12 +81,6 @@ sub parse_logfiles {
         my $curr_file; # Current input file
         my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
 
-        if ($hitlist_file) {
-                open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
-                        @hitlist = <HITLIST>;
-                close(HITLIST);
-        }
-
         if ($ignore_file) {
                 open(IGNORE, "$ignore_file") || die "\nError: Cannot open $ignore_file - $!\n";
                         while (<IGNORE>) {
@@ -387,6 +381,13 @@ sub get_arguments {
         if (!$log_summary && !$hitlist_file && !$check_ip && !$check_host && !$filetype) {
                 print "\nError: no processing option selected\n";
                 &print_usage();
+        }
+
+        # Read in option files
+        if ($hitlist_file) {
+                open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file - $!\n";
+                        @hitlist = <HITLIST>;
+                close(HITLIST);
         }
 }
 

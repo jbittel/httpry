@@ -18,7 +18,7 @@ use Socket qw(inet_ntoa inet_aton);
 # -----------------------------------------------------------------------------
 my $PATTERN = "\t";
 my $PROG_NAME = "parse_flows.pl";
-my $PROG_VER = "0.0.2";
+my $PROG_VER = "0.0.3";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $TAGGED_LIMIT = 5;
 
@@ -28,6 +28,7 @@ my $TAGGED_LIMIT = 5;
 my %content_hits = (); # Summary of all tagged flows
 my @flow_data;
 my @hitlist;
+my @watch_list;
 my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing codet;
 
@@ -109,7 +110,7 @@ sub parse_flows {
                                 if ($watch_file && &watching_ip($ip)) {
                                         &write_host_subfile("$host_detail/watching_$ip.txt");
                                 }
-                        
+
                                 if ($tagged_lines > $TAGGED_LIMIT) {
                                         $tagged_flows_cnt++;
                                         $total_tagged_lines_cnt += $tagged_lines;
@@ -197,10 +198,11 @@ sub write_summary_file {
         print OUTFILE "Flow count:\t$flow_cnt\n";
         print OUTFILE "Flow lines:\t$flow_line_cnt\n";
         print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/".sprintf("%d", $flow_line_cnt / $flow_cnt)."\n";
-        print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
-        print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
 
         if ($hitlist_file) {
+                print OUTFILE "Tagged IPs:\t".(keys %content_hits)."\n";
+                print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
+                print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
                 print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
@@ -258,7 +260,7 @@ sub watching_ip {
         my $ip = shift;
 
         foreach (@watch_list) {
-                if ($ip eq $_) return 1;
+                return 1 if ($ip eq $_);
         }
 
         return 0;
@@ -291,7 +293,7 @@ sub get_arguments {
         $hitlist_file = 0 unless ($hitlist_file = $opts{l});
         $output_file = 0 unless ($output_file = $opts{o});
         $flows_summary = 0 unless ($flows_summary = $opts{s});
-        $watch_file = 0 unless ($hitlist_file = $opts{w});
+        $watch_file = 0 unless ($watch_file = $opts{w});
         $convert_hex = 0 unless ($convert_hex = $opts{x});
 
         # Check for required options and combinations
@@ -323,6 +325,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-hsx] [-d dir] [-l file] [-o file] [input files]
+Usage: $PROG_NAME [-hsx] [-d dir] [-l file] [-o file] [-w file] [input files]
 USAGE
 }

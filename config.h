@@ -17,7 +17,7 @@
 #define PROG_VER "0.0.7"
 
 /* Directory to switch to when running in daemon mode
-   Can be overridden with -r */
+   *** Can be overridden with -r */
 #define RUN_DIR "/"
 
 /* Location to store the PID file when running in daemon mode */
@@ -27,7 +27,7 @@
 #define NULL_FILE "/dev/null"
 
 /* Default packet capture filter; must be standard Pcap format
-   Can be overridden with -l */
+   *** Can be overridden with -l */
 #define DEFAULT_CAPFILTER "tcp dst port 80"
 
 /* Line terminator for HTTP header; should never change! */

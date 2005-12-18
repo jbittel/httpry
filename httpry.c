@@ -57,6 +57,7 @@ void display_version();
 void display_help();
 
 /* Program flags/options, set by arguments or config file */
+static char *use_binfile = NULL;
 static int  pkt_count    = -1;
 static int  daemon_mode  = 0;
 static char *use_infile  = NULL;
@@ -68,6 +69,8 @@ static char *new_user    = NULL;
 static char *run_dir     = NULL;
 static char *use_config  = NULL;
 static int extended_info = 0;
+
+static pcap_dumper_t *dump_file;
 
 /* Read options in from config file */
 void parse_config(char *filename) {
@@ -334,11 +337,14 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         if (!extended_info) {
                 printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.hostname, http.uri);
         } else {
-                printf("%s\t%s:%d\t%s:%d\t%s\t%s\t", ts, saddr, ntohs(tcp->th_sport), daddr, ntohs(tcp->th_dport), http.hostname, http.uri);
-                printf("%s\t%s\n", http.referer, http.user_agent);
+                printf("%s\t%s:%d\t%s:%d\t%s\t%s\t%s\t%s\n",
+                       ts, saddr, ntohs(tcp->th_sport), daddr, ntohs(tcp->th_dport),
+                       http.hostname, http.uri, http.referer, http.user_agent);
         }
 
         free(data);
+
+        if (use_binfile) pcap_dump((u_char *) dump_file, header, pkt);
 
         return;
 }
@@ -434,6 +440,13 @@ void cleanup_exit(int exit_value) {
         fflush(NULL);
         remove(PID_FILE); // If daemon, we need this gone
 
+        if (use_binfile) {
+                pcap_dump_flush(dump_file);
+                pcap_dump_close(dump_file);
+        }
+
+        // TODO: pcap_close();
+
         exit(exit_value);
 }
 
@@ -446,9 +459,10 @@ void display_version() {
 
 /* Display program help/usage information */
 void display_help() {
-        info("Usage: %s [-dhpvx] [-c file] [-f file] [-i interface]\n"
+        info("Usage: %s [-dhpvx] [-b file] [-c file] [-f file] [-i interface]\n"
              "        [-l filter] [-n count] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
-        info("  -c ... specify config file\n"
+        info("  -b ... binary capture output file\n"
+             "  -c ... specify config file\n"
              "  -d ... run as daemon\n"
              "  -f ... input file to read from\n"
              "  -h ... print help information\n"
@@ -475,8 +489,9 @@ int main(int argc, char *argv[]) {
         int arg;
 
         // Process command line arguments
-        while ((arg = getopt(argc, argv, "c:df:hi:l:n:o:pr:u:vx")) != -1) {
+        while ((arg = getopt(argc, argv, "b:c:df:hi:l:n:o:pr:u:vx")) != -1) {
                 switch (arg) {
+                        case 'b': use_binfile = safe_strdup(optarg); break;
                         case 'c': use_config = safe_strdup(optarg); break;
                         case 'd': daemon_mode = 1; break;
                         case 'f': use_infile = safe_strdup(optarg); break;
@@ -529,10 +544,17 @@ int main(int argc, char *argv[]) {
         pcap_hnd = open_dev(dev, set_promisc, use_infile);
         set_filter(pcap_hnd, capfilter, net);
 
+        if (use_binfile) {
+                if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL) {
+                        log_die("Cannot open dump file '%s'", use_binfile);
+                }
+        }
+
         if (daemon_mode) runas_daemon(run_dir);
         if (new_user) change_user(new_user);
 
         // Clean up allocated memory before main loop
+        if (use_binfile) free(use_binfile);
         if (use_config)  free(use_config);
         if (use_infile)  free(use_infile);
         if (interface)   free(interface);

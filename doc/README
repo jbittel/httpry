@@ -18,11 +18,11 @@ I. ABOUT
 ----------------------
 
 httpry is a tool designed for displaying and logging HTTP traffic. It is not
-intended to perform analysis itself, but instead to capture, parse and/or log the
-traffic for later analysis. It can be run in real-time displaying the traffic as
-it is parsed, or as a daemon process that logs to an output file. It is written
-to be as lightweight and flexible as possible, so that it can be easily adapted to
-different applications.
+intended to perform analysis itself, but instead to capture, parse and/or log
+the traffic for later analysis. It can be run in real-time displaying the
+traffic as it is parsed, or as a daemon process that logs to an output file. It
+is written to be as lightweight and flexible as possible, so that it can be
+easily adapted to different applications.
 
 "How is this tool useful?" you may ask. Well, here's a few ideas that have
 occurred to me:
@@ -50,12 +50,11 @@ I was hoping you'd ask! Installing httpry is as simple as:
 
 These commands will compile the latest version of the code and then install it
 appropriately in /usr/sbin. Along with httpry itself, there are several other
-tools included. These consist of a log rotation and log parsing script, as well
-as a shell script to tie these together. These may either be useful as-is, or as
-a starting point for your own tools. Additionally, there is an included
-rc.httpry file for automatically starting the program under Linux. This file has
-only been tested under Slackware Linux; your distro may handle things
-differently. Finally, if you ever tire of httpry, simply run:
+scripts included. These tools may either be useful as-is, or as a starting point
+for your own log parsing tools. Additionally, there is an included rc.httpry
+file for automatically starting the program under Linux. This file has only been
+tested under Slackware Linux; your distro may handle things differently.
+Finally, if you ever tire of httpry, simply run:
 
  # make uninstall
 
@@ -72,8 +71,13 @@ of the available options. However, this is merely an abbreviated description
 meant for quick reference and not an understanding of program behavior. This
 section describes these options in greater detail.
 
-httpry [-dhpv] [-c count] [-f file] [-i interface] [-l filter] [-o file] [-r dir]
-       [-u user]
+httpry [-dhpvx] [-b file] [-c count] [-f file] [-i interface] [-l filter]
+       [-o file] [-r dir] [-u user]
+
+-b <file> :
+Dumps a binary packet capture output file to the specified location. Note that
+these are packets that pass both the pcap filter as well as are successfully
+parsed as HTTP packets.
 
 -c <file> :
 Provides a configuration file to read settings from at initilization. These
@@ -92,7 +96,8 @@ does not require the program to be run as root, as no access to the NIC is
 required.
 
 -h :
-Displays a brief description of these options, after which the program terminates.
+Displays a brief description of these options, after which the program
+terminates.
 
 -i <interface> :
 Specifies an ethernet interface for the program to listen on.
@@ -120,7 +125,8 @@ Disables promiscuous mode on the NIC. Under most circumstances this should
 not be required.
 
 -r <dir> :
-Allows a running directory to be specified when running in daemon mode. By default
+Allows a running directory to be specified when running in daemon mode. By
+default
 this is set to '/', which should be adequate for most uses.
 
 -u <user> :
@@ -130,7 +136,12 @@ privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
 
 -v :
-Displays the program name and version number, after which the program terminates.
+Displays the program name and version number, after which the program
+terminates.
+
+-x :
+Causes the program to include additional information in the output string
+including client/server port numbers, HTTP referer and HTTP user agent.
 
 
 ----------------------
@@ -144,6 +155,7 @@ version 0.0.7
    = Chg: cleaned up initialization routines in main()
    + Add: added config.h for setting compile time program defaults
    + Add: option to display extended packet information (-x)
+   + Add: option to dump binary capture output file (-b)
 
 version 0.0.6
    + Add: ability to change process owner (-u)
@@ -175,12 +187,12 @@ program version number I'm targeting to focus on that particular option.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
-* Configurable subset of HTTP traffic to parse/output (.8)
+* Configurable output format string (.8)
 * More extensive disassembly of the HTTP protocol (.8)
 * Viewable packet capture statistics
 * Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
-* Option to dump raw packets that are logged
+* Find alternative to using pcap_loop() for processing packets
 
 
 ----------------------
