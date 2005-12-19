@@ -127,6 +127,8 @@ void parse_config(char *filename) {
                         new_user = safe_strdup(value);
                 } else if (!strcmp(name, "ExtendedInfo") && !extended_info) {
                         extended_info = atoi(value);
+                } else if (!strcmp(name, "BinaryFile") && !use_binfile) {
+                        use_binfile = safe_strdup(value);
                 } else {
                         warn("Config file option '%s' not recognized...skipping", name);
                         continue;
