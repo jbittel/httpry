@@ -442,8 +442,8 @@ char* safe_strdup(char *curr_str) {
 
 /* Clean up/flush opened filehandles on exit */
 void cleanup_exit(int exit_value) {
-        struct pcap_stat stats;
-        
+        struct pcap_stat pkt_stats; // Store stats from pcap
+
         fflush(NULL);
         remove(PID_FILE); // If daemon, we need this gone
 
@@ -453,13 +453,15 @@ void cleanup_exit(int exit_value) {
         }
 
         if (!use_infile) { // Stats are not calculated when reading from an input file
-                if (pcap_stats(pcap_hnd, &stats) == 0) {
-                        info("  %d packets received\n", stats.ps_recv);
-                        info("  %d packets dropped\n", stats.ps_drop);
-                        info("  %d packets parsed\n", pkt_parsed);
+                if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
+                        warn("Could not obtain packet capture statistics");
                 }
+
+                info("  %d packets received\n", pkt_stats.ps_recv);
+                info("  %d packets dropped\n", pkt_stats.ps_drop);
+                info("  %d packets parsed\n", pkt_parsed);
         }
-        
+
         pcap_close(pcap_hnd);
 
         exit(exit_value);

@@ -156,6 +156,7 @@ version 0.0.7
    + Add: added config.h for setting compile time program defaults
    + Add: option to display extended packet information (-x)
    + Add: option to dump binary capture output file (-b)
+   + Add: basic packet capture/parsing stats at program termination
 
 version 0.0.6
    + Add: ability to change process owner (-u)
@@ -189,7 +190,6 @@ program version number I'm targeting to focus on that particular option.
 * Parent/worker threaded design
 * Configurable output format string (.8)
 * More extensive disassembly of the HTTP protocol (.8)
-* Viewable packet capture statistics
 * Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
