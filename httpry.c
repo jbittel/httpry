@@ -70,7 +70,9 @@ static char *run_dir     = NULL;
 static char *use_config  = NULL;
 static int extended_info = 0;
 
+static pcap_t *pcap_hnd; // Opened pcap device handle
 static pcap_dumper_t *dump_file;
+static int pkt_parsed = 0;
 
 /* Read options in from config file */
 void parse_config(char *filename) {
@@ -347,6 +349,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         free(data);
 
         if (use_binfile) pcap_dump((u_char *) dump_file, header, pkt);
+        pkt_parsed++;
 
         return;
 }
@@ -414,11 +417,11 @@ void runas_daemon(char *run_dir) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        info("Caught SIGINT, cleaning up...\n");
+                        info("\nCaught SIGINT, cleaning up...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
                 case SIGTERM:
-                        info("Caught SIGTERM, cleaning up...\n");
+                        info("\nCaught SIGTERM, cleaning up...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
         }
@@ -439,6 +442,8 @@ char* safe_strdup(char *curr_str) {
 
 /* Clean up/flush opened filehandles on exit */
 void cleanup_exit(int exit_value) {
+        struct pcap_stat stats;
+        
         fflush(NULL);
         remove(PID_FILE); // If daemon, we need this gone
 
@@ -447,7 +452,15 @@ void cleanup_exit(int exit_value) {
                 pcap_dump_close(dump_file);
         }
 
-        // TODO: pcap_close();
+        if (!use_infile) { // Stats are not calculated when reading from an input file
+                if (pcap_stats(pcap_hnd, &stats) == 0) {
+                        info("  %d packets received\n", stats.ps_recv);
+                        info("  %d packets dropped\n", stats.ps_drop);
+                        info("  %d packets parsed\n", pkt_parsed);
+                }
+        }
+        
+        pcap_close(pcap_hnd);
 
         exit(exit_value);
 }
@@ -463,7 +476,7 @@ void display_version() {
 void display_help() {
         info("Usage: %s [-dhpvx] [-b file] [-c file] [-f file] [-i interface]\n"
              "        [-l filter] [-n count] [-o file] [-r dir ] [-u user]\n", PROG_NAME);
-        info("  -b ... binary capture output file\n"
+        info("  -b ... binary packet output file\n"
              "  -c ... specify config file\n"
              "  -d ... run as daemon\n"
              "  -f ... input file to read from\n"
@@ -485,7 +498,6 @@ void display_help() {
 int main(int argc, char *argv[]) {
         char *dev = NULL;
         bpf_u_int32 net;
-        pcap_t *pcap_hnd; // Opened pcap device handle
         char default_capfilter[] = DEFAULT_CAPFILTER;
         char default_rundir[] = RUN_DIR;
         int arg;
@@ -546,6 +558,7 @@ int main(int argc, char *argv[]) {
         pcap_hnd = open_dev(dev, set_promisc, use_infile);
         set_filter(pcap_hnd, capfilter, net);
 
+        // Open binary pcap output file for writing
         if (use_binfile) {
                 if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL) {
                         log_die("Cannot open dump file '%s'", use_binfile);
