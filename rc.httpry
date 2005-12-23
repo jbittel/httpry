@@ -11,17 +11,18 @@
 # --------------------
 # --- MODIFY THESE ---
 # --------------------
-# Change these values to reflect
-# your particular setup
+# This script assumes you are storing all your configuration in a httpry
+# config file. If that is not the case, then you will need to change the
+# start line below to reflect your particular setup.
 
-logs_dir="" # Change this to where you want to store your logs
+config_file="" # Path to your config file
 
 # --------------------
 
 case $1 in
 start)
         echo "Starting httpry..."
-        httpry -d -o $logs_dir/out.log
+        httpry -c $config_file
         ;;
 stop)
         echo "Stopping httpry..."
