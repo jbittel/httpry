@@ -57,21 +57,21 @@ void display_version();
 void display_help();
 
 /* Program flags/options, set by arguments or config file */
-static char *use_binfile = NULL;
-static int  pkt_count    = -1;
-static int  daemon_mode  = 0;
-static char *use_infile  = NULL;
-static char *interface   = NULL;
-static char *capfilter   = NULL;
-static char *use_outfile = NULL;
-static int  set_promisc  = 1;
-static char *new_user    = NULL;
-static char *run_dir     = NULL;
-static char *use_config  = NULL;
-static int extended_info = 0;
+static char *use_binfile   = NULL;
+static int   pkt_count     = -1;
+static int   daemon_mode   = 0;
+static char *use_infile    = NULL;
+static char *interface     = NULL;
+static char *capfilter     = NULL;
+static char *use_outfile   = NULL;
+static int   set_promisc   = 1;
+static char *new_user      = NULL;
+static char *run_dir       = NULL;
+static char *use_config    = NULL;
+static int   extended_info = 0;
 
-static pcap_t *pcap_hnd; // Opened pcap device handle
-static pcap_dumper_t *dump_file;
+static pcap_t *pcap_hnd = NULL; // Opened pcap device handle
+static pcap_dumper_t *dump_file = NULL;
 static int pkt_parsed = 0;
 
 /* Read options in from config file */
@@ -79,9 +79,10 @@ void parse_config(char *filename) {
         FILE *config_file;
         char buf[MAX_CONFIG_LEN];
         char *line;
-        char *name;
-        char *value;
+        char name[MAX_CONFIG_LEN];
+        char value[MAX_CONFIG_LEN];
         int line_count = 0;
+        int len;
 
         if ((config_file = fopen(filename, "r")) == NULL) {
                 log_die("Cannot open config file '%s'\n", filename);
@@ -89,23 +90,21 @@ void parse_config(char *filename) {
 
         while ((line = fgets(buf, sizeof(buf), config_file))) {
                 line_count++;
-                while (isspace(*line)) line++;   // Skip leading spaces
-                if (strlen(line) <= 1) continue; // Skip blank lines
-                if (*line == '#') continue;      // Skip comments
 
-                // Search for name/value pairs in the format 'Name Value'
-                name = line;
-                if ((value = strchr(line, SPACE_CHAR)) == NULL) {
-                        die("Bad data in config file at line %d\n", line_count);
+                // Strip leading and trailing spaces
+                while (isspace(*line)) line++;
+                len = strlen(line);
+                while (len && isspace(*(line + len - 1)))
+                        *(line + (len--) - 1) = '\0';
+
+                // Skip blank lines and comments
+                if (!len) continue;
+                if (*line == '#') continue;
+
+                if (sscanf(line, "%[A-Za-z]=%[^=]", name, value) != 2) {
+                        warn("Bad data in config file at line %d\n", line_count);
+                        continue;
                 }
-                *value++ = '\0';
-
-                if ((line = strchr(value, '\n')) == NULL) {
-                        die("Bad data in config file at line %d\n", line_count);
-                }
-                *line = '\0';
-
-                if (!strlen(value)) continue; // Skip empty values
 
                 // Test parsed name/value pairs and set values accordingly
                 // Only set if value is default to prevent overwriting arguments
@@ -132,7 +131,7 @@ void parse_config(char *filename) {
                 } else if (!strcmp(name, "BinaryFile") && !use_binfile) {
                         use_binfile = safe_strdup(value);
                 } else {
-                        warn("Config file option '%s' not recognized...skipping", name);
+                        warn("Config file option '%s' at line %d not recognized...skipping", name, line_count);
                         continue;
                 }
         }
@@ -447,12 +446,12 @@ void cleanup_exit(int exit_value) {
         fflush(NULL);
         remove(PID_FILE); // If daemon, we need this gone
 
-        if (use_binfile) {
+        if (dump_file) {
                 pcap_dump_flush(dump_file);
                 pcap_dump_close(dump_file);
         }
 
-        if (!use_infile) { // Stats are not calculated when reading from an input file
+        if (pcap_hnd && !use_infile) { // Stats are not calculated when reading from an input file
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
                         warn("Could not obtain packet capture statistics");
                 }
@@ -462,7 +461,7 @@ void cleanup_exit(int exit_value) {
                 info("  %d packets parsed\n", pkt_parsed);
         }
 
-        pcap_close(pcap_hnd);
+        if (pcap_hnd) pcap_close(pcap_hnd);
 
         exit(exit_value);
 }
