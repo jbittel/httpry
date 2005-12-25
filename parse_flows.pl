@@ -142,23 +142,6 @@ sub parse_flows {
 }
 
 # -----------------------------------------------------------------------------
-# Write detail subfile for specified client ip
-# -----------------------------------------------------------------------------
-sub write_host_subfile {
-        my $path = shift;
-
-        open(HOSTFILE, ">>$path") || die "\nError: cannot open $path - $!\n";
-
-        print HOSTFILE '>' x 80 . "\n";
-        foreach (@flow_data) {
-                print HOSTFILE "$_\n";
-        }
-        print HOSTFILE '<' x 80 . "\n";
-
-        close(HOSTFILE);
-}
-
-# -----------------------------------------------------------------------------
 # Search fields for specified content; returns true if match occurs
 # -----------------------------------------------------------------------------
 sub content_check {
@@ -176,6 +159,46 @@ sub content_check {
         }
 
         return 0;
+}
+
+# -----------------------------------------------------------------------------
+# Scan list of IP addresses and see if current IP is being watched
+# -----------------------------------------------------------------------------
+sub watching_ip {
+        my $ip = shift;
+
+        foreach (@watch_list) {
+                return 1 if ($ip eq $_);
+        }
+
+        return 0;
+}
+
+# -----------------------------------------------------------------------------
+# Calculate ratio information
+# -----------------------------------------------------------------------------
+sub percent_of {
+        my $subset = shift;
+        my $total = shift;
+
+        return sprintf("%.1f", ($subset / $total) * 100);
+}
+
+# -----------------------------------------------------------------------------
+# Write detail subfile for specified client ip
+# -----------------------------------------------------------------------------
+sub write_host_subfile {
+        my $path = shift;
+
+        open(HOSTFILE, ">>$path") || die "\nError: cannot open $path - $!\n";
+
+        print HOSTFILE '>' x 80 . "\n";
+        foreach (@flow_data) {
+                print HOSTFILE "$_\n";
+        }
+        print HOSTFILE '<' x 80 . "\n";
+
+        close(HOSTFILE);
 }
 
 # -----------------------------------------------------------------------------
@@ -251,29 +274,6 @@ sub send_email {
                 );
 
         $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
-}
-
-# -----------------------------------------------------------------------------
-# Scan list of IP addresses and see if current IP is being watched
-# -----------------------------------------------------------------------------
-sub watching_ip {
-        my $ip = shift;
-
-        foreach (@watch_list) {
-                return 1 if ($ip eq $_);
-        }
-
-        return 0;
-}
-
-# -----------------------------------------------------------------------------
-# Calculate ratio information
-# -----------------------------------------------------------------------------
-sub percent_of {
-        my $subset = shift;
-        my $total = shift;
-
-        return sprintf("%.1f", ($subset / $total) * 100);
 }
 
 # -----------------------------------------------------------------------------

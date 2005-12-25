@@ -27,6 +27,7 @@ my $compress = 0;
 my $del_text = 0;
 my $input_file;
 my $purge_limit;
+my $purge_size;
 my $output_dir;
 my @dir_list;
 
@@ -42,20 +43,15 @@ opendir(DIR, $output_dir) || die "\nError: cannot open directory $output_dir\n";
 closedir(DIR);
 
 # Process log file/directory commands
-if ($compress) {
-        &compress_files();
-}
+&compress_files() if $compress;
 if ($del_text) {
         foreach (grep /\.txt$/, @dir_list) {
                 unlink;
         }
 }
-if ($input_file) {
-        &move_file();
-}
-if ($purge_limit) {
-        &purge_dir();
-}
+&move_file() if $input_file;
+&purge_dir_by_count() if $purge_limit;
+&purge_dir_by_size() if $purge_size;
 
 # -----------------------------------------------------------------------------
 # Iterate through log files, compressing them in tar.gz format
@@ -111,7 +107,7 @@ sub move_file {
 # -----------------------------------------------------------------------------
 # Remove oldest files if total file count is above specified purge limit
 # -----------------------------------------------------------------------------
-sub purge_dir {
+sub purge_dir_by_count {
         my @logs;
         my $del_count;
 
@@ -125,8 +121,6 @@ sub purge_dir {
                 }
                 map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /\.tar.gz$/, @dir_list;
 
-        # Delete oldest archives from directory if the total
-        # number of files is above the provided purge limit
         if (scalar @logs > $purge_limit) {
                 $del_count = scalar @logs - $purge_limit;
                 for (my $i = 0; $i < $del_count; $i++) {
@@ -136,12 +130,37 @@ sub purge_dir {
 }
 
 # -----------------------------------------------------------------------------
+# Remove oldest files if total file size is above specified size limit
+# -----------------------------------------------------------------------------
+sub purge_dir_by_size {
+        my @logs;
+        my $log_file;
+        my $file_size;
+
+        # Sort all compressed archives in the directory according
+        # to the date in the filename
+        @logs = map $_->[0],
+                sort {
+                        $a->[3] <=> $b->[3] or # Sort by year...
+                        $a->[1] <=> $b->[1] or # ...then by month...
+                        $a->[2] <=> $b->[2]    # ...and finally day
+                }
+                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /\.tar.gz$/, @dir_list;
+
+        foreach $log_file (reverse @logs) {
+                $file_size += int((stat($log_file))[7] / 1000000);
+
+                if ($file_size > $purge_size) {
+                        unlink $log_file;
+                }
+        }
+}
+
+# -----------------------------------------------------------------------------
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('cd:hi:p:t', \%opts) or &print_usage();
-
-        # TODO: add -m option that limits archive directory to a max size
+        getopts('cd:hi:m:p:t', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -151,6 +170,7 @@ sub get_arguments {
         $del_text = 1 if ($opts{t});
         $input_file = 0 unless ($input_file = $opts{i});
         $purge_limit = 0 unless ($purge_limit = $opts{p});
+        $purge_size = 0 unless ($purge_size = $opts{m});
         $output_dir = 0 unless ($output_dir = $opts{d});
 
         if (!$output_dir) {
@@ -165,6 +185,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-ct] [-d dir] [-i file] [-p count]
+Usage: $PROG_NAME [-ct] [-d dir] [-i file] [-m size(MB)] [-p count]
 USAGE
 }

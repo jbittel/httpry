@@ -66,12 +66,7 @@ my $convert_hex;
 &get_arguments();
 &parse_logfiles();
 &write_output_file();
-if ($host_detail) {
-        &write_host_subfiles();
-}
-if ($email_addr) {
-        &send_email();
-}
+&send_email() if $email_addr;
 
 # -----------------------------------------------------------------------------
 # Core parsing engine, processes all input files based on options provided
@@ -178,6 +173,37 @@ sub content_check {
 }
 
 # -----------------------------------------------------------------------------
+# Calculate ratio information
+# -----------------------------------------------------------------------------
+sub percent_of {
+        my $subset = shift;
+        my $total = shift;
+
+        return sprintf("%.1f", ($subset / $total) * 100);
+}
+
+# -----------------------------------------------------------------------------
+# Create subfile for each host tagged in content checks
+# -----------------------------------------------------------------------------
+sub write_host_subfiles {
+        my $curr_line;
+        my $ip;
+
+        foreach $ip (keys %content_hits) {
+                open(HOSTFILE, ">>$host_detail/detail_$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
+
+                foreach $curr_line (@hits) {
+                        my @record;
+
+                        @record = split(/$PATTERN/, $curr_line);
+                        print HOSTFILE "$curr_line\n" if ($record[1] eq $ip);
+                }
+
+                close(HOSTFILE);
+        }
+}
+
+# -----------------------------------------------------------------------------
 # Write collected information to specified output file
 # -----------------------------------------------------------------------------
 sub write_output_file {
@@ -244,9 +270,9 @@ sub write_output_file {
                 print OUTFILE "\n\nURI CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
-                if (scalar(@hits) > 0) {
-                        &prune_content_hits();
+                &prune_content_hits();
 
+                if (scalar(%content_hits) > 0) {
                         # Print sorted list of IP addresses and hostnames
                         foreach $key (map { inet_ntoa $_ }
                                       sort
@@ -257,6 +283,8 @@ sub write_output_file {
                                 }
                                 print OUTFILE "\n";
                         }
+
+                        &write_host_subfiles() if $host_detail;
                 } else {
                         print OUTFILE "No matching records found\n";
                 }
@@ -282,27 +310,6 @@ sub prune_content_hits {
                 if (scalar keys(%{ $content_hits{$key} }) == 0) {
                         delete $content_hits{$key};
                 }
-        }
-}
-
-# -----------------------------------------------------------------------------
-# Create subfile for each host tagged in content checks
-# -----------------------------------------------------------------------------
-sub write_host_subfiles {
-        my $curr_line;
-        my $ip;
-
-        foreach $ip (keys %content_hits) {
-                open(HOSTFILE, ">>$host_detail/detail_$ip.txt") || die "\nError: cannot open $host_detail/$ip.txt - $!\n";
-
-                foreach $curr_line (@hits) {
-                        my @record;
-
-                        @record = split(/$PATTERN/, $curr_line);
-                        print HOSTFILE "$curr_line\n" if ($record[1] eq $ip);
-                }
-
-                close(HOSTFILE);
         }
 }
 
@@ -333,16 +340,6 @@ sub send_email {
                 );
 
         $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
-}
-
-# -----------------------------------------------------------------------------
-# Calculate ratio information
-# -----------------------------------------------------------------------------
-sub percent_of {
-        my $subset = shift;
-        my $total = shift;
-
-        return sprintf("%.1f", ($subset / $total) * 100);
 }
 
 # -----------------------------------------------------------------------------
