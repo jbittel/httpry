@@ -7,7 +7,7 @@
 #
 
 CC	= gcc
-CFLAGS	= -Wall -O3 -funroll-loops
+CFLAGS	= -Wall -O3 -funroll-loops -ansi
 LIBS	= -lpcap -I/usr/include/pcap -I/usr/local/include/pcap
 PROG	= httpry
 
