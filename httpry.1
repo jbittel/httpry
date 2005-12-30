@@ -1,9 +1,9 @@
-.TH httpry 1 2005-10-15
+.TH httpry 1 2005-12-28
 .SH NAME
 httpry - HTTP logging and information display tool
 .SH SYNOPSIS
 .B httpry
-.I httpry [-dhpv] [-c count] [-f file] [-i interface] [-l filter] [-o file] [-r dir] [-u user]
+.I httpry [-dhpvx] [-b file] [-c count] [-f file] [-i interface] [-l filter] [-n count] [-o file] [-r dir] [-u user]
 .br
 .SH DESCRIPTION
 .PP
@@ -12,13 +12,18 @@ is a tool designed for displaying and logging HTTP traffic. It is not designed t
 perform analysis itself, but instead to capture, parse and log the traffic for later
 analysis. It can be run in real-time displaying the traffic as it is parsed, or as a
 daemon process that logs to an output file. It is written to be as lightweight and
-flexible as possible, so that it can be adapted to many different applications.
+flexible as possible, so that it can be adaptable to many different applications.
 .SH OPTIONS
 .TP
-\fB-c\fR count
-Specifies a number of packets to capture, following which the
-program will terminate. Note that this is a count of total captured packets, not
-of parsed HTTP packets.
+\fB-b\fR file
+Dumps a binary packet capture output file to the specified location. Note that
+these are packets that pass both the pcap filter and are successfully parsed as
+HTTP packets.
+.TP
+\fB-c\fR file
+Provides a configuration file to read settings from at initilization. These
+settings can be overridden by command line arguments. See the included example
+configuration file to see the available options and proper syntax.
 .TP
 \fB-d\fR
 Runs the program as a daemon process. All program status output will be
@@ -44,11 +49,15 @@ Allows the default capture filter to be overridden by a filter
 that follows the tcpdump format. Useful for capturing traffic on non-standard
 ports or to/from specific hosts.
 .TP
+\fB-n\fR count
+Specifies a number of packets to capture, following which the
+program will terminate. Note that this is a count of total captured packets, not
+of parsed HTTP packets.
+.TP
 \fB-o\fR file
-Provides an output file for writing parsed packet data. Running the
-program as a daemon without this option would be pretty useless and/or stupid.
-Note that if the program is running as a daemon, its base directory is set to
-the filesystem root so an absolute path to the output file should be specified.
+Provides an output file for writing parsed packet data. Note that if the
+program is running as a daemon, its base directory is set to the filesystem
+root (by default) so an absolute path to the output file should be specified.
 .TP
 \fB-p\fR
 Disables promiscuous mode on the NIC. Under most circumstances this should
@@ -66,8 +75,12 @@ credentials once initialization is complete.
 .TP
 \fB-v\fR
 Displays the program name and version number, after which the program terminates.
+.TP
+\fB-x\fR
+Causes the output to include additional information in the output string
+such as client/server port numbers, HTTP referer and HTTP user agent.
 .SH BUGS
-See the included README file for an up-to-date list of known issues.
+There are no known issues that I am currently aware of.
 .SH AUTHOR
 .B httpry
 was written by Jason Bittel <jbittel@corban.edu>. All rights reserved.

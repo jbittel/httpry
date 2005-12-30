@@ -22,7 +22,7 @@ intended to perform analysis itself, but instead to capture, parse and/or log
 the traffic for later analysis. It can be run in real-time displaying the
 traffic as it is parsed, or as a daemon process that logs to an output file. It
 is written to be as lightweight and flexible as possible, so that it can be
-easily adapted to different applications.
+easily adaptable to different applications.
 
 "How is this tool useful?" you may ask. Well, here's a few ideas that have
 occurred to me:
@@ -35,8 +35,14 @@ occurred to me:
  - Simple curiosity
  - It's just plain fun to watch in realtime
 
-Of course, I hope that others will find additional uses for the tool beyond what
-I've imagined.
+Of course, I hope that others will find additional uses for the tool beyond
+what I've imagined. One might also note that, merely capturing and logging the
+data is only the first step; the ability to effectively process the resulting
+logs is what makes the information truly useful. To that end I've included
+several Perl scripts that are post-processors for the log files. They are
+relatively generic examples for various aspects of parsing and analyzing the
+log files. Hopefully they will be of use for developing your own log parsing
+toolset.
 
 
 ----------------------
@@ -72,12 +78,12 @@ meant for quick reference and not an understanding of program behavior. This
 section describes these options in greater detail.
 
 httpry [-dhpvx] [-b file] [-c count] [-f file] [-i interface] [-l filter]
-       [-o file] [-r dir] [-u user]
+       [-n count] [-o file] [-r dir] [-u user]
 
 -b <file> :
 Dumps a binary packet capture output file to the specified location. Note that
-these are packets that pass both the pcap filter as well as are successfully
-parsed as HTTP packets.
+these are packets that pass both the pcap filter and are successfully parsed as
+HTTP packets.
 
 -c <file> :
 Provides a configuration file to read settings from at initilization. These
@@ -115,10 +121,9 @@ program will terminate. Note that this is a count of total captured packets, not
 of parsed HTTP packets.
 
 -o <file> :
-Provides an output file for writing parsed packet data. Running the
-program as a daemon without this option would be pretty useless and/or stupid.
-Note that if the program is running as a daemon, its base directory is set to
-the filesystem root so an absolute path to the output file should be specified.
+Provides an output file for writing parsed packet data. Note that if the
+program is running as a daemon, its base directory is set to the filesystem
+root (by default) so an absolute path to the output file should be specified.
 
 -p :
 Disables promiscuous mode on the NIC. Under most circumstances this should
@@ -126,8 +131,7 @@ not be required.
 
 -r <dir> :
 Allows a running directory to be specified when running in daemon mode. By
-default
-this is set to '/', which should be adequate for most uses.
+default this is set to '/', which should be adequate for most uses.
 
 -u <user> :
 Allows an alternate user to take ownership of the process. This is
@@ -140,8 +144,8 @@ Displays the program name and version number, after which the program
 terminates.
 
 -x :
-Causes the program to include additional information in the output string
-including client/server port numbers, HTTP referer and HTTP user agent.
+Causes the output to include additional information in the output string
+such as client/server port numbers, HTTP referer and HTTP user agent.
 
 
 ----------------------
@@ -150,15 +154,16 @@ IV. CHANGELOG
 
 version 0.0.7
    + Add: option to read settings from a config file (-c)
-   = Chg: changed packet count switch (-c) to -n
+   = Chg: changed packet count switch from -c to -n
    - Fix: fixed bug in packet count check
    = Chg: cleaned up initialization routines in main()
    + Add: added config.h for setting compile time program defaults
    + Add: option to display extended packet information (-x)
    + Add: option to dump binary capture output file (-b)
    + Add: basic packet capture/parsing stats at program termination
+   = Chg: program now compiles cleanly as strict ANSI C
 
-version 0.0.6
+version 0.0.6 (initial "official" release)
    + Add: ability to change process owner (-u)
    + Add: additional error checking when entering daemon mode
    = Chg: completely reworked output data handling
@@ -170,9 +175,6 @@ version 0.0.6
    - Fix: fixed an incorrect array initialisation
    = Chg: split version and help information into two commands (-v and -h)
 
-version 0.0.5
-   + Initial "official" release
-
 All previous releases were internal pre-release builds
 
 
@@ -183,7 +185,7 @@ V. FUTURE IDEAS
 These are ideas that have occurred to me while working on this project as
 potential ways to improve or extend the code. I'm still not convinced all of
 them are necessarily good ideas, but they are a source of inspiration and
-consideration as I continue working on the project. A number indicates the
+consideration as I continue improving the project. A number indicates the
 program version number I'm targeting to focus on that particular option.
 
 * Internal packet queue to help with burst traffic
