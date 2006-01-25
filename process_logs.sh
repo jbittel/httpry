@@ -30,6 +30,7 @@ config_file=""   # Path to httpry config file
 
 log_fn="out.log"                  # Default file name for active log file
 parse_fn="`date +%-m-%-d-%Y`.log" # This is the date format used by rotate_log.pl
+out_fn="`date +%-m-%-d-%Y`"       # Use current date as base filename for output files
 
 # Stop the httpry service if it is running
 if [ -r "/var/run/httpry.pid" ]; then
@@ -43,12 +44,16 @@ if [ -e "$tools_dir/$log_fn" ]; then
         perl $tools_dir/rotate_log.pl -ct -i $logs_dir/$log_fn -d $logs_dir
 fi
 
+
 # Restart the httpry service
+if [ -e "/var/run/httpry.pid" ]; then
+        rm -rf /var/run/httpry.pid
+fi
 httpry -c $config_file
 
 # Process new log file data
 if [ -e "$logs_dir/$parse_fn" ]; then
-        perl $tools_dir/parse_log.pl -s -o $logs_dir/$parse_fn.txt -c 20 -e $email_addr $logs_dir/$parse_fn
+        perl $tools_dir/parse_log.pl -s -o $logs_dir/$out_fn-log.txt -c 20 -e $email_addr $logs_dir/$parse_fn
         perl $tools_dir/trace_flows.pl -m -o $logs_dir/$parse_fn.flows $logs_dir/$parse_fn
-        perl $tools_dir/parse_flows.pl -sx -l $tools_dir/$content_fn -d $logs_dir -o $logs_dir/$parse_fn.txt -e $email_addr $logs_dir/$parse_fn.flows
+        perl $tools_dir/parse_flows.pl -sx -l $tools_dir/$content_fn -d $logs_dir -o $logs_dir/$out_fn-flow.txt -e $email_addr $logs_dir/$parse_fn.flows
 fi
