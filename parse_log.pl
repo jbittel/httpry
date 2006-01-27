@@ -286,7 +286,7 @@ sub write_output_file {
 
                         &write_host_subfiles() if $host_detail;
                 } else {
-                        print OUTFILE "No matching records found\n";
+                        print OUTFILE "No tagged records found\n";
                 }
         }
 

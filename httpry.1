@@ -1,4 +1,4 @@
-.TH httpry 1 2005-12-28
+.TH httpry 1 "January 2006"
 .SH NAME
 httpry - HTTP logging and information display tool
 .SH SYNOPSIS
@@ -8,11 +8,12 @@ httpry - HTTP logging and information display tool
 .SH DESCRIPTION
 .PP
 .B httpry
-is a tool designed for displaying and logging HTTP traffic. It is not designed to
-perform analysis itself, but instead to capture, parse and log the traffic for later
-analysis. It can be run in real-time displaying the traffic as it is parsed, or as a
-daemon process that logs to an output file. It is written to be as lightweight and
-flexible as possible, so that it can be adaptable to many different applications.
+is a tool designed for displaying and logging HTTP traffic. It is not designed
+to perform analysis itself, but instead to capture, parse and log the traffic
+for later analysis. It can be run in real-time displaying the traffic as it is
+parsed, or as a daemon process that logs to an output file. It is written to be
+as lightweight and flexible as possible, so that it can be adaptable to many
+different applications.
 .SH OPTIONS
 .TP
 \fB-b\fR file
@@ -23,12 +24,12 @@ HTTP packets.
 \fB-c\fR file
 Provides a configuration file to read settings from at initilization. These
 settings can be overridden by command line arguments. See the included example
-configuration file to see the available options and proper syntax.
+configuration file for the available options and proper syntax.
 .TP
 \fB-d\fR
 Runs the program as a daemon process. All program status output will be
-sent to the syslog. Additionally, there is a pid file created for the process in
-/var/run/httpry.pid. Requires -o.
+sent to the syslog. A pid file is created for the process in /var/run/httpry.pid
+by default. Requires -o.
 .TP
 \fB-f\fR file
 Provide an input capture file to read from instead of performing a
@@ -37,7 +38,8 @@ does not require the program to be run as root, as no access to the NIC is
 required.
 .TP
 \fB-h\fR
-Displays a brief description of these options, after which the program terminates.
+Displays a brief description of these options, after which the program
+terminates.
 .TP
 \fB-i\fR interface
 Specifies an ethernet interface for the program to listen on.
@@ -64,7 +66,8 @@ Disables promiscuous mode on the NIC. Under most circumstances this should
 not be required.
 .TP
 \fB-r\fR dir
-Allows a running directory to be specified when running in daemon mode. By default
+Allows a running directory to be specified when running in daemon mode. By
+default
 this is set to '/', which should be adequate for most uses.
 .TP
 \fB-u\fR user
@@ -74,13 +77,14 @@ privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
 .TP
 \fB-v\fR
-Displays the program name and version number, after which the program terminates.
+Displays the program name and version number, after which the program
+terminates.
 .TP
 \fB-x\fR
-Causes the output to include additional information in the output string
-such as client/server port numbers, HTTP referer and HTTP user agent.
+Causes the program to include additional information in the output string
+such as client/server port numbers, HTTP referrer and HTTP user agent.
 .SH BUGS
-There are no known issues that I am currently aware of.
+There are no known issues that I am aware of.
 .SH AUTHOR
 .B httpry
 was written by Jason Bittel <jbittel@corban.edu>. All rights reserved.
