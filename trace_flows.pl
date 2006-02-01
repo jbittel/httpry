@@ -167,7 +167,10 @@ sub get_arguments {
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
-        &print_usage() unless ($ARGV[0]);
+        unless ($ARGV[0]) {
+                print "\nError: no input file provided\n";
+                &print_usage();
+        }
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
