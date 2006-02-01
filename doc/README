@@ -7,7 +7,7 @@
                    | |          __/ |
                    |_|         |___/
 
-        -||-  HTTPry 0.0.7  -||-
+        -||-  HTTPry 0.0.8  -||-
 
   HTTP logging and information display tool
       Jason Bittel <jbittel@corban.edu>
@@ -151,6 +151,9 @@ such as client/server port numbers, HTTP referrer and HTTP user agent.
 ----------------------
 IV. CHANGELOG
 ----------------------
+
+version 0.0.8
+   - Fix:
 
 version 0.0.7
    + Add: option to read settings from a config file (-c)

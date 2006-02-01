@@ -454,15 +454,13 @@ void cleanup_exit(int exit_value) {
 
         if (pcap_hnd && !use_infile) { /* Stats are not calculated when reading from an input file */
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
-                        warn("Could not obtain packet capture statistics");
+                        warn("Could not obtain packet capture statistics\n");
+                } else {
+                        info("  %d packets received\n", pkt_stats.ps_recv);
+                        info("  %d packets dropped\n", pkt_stats.ps_drop);
+                        info("  %d packets parsed\n", pkt_parsed);
                 }
-
-                info("  %d packets received\n", pkt_stats.ps_recv);
-                info("  %d packets dropped\n", pkt_stats.ps_drop);
-                info("  %d packets parsed\n", pkt_parsed);
         }
-
-        if (pcap_hnd) pcap_close(pcap_hnd);
 
         exit(exit_value);
 }
@@ -575,7 +573,6 @@ int main(int argc, char *argv[]) {
         /* Clean up allocated memory before main loop */
         if (use_binfile) free(use_binfile);
         if (use_config)  free(use_config);
-        if (use_infile)  free(use_infile);
         if (interface)   free(interface);
         if (capfilter)   free(capfilter);
         if (use_outfile) free(use_outfile);
