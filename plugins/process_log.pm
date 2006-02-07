@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# parse_log.pm 6/25/2005
+# process_log.pm 6/25/2005
 #
 # Copyright (c) 2005, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -45,7 +45,9 @@ sub new {
 }
 
 sub init {
-        &load_config();
+        if (&load_config() < 0) {
+                return -1;
+        }
 }
 
 sub main {
@@ -300,6 +302,8 @@ sub load_config {
                         @hitlist = <HITLIST>;
                 close(HITLIST);
         }
+
+        return 0;
 }
 
 1;

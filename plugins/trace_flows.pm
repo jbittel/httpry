@@ -32,7 +32,9 @@ sub new {
 }
 
 sub init {
-        &load_config();
+        if (&load_config() < 0) {
+                return -1;
+        }
         unlink $output_file if (-e $output_file);
 }
 
@@ -157,7 +159,7 @@ sub print_flow {
 sub load_config {
         # Load config file; by default in same directory as plugin
         require "./plugins/" . __PACKAGE__ . ".cfg";
-
+        
         # Check for required options and combinations
         if (!$output_file) {
                 print "\nError: no output file provided\n";
@@ -167,6 +169,8 @@ sub load_config {
                 print "\nWarning: invalid flow output type specified, defaulting to one-to-many\n";
                 $flow_one2many = 1;
         }
+
+        return 0;
 }
 
 1;

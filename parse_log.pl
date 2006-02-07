@@ -48,8 +48,8 @@ my $log_summary;
 # -----------------------------------------------------------------------------
 &get_arguments();
 &init_plugins($plugin_dir);
-&parse_logfiles();
-&end_plugins();
+#&parse_logfiles();
+#&end_plugins();
 
 # -----------------------------------------------------------------------------
 # Load and initialize all plugins in specified directory
@@ -75,11 +75,19 @@ sub init_plugins {
         foreach $plugin (@callbacks) {
                 if (!$plugin->can('main')) {
                         print "Warning: plugin '$plugin' does not contain a required main() function...disabling\n";
-                        splice(@callbacks, $i, 1);
+                        splice @callbacks, $i, 1;
                         next;
                 }
 
-                $plugin->init() if ($plugin->can('init'));
+                if ($plugin->can('init')) {
+                        if ($plugin->init() < 0) {
+                                print "Warning: plugin '$plugin' did not initialize properly...disabling\n";
+                                splice @callbacks, $i, 1;
+                                next;
+                        } else {
+                                print "Initialized $plugin";
+                        }
+                }
                 $i++;
         }
 }
@@ -135,7 +143,7 @@ sub parse_logfiles {
                         }
 
                         foreach $plugin (@callbacks) {
-                                $plugin->main("ping");
+                                #$plugin->main("ping");
                         }
                 }
 
