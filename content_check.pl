@@ -40,6 +40,8 @@ my $flows_summary;
 #my $temp_file;
 #my $temp_fh;
 #my $temp_name;
+my $start_time; # Start tick for timing code
+my $end_time;   # End tick for timing code
 
 # Counter variables
 my $file_cnt = 0;
@@ -53,10 +55,10 @@ my $tagged_flows_cnt = 0;
 my $total_tagged_lines_cnt = 0;
 
 # Data structures
-my %flow_info = ();             # Holds metadata about each flow
-my %flow_data_lines = ();       # Holds actual data lines for each flow
-my %flow_hits = ();             # Flow data lines for tagged flows
-my %hostname_hits = ();         # Individual hostnames tagged within tagged flows
+my %flow_info = ();       # Holds metadata about each flow
+my %flow_data_lines = (); # Holds actual data lines for each flow
+my %tagged_flows = ();
+#my %hostname_hits = ();   # Individual hostnames tagged within tagged flows
 my @hitlist = ();
 my @host_data = ();
 
@@ -70,9 +72,9 @@ my @host_data = ();
 #        until $temp_file = IO::File->new($temp_name, O_RDWR|O_CREAT|O_EXCL);
 #END { unlink($temp_file) || die "Error: couldn't unlink '$temp_file': $!" }
 #$temp_fh = IO::File->new_tmpfile || die "Error: unable to make new temporary file: $!";
-
+$start_time = (times)[0];
 &trace_flows();
-
+$end_time = (times)[0];
 #seek($temp_fh, 0, 0) || die "Error: unable to rewind temporary file: $!";
 
 #&parse_flows();
@@ -87,11 +89,11 @@ sub trace_flows {
         my $curr_file;
         my $key;
         my ($timestamp, $epochstamp, $src_ip, $dst_ip, $hostname, $uri);
+#        my $flow_token;
 
         foreach $curr_file (@input_files) {
                 unless(open(INFILE, "$curr_file")) {
-                        print "\nWarning: Cannot open $curr_file - $!\n";
-                        print "           Skipping that particular file...\n";
+                        print "\nWarning: skipping $curr_file: $!\n";
                         next;
                 }
 
@@ -107,7 +109,7 @@ sub trace_flows {
                         $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
                         next if $curr_line eq "";
                         $total_line_cnt++;
-                        
+
                         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
 
                         # Convert timestamp of current record to epoch seconds
@@ -115,9 +117,12 @@ sub trace_flows {
                         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
                         if (!exists $flow_info{$src_ip}) {
+#                                print "new flow\n";
                                 $flow_cnt++;
                                 $flow_line_cnt++;
-                                
+
+                                # TODO: convert %flow_info to a hash of lists
+
                                 $flow_info{$src_ip}->{"src_ip"} = $src_ip;
                                 $flow_info{$src_ip}->{"start_time"} = $timestamp;
                                 $flow_info{$src_ip}->{"end_time"} = $timestamp;
@@ -129,12 +134,16 @@ sub trace_flows {
                                 push(@{$flow_data_lines{$src_ip}}, $curr_line);
 
                                 if ($hitlist_file && &content_check($hostname, $uri)) {
-                                        $hostname_hits{$src_ip}->{$hostname}++; # TODO: switch this to a per host/flow unique key
+#                                        $flow_token = "[" . $flow_info{$src_ip}->{"start_time"} . "]->[" . \
+#                                                $flow_info{$src_ip}->{"end_time"} . "]";
+
+                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"start_time"}}->{$hostname}++;
                                         $flow_info{$src_ip}->{"tagged_lines"}++;
                                 }
                         } else {
+#                                print "existing flow\n";
                                 $flow_line_cnt++;
-                                
+
                                 $flow_info{$src_ip}->{"end_time"} = $timestamp;
                                 $flow_info{$src_ip}->{"end_epoch"} = $epochstamp;
                                 $flow_info{$src_ip}->{"length"}++;
@@ -142,15 +151,18 @@ sub trace_flows {
                                 push(@{$flow_data_lines{$src_ip}}, $curr_line);
 
                                 if ($hitlist_file && &content_check($hostname, $uri)) {
-                                        $hostname_hits{$src_ip}->{$hostname}++; # TODO: switch this to a per host/flow unique key
+#                                        $flow_token = "[" . $flow_info{$src_ip}->{"start_time"} . "]->[" . \
+#                                                $flow_info{$src_ip}->{"end_time"} . "]";
+
+                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"start_time"}}->{$hostname}++;
                                         $flow_info{$src_ip}->{"tagged_lines"}++;
                                 }
                         }
 
                         # Timeout old flows
                         foreach $key (keys %flow_info) {
-                                next if (($epochstamp - $flow_info{$key}->{"end_epoch"}) > $FLOW_TIMEOUT);
-
+                                next unless (($epochstamp - $flow_info{$key}->{"end_epoch"}) > $FLOW_TIMEOUT);
+#                                print ".";
                                 # Set minimum/maximum flow length
                                 if ($flow_info{$key}->{"length"} < $flow_min_len) {
                                         $flow_min_len = $flow_info{$key}->{"length"};
@@ -158,21 +170,26 @@ sub trace_flows {
                                 if ($flow_info{$key}->{"length"} > $flow_max_len) {
                                         $flow_max_len = $flow_info{$key}->{"length"};
                                 }
-                                        
-                                if ($flow_info{$key}->{"tagged_lines"} > $TAGGED_LIMIT) {
+
+#                                if ($flow_info{$key}->{"tagged_lines"} > $TAGGED_LIMIT) {
                                         $tagged_flows_cnt++;
                                         $total_tagged_lines_cnt += $flow_info{$key}->{"tagged_lines"};
 
                                         &append_host_subfile("$host_detail/detail_$key.txt") if $host_detail;
 
-                                        push(@{$flow_hits{$key}}, "[" . $flow_info{$key}->{"start_time"} . "]->[" . \
-                                                $flow_info{$key}->{"end_time"} . "]\t" . $flow_info{$key}->{"tagged_lines"} . \
-                                                "/" . $flow_info{$key}->{"length"} . "\t" . \
-                                                percent_of($flow_info{$key}->{"tagged_lines"}, $flow_info{$key}->{"length"}) . "%");
-                                }
-                                        
+#                                        $flow_token = "[" . $flow_info{$src_ip}->{"start_time"} . "]->[" . \
+#                                                $flow_info{$src_ip}->{"end_time"} . "]";
+
+#                                        push(@{$flow_results{$key}}, "[" . $flow_info{$key}->{"start_time"} . "]->[" . \
+#                                                $flow_info{$key}->{"end_time"} . "]\t" . $flow_info{$key}->{"tagged_lines"} . \
+#                                                "/" . $flow_info{$key}->{"length"} . "\t" . \
+#                                                percent_of($flow_info{$key}->{"tagged_lines"}, $flow_info{$key}->{"length"}) . "%");
+#                                }
+                                # TODO: else, purge useless hash element
+
                                 &timeout_flow($key);
                         }
+#                        print "\n";
                 }
         }
 
@@ -268,7 +285,7 @@ sub append_host_subfile {
 
         print HOSTFILE '>' x 80 . "\n";
         foreach (@host_data) {
-                print HOSTFILE "$_\n";
+                print HOSTFILE $_, "\n";
         }
         print HOSTFILE '<' x 80 . "\n";
 
@@ -329,40 +346,41 @@ sub timeout_flow {
 # Write summary information to specified output file
 # -----------------------------------------------------------------------------
 sub write_summary_file {
-        my $key;
+        my $ip;
         my $flow;
         my $hostname;
 
-        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
+        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";
         print OUTFILE "Total files:\t$file_cnt\n";
         print OUTFILE "Total size:\t$size_cnt MB\n";
         print OUTFILE "Total lines:\t$total_line_cnt\n";
+        print OUTFILE "Total time:\t" . sprintf("%.2f", $end_time - $start_time) . " secs\n";
 
         print OUTFILE "\n\nFLOW STATS\n\n";
         print OUTFILE "Flow count:\t$flow_cnt\n";
         print OUTFILE "Flow lines:\t$flow_line_cnt\n";
-        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/".sprintf("%d", $flow_line_cnt / $flow_cnt)."\n";
+        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
 
         if ($hitlist_file) {
-                print OUTFILE "Tagged IPs:\t".(keys %flow_hits)."\n";
+                print OUTFILE "Tagged IPs:\t" . (keys %tagged_flows) . "\n";
                 print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
                 print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
                 print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
                 if ($total_tagged_lines_cnt > 0) {
-                        foreach $key (map { inet_ntoa $_ }
-                                      sort
-                                      map { inet_aton $_ } keys %flow_hits) {
-                                print OUTFILE "$key\n";
-                                foreach $flow (@{$flow_hits{$key}}) {
+                        foreach $ip (map { inet_ntoa $_ }
+                                     sort
+                                     map { inet_aton $_ } keys %tagged_flows) {
+                                print OUTFILE "$ip\n";
+                                foreach $flow (keys %{$tagged_flows{$ip}}) {
                                         print OUTFILE "\t$flow\n";
-                                        
-                                        foreach $hostname (sort keys %{ $hostname_hits{$key} }) {
-                                                print OUTFILE "\t\t$hostname\t$hostname_hits{$key}->{$hostname}\n";
+
+                                        foreach $hostname (keys %{$tagged_flows{$ip}->{$flow}}) {
+                                                print OUTFILE "\t\t$hostname\t$tagged_flows{$ip}->{$flow}->{$hostname}";
                                         }
                                 }
                                 print OUTFILE "\n";
@@ -373,6 +391,8 @@ sub write_summary_file {
         }
 
         close(OUTFILE);
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -402,6 +422,8 @@ sub send_email {
                 );
 
         $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail: $!\n";
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -441,6 +463,8 @@ sub get_arguments {
                         @hitlist = <HITLIST>;
                 close(HITLIST);
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
