@@ -66,18 +66,7 @@ my @host_data = ();
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-
-# Create temp file
-#do { $temp_name = tmpnam() }
-#        until $temp_file = IO::File->new($temp_name, O_RDWR|O_CREAT|O_EXCL);
-#END { unlink($temp_file) || die "Error: couldn't unlink '$temp_file': $!" }
-#$temp_fh = IO::File->new_tmpfile || die "Error: unable to make new temporary file: $!";
-$start_time = (times)[0];
 &trace_flows();
-$end_time = (times)[0];
-#seek($temp_fh, 0, 0) || die "Error: unable to rewind temporary file: $!";
-
-#&parse_flows();
 &write_summary_file() if $flows_summary;
 &send_email() if $email_addr;
 
@@ -87,10 +76,11 @@ $end_time = (times)[0];
 sub trace_flows {
         my $curr_line;
         my $curr_file;
-        my $key;
+        my $flow_key;
         my ($timestamp, $epochstamp, $src_ip, $dst_ip, $hostname, $uri);
 #        my $flow_token;
 
+        $start_time = (times)[0];
         foreach $curr_file (@input_files) {
                 unless(open(INFILE, "$curr_file")) {
                         print "\nWarning: skipping $curr_file: $!\n";
@@ -117,12 +107,12 @@ sub trace_flows {
                         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
                         if (!exists $flow_info{$src_ip}) {
-#                                print "new flow\n";
                                 $flow_cnt++;
                                 $flow_line_cnt++;
 
                                 # TODO: convert %flow_info to a hash of lists
 
+                                $flow_info{$src_ip}->{"id"} = $timestamp;
                                 $flow_info{$src_ip}->{"src_ip"} = $src_ip;
                                 $flow_info{$src_ip}->{"start_time"} = $timestamp;
                                 $flow_info{$src_ip}->{"end_time"} = $timestamp;
@@ -136,12 +126,11 @@ sub trace_flows {
                                 if ($hitlist_file && &content_check($hostname, $uri)) {
 #                                        $flow_token = "[" . $flow_info{$src_ip}->{"start_time"} . "]->[" . \
 #                                                $flow_info{$src_ip}->{"end_time"} . "]";
-
-                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"start_time"}}->{$hostname}++;
+                                # TODO: encode both start and end time so we can print full flow duration to output file
+                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
                                         $flow_info{$src_ip}->{"tagged_lines"}++;
                                 }
                         } else {
-#                                print "existing flow\n";
                                 $flow_line_cnt++;
 
                                 $flow_info{$src_ip}->{"end_time"} = $timestamp;
@@ -154,106 +143,40 @@ sub trace_flows {
 #                                        $flow_token = "[" . $flow_info{$src_ip}->{"start_time"} . "]->[" . \
 #                                                $flow_info{$src_ip}->{"end_time"} . "]";
 
-                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"start_time"}}->{$hostname}++;
+                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
                                         $flow_info{$src_ip}->{"tagged_lines"}++;
                                 }
                         }
 
                         # Timeout old flows
-                        foreach $key (keys %flow_info) {
-                                next unless (($epochstamp - $flow_info{$key}->{"end_epoch"}) > $FLOW_TIMEOUT);
-#                                print ".";
+                        foreach $flow_key (keys %flow_info) {
+                                next unless (($epochstamp - $flow_info{$flow_key}->{"end_epoch"}) > $FLOW_TIMEOUT);
                                 # Set minimum/maximum flow length
-                                if ($flow_info{$key}->{"length"} < $flow_min_len) {
-                                        $flow_min_len = $flow_info{$key}->{"length"};
+                                if ($flow_info{$flow_key}->{"length"} < $flow_min_len) {
+                                        $flow_min_len = $flow_info{$flow_key}->{"length"};
                                 }
-                                if ($flow_info{$key}->{"length"} > $flow_max_len) {
-                                        $flow_max_len = $flow_info{$key}->{"length"};
+                                if ($flow_info{$flow_key}->{"length"} > $flow_max_len) {
+                                        $flow_max_len = $flow_info{$flow_key}->{"length"};
                                 }
 
-#                                if ($flow_info{$key}->{"tagged_lines"} > $TAGGED_LIMIT) {
+                                if ($flow_info{$flow_key}->{"tagged_lines"} > $TAGGED_LIMIT) { # We have enough hits to be interesting
                                         $tagged_flows_cnt++;
-                                        $total_tagged_lines_cnt += $flow_info{$key}->{"tagged_lines"};
+                                        $total_tagged_lines_cnt += $flow_info{$flow_key}->{"tagged_lines"};
+        
+                                        &append_host_subfile("$host_detail/detail_$flow_key.txt") if $host_detail;
+                                } else {
+                                        #delete $tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}};
+                                        # TODO: delete empty IP addresses
+                                }
 
-                                        &append_host_subfile("$host_detail/detail_$key.txt") if $host_detail;
-
-#                                        $flow_token = "[" . $flow_info{$src_ip}->{"start_time"} . "]->[" . \
-#                                                $flow_info{$src_ip}->{"end_time"} . "]";
-
-#                                        push(@{$flow_results{$key}}, "[" . $flow_info{$key}->{"start_time"} . "]->[" . \
-#                                                $flow_info{$key}->{"end_time"} . "]\t" . $flow_info{$key}->{"tagged_lines"} . \
-#                                                "/" . $flow_info{$key}->{"length"} . "\t" . \
-#                                                percent_of($flow_info{$key}->{"tagged_lines"}, $flow_info{$key}->{"length"}) . "%");
-#                                }
-                                # TODO: else, purge useless hash element
-
-                                &timeout_flow($key);
+                                &timeout_flow($flow_key);
                         }
-#                        print "\n";
                 }
         }
+        $end_time = (times)[0];
 
         return;
 }
-
-# -----------------------------------------------------------------------------
-# Core parsing engine, processes all input files based on options provided
-# -----------------------------------------------------------------------------
-#sub parse_flows {
-#        my $curr_line;
-#        my $curr_file;
-#        my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
-#        my ($ip, $flow_len, $flow_start, $flow_end, $tagged_lines); # Flow detail information
-#
-#        #open(INFILE, "$temp_file") || die "\nError: Cannot open $temp_file: $!\n";
-#
-#        foreach $curr_line (<$temp_fh>) {
-#                chomp $curr_line;
-#                next if $curr_line eq "";
-#
-#                if ($curr_line =~ /^>>> (.*)!(.*)!(.*)!(.*) >/) { # Start of flow marker + metadata
-#                        $ip = $1;
-#                        $flow_len = $2;
-#                        $flow_start = $3;
-#                        $flow_end = $4;
-#
-#                        # Set up variables for new flow
-#                        @host_data = ();
-#                        $tagged_lines = 0;
-#                        $flow_cnt++;
-#                        $flow_line_cnt += $flow_len;
-#
-#                        # Set minimum/maximum flow length
-#                        if ($flow_len < $flow_min_len) {
-#                                $flow_min_len = $flow_len;
-#                        }
-#                        if ($flow_len > $flow_max_len) {
-#                                $flow_max_len = $flow_len;
-#                        }
-#                } elsif ($curr_line =~ /^<<</) { # End of flow marker
-#                        if ($tagged_lines > $TAGGED_LIMIT) {
-#                                $tagged_flows_cnt++;
-#                                $total_tagged_lines_cnt += $tagged_lines;
-#
-#                                &write_host_subfile("$host_detail/detail_$ip.txt") if $host_detail;
-#                                push(@{$flow_hits{$ip}}, "[$flow_start]->[$flow_end]\t$tagged_lines/$flow_len\t".percent_of($tagged_lines, $flow_len)."%");
-#                        }
-#                } else { # Flow data line
-#                        push(@host_data, $curr_line);
-#
-#                        if ($hitlist_file) {
-#                                ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-#
-#                                if (&content_check($hostname, $uri)) {
-#                                                $hostname_hits{$ip}->{$hostname}++;
-#                                                $tagged_lines++;
-#                                }
-#                        }
-#                }
-#
-#                #close(INFILE);
-#        }
-#}
 
 # -----------------------------------------------------------------------------
 # Search fields for specified content; returns true if match occurs
@@ -306,41 +229,9 @@ sub timeout_flow {
                 return;
         }
 
-        # TODO: move flow_hits appending here
-
-        #&print_flow($flow_key);
-
         delete $flow_info{$flow_key};
         delete $flow_data_lines{$flow_key};
 }
-
-# -----------------------------------------------------------------------------
-# Print flow to output file along with start/end markers
-# -----------------------------------------------------------------------------
-#sub print_flow {
-#        my $flow_key = shift;
-#        my $line;
-#        my $metadata;
-#
-#        #open(OUTFILE, ">>$temp_file") || die "\nError: cannot open $temp_file - $!\n";
-#
-#        # Print flow header line
-#        $metadata = sprintf("%s!%d!%s!%s", $flow_info{$flow_key}->{'src_ip'},
-#                                           $flow_info{$flow_key}->{'length'},
-#                                           $flow_info{$flow_key}->{'start_time'},
-#                                           $flow_info{$flow_key}->{'end_time'});
-#        print $temp_fh ">>> $metadata " . '>' x (75 - length($metadata)) . "\n";
-#
-#        # Print flow data lines
-#        foreach $line ( @{$flow_data_lines{$flow_key}} ) {
-#                print $temp_fh "$line\n";
-#        }
-#
-#        # Print flow footer line
-#        print $temp_fh '<' x 80 . "\n";
-#
-#        #close(OUTFILE);
-#}
 
 # -----------------------------------------------------------------------------
 # Write summary information to specified output file
@@ -380,7 +271,7 @@ sub write_summary_file {
                                         print OUTFILE "\t$flow\n";
 
                                         foreach $hostname (keys %{$tagged_flows{$ip}->{$flow}}) {
-                                                print OUTFILE "\t\t$hostname\t$tagged_flows{$ip}->{$flow}->{$hostname}";
+                                                print OUTFILE "\t\t$hostname\t$tagged_flows{$ip}->{$flow}->{$hostname}\n";
                                         }
                                 }
                                 print OUTFILE "\n";
