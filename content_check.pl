@@ -13,8 +13,6 @@ use File::Basename;
 use MIME::Lite;
 use Socket qw(inet_ntoa inet_aton);
 use Time::Local qw(timelocal);
-#use IO::File;
-#use POSIX qw(tmpnam);
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -37,9 +35,6 @@ my $email_addr;
 my $hitlist_file;
 my $output_file;
 my $flows_summary;
-#my $temp_file;
-#my $temp_fh;
-#my $temp_name;
 my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing code
 
@@ -58,7 +53,6 @@ my $total_tagged_lines_cnt = 0;
 my %flow_info = ();       # Holds metadata about each flow
 my %flow_data_lines = (); # Holds actual data lines for each flow
 my %tagged_flows = ();
-#my %hostname_hits = ();   # Individual hostnames tagged within tagged flows
 my @hitlist = ();
 my @host_data = ();
 
@@ -66,14 +60,14 @@ my @host_data = ();
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-&trace_flows();
+&parse_flows();
 &write_summary_file() if $flows_summary;
 &send_email() if $email_addr;
 
 # -----------------------------------------------------------------------------
-#
+# Break input log files into flows and perform content checks
 # -----------------------------------------------------------------------------
-sub trace_flows {
+sub parse_flows {
         my $curr_line;
         my $curr_file;
         my $flow_key;
@@ -123,9 +117,9 @@ sub trace_flows {
                                 push(@{$flow_data_lines{$src_ip}}, $curr_line);
 
                                 if ($hitlist_file && &content_check($hostname, $uri)) {
-                                        
+
 # TODO: encode both start and end time so we can print full flow duration to output file
-                                
+
                                         $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
                                         $flow_info{$src_ip}->{"tagged_lines"}++;
                                 }
@@ -173,7 +167,7 @@ sub content_check {
 }
 
 # -----------------------------------------------------------------------------
-# Handle end of flow duties: flush to disk and delete hash entry
+# Handle end of flow duties: flush to disk and delete hash entries
 # -----------------------------------------------------------------------------
 sub timeout_flow {
         my $flow_key = shift;
@@ -190,29 +184,15 @@ sub timeout_flow {
                         $flow_max_len = $flow_info{$flow_key}->{"length"};
                 }
 
-                # Discard brief flows
-                #if ($flow_info{$flow_key}->{"length"} <= $FLOW_DISCARD) {
-                #        delete $flow_info{$flow_key};
-                #        delete $flow_data_lines{$flow_key};
-                #        delete $tagged_flows{$flow_key};
-                #
-                #        next;
-                #}
- 
                 # Check if we have enough hits to be interested in the flow
-                if ($flow_info{$flow_key}->{"tagged_lines"} > $TAGGED_LIMIT) { 
+                if ($flow_info{$flow_key}->{"tagged_lines"} > $TAGGED_LIMIT) {
                         $tagged_flows_cnt++;
                         $total_tagged_lines_cnt += $flow_info{$flow_key}->{"tagged_lines"};
-       
-                        &append_host_subfile("$host_detail/detail_$flow_key.txt") if $host_detail;
+
+                        &append_host_subfile("$host_detail/detail_$flow_key.txt", $flow_key) if $host_detail;
                 } else {
-                        #print "......................\n";
-                        #print $flow_key, "\n";
-                        #print $flow_info{$flow_key}->{"id"}, "\n";
-                        #print $tagged_flows{$flow_key}, "\n";
-                        #print "delete ", $tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}}, "\n";
-                        #print "delete ", $tagged_flows{$flow_key}->{"02/19/2006 04:42:00"}, "\n";
                         delete $tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}} if exists $tagged_flows{$flow_key};
+                        delete $tagged_flows{$flow_key} if (keys %{$tagged_flows{$flow_key}} == 0);
                 }
 
                 delete $flow_info{$flow_key};
@@ -225,11 +205,12 @@ sub timeout_flow {
 # -----------------------------------------------------------------------------
 sub append_host_subfile {
         my $path = shift;
+        my $flow_key = shift;
 
         open(HOSTFILE, ">>$path") || die "\nError: cannot open $path - $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
-        foreach (@host_data) { # TODO: I don't think this is right
+        foreach (@{$flow_data_lines{$flow_key}}) {
                 print HOSTFILE $_, "\n";
         }
         print HOSTFILE '<' x 80 . "\n";
@@ -259,8 +240,6 @@ sub write_summary_file {
         print OUTFILE "Flow lines:\t$flow_line_cnt\n";
         print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
 
-# TODO: reconcile "Tagged IPs" count with actual output tree contents
-
         if ($hitlist_file) {
                 print OUTFILE "Tagged IPs:\t" . (keys %tagged_flows) . "\n";
                 print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
@@ -272,9 +251,8 @@ sub write_summary_file {
                         foreach $ip (map { inet_ntoa $_ }
                                      sort
                                      map { inet_aton $_ } keys %tagged_flows) {
-                                next if (keys %{$tagged_flows{$ip}} == 0);
                                 print OUTFILE "$ip\n";
-                                foreach $flow (keys %{$tagged_flows{$ip}}) {
+                                foreach $flow (sort keys %{$tagged_flows{$ip}}) {
                                         print OUTFILE "\t$flow\n";
 
                                         foreach $hostname (keys %{$tagged_flows{$ip}->{$flow}}) {
