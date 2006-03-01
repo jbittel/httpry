@@ -51,10 +51,10 @@ my $total_tagged_lines_cnt = 0;
 
 # Data structures
 my %flow_info = ();       # Holds metadata about each flow
-my %flow_data_lines = (); # Holds actual data lines for each flow
-my %tagged_flows = ();
+my %flow_data_lines = (); # Holds actual log file lines for each flow
+my %tagged_flows = ();    # Ip/flow/hostname information for tagged flows
+my %output_flows = ();    # Pruned and cleaned tagged flows for display
 my @hitlist = ();
-my @host_data = ();
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -90,6 +90,7 @@ sub parse_flows {
                         # Convert hex characters to ASCII
                         $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
                         $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+
                         next if $curr_line eq "";
                         $total_line_cnt++;
 
@@ -105,7 +106,7 @@ sub parse_flows {
 
 # TODO: convert %flow_info to a hash of lists
 
-                                $flow_info{$src_ip}->{"id"} = $timestamp;
+                                $flow_info{$src_ip}->{"id"} = $flow_cnt;
                                 $flow_info{$src_ip}->{"src_ip"} = $src_ip;
                                 $flow_info{$src_ip}->{"start_time"} = $timestamp;
                                 $flow_info{$src_ip}->{"end_time"} = $timestamp;
@@ -117,9 +118,6 @@ sub parse_flows {
                                 push(@{$flow_data_lines{$src_ip}}, $curr_line);
 
                                 if ($hitlist_file && &content_check($hostname, $uri)) {
-
-# TODO: encode both start and end time so we can print full flow duration to output file
-
                                         $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
                                         $flow_info{$src_ip}->{"tagged_lines"}++;
                                 }
@@ -172,6 +170,8 @@ sub content_check {
 sub timeout_flow {
         my $flow_key = shift;
         my $epochstamp = shift;
+        my $flow_str;
+        my $hostname;
 
         foreach $flow_key (keys %flow_info) {
                 next unless (($epochstamp - $flow_info{$flow_key}->{"end_epoch"}) > $FLOW_TIMEOUT);
@@ -189,8 +189,16 @@ sub timeout_flow {
                         $tagged_flows_cnt++;
                         $total_tagged_lines_cnt += $flow_info{$flow_key}->{"tagged_lines"};
 
+                        # Copy data to output hash so we can prune and reformat
+                        $flow_str = "[$flow_info{$flow_key}->{'start_time'}]->[$flow_info{$flow_key}->{'end_time'}]";
+                        foreach $hostname (keys %{$tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}}}) {
+                                $output_flows{$flow_key}->{$flow_str}->{$hostname} = $tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}}->{$hostname};
+                        }
+                        delete $tagged_flows{$flow_key};
+
                         &append_host_subfile("$host_detail/detail_$flow_key.txt", $flow_key) if $host_detail;
                 } else {
+                        # Not an interesting flow, but delete any tagged lines that do exist
                         delete $tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}} if exists $tagged_flows{$flow_key};
                         delete $tagged_flows{$flow_key} if (keys %{$tagged_flows{$flow_key}} == 0);
                 }
@@ -198,6 +206,8 @@ sub timeout_flow {
                 delete $flow_info{$flow_key};
                 delete $flow_data_lines{$flow_key};
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -216,6 +226,8 @@ sub append_host_subfile {
         print HOSTFILE '<' x 80 . "\n";
 
         close(HOSTFILE);
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -250,13 +262,13 @@ sub write_summary_file {
                 if ($total_tagged_lines_cnt > 0) {
                         foreach $ip (map { inet_ntoa $_ }
                                      sort
-                                     map { inet_aton $_ } keys %tagged_flows) {
+                                     map { inet_aton $_ } keys %output_flows) {
                                 print OUTFILE "$ip\n";
-                                foreach $flow (sort keys %{$tagged_flows{$ip}}) {
+                                foreach $flow (sort keys %{$output_flows{$ip}}) {
                                         print OUTFILE "\t$flow\n";
 
-                                        foreach $hostname (keys %{$tagged_flows{$ip}->{$flow}}) {
-                                                print OUTFILE "\t\t$hostname\t$tagged_flows{$ip}->{$flow}->{$hostname}\n";
+                                        foreach $hostname (sort keys %{$output_flows{$ip}->{$flow}}) {
+                                                print OUTFILE "\t\t$hostname\t$output_flows{$ip}->{$flow}->{$hostname}\n";
                                         }
                                 }
                                 print OUTFILE "\n";
