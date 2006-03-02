@@ -61,6 +61,7 @@ my @hitlist = ();
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
+&delete_text_files();
 &parse_flows();
 &write_summary_file() if $output_file;
 &send_email() if $email_addr;
@@ -236,6 +237,22 @@ sub append_host_subfile {
 
         close(HOSTFILE);
 
+        return;
+}
+
+# -----------------------------------------------------------------------------
+# Remove text detail files to ensure they don't accumulate
+# -----------------------------------------------------------------------------
+sub delete_text_files {
+        $host_detail =~ s/\/$//; # Remove trailing slash
+
+        # Iterate through directory and delete tagged_ files
+        opendir(DIR, $host_detail) || die "\nError: cannot open directory $host_detail\n";
+                foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
+                        unlink;
+                }
+        closedir(DIR);
+        
         return;
 }
 
