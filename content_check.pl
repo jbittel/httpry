@@ -22,7 +22,6 @@ my $PROG_NAME = "content_check.pl";
 my $PROG_VER = "0.0.1";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
-my $FLOW_DISCARD = 10;
 my $TAGGED_LIMIT = 5;
 
 # -----------------------------------------------------------------------------
@@ -54,6 +53,8 @@ my %flow_info = ();       # Holds metadata about each flow
 my %flow_data_lines = (); # Holds actual log file lines for each flow
 my %tagged_flows = ();    # Ip/flow/hostname information for tagged flows
 my %output_flows = ();    # Pruned and cleaned tagged flows for display
+my %history = ();         # Holds history of content checks to avoid matching
+                          # -1 unmatched / 1 matched / 0 no match
 my @hitlist = ();
 
 # -----------------------------------------------------------------------------
@@ -61,7 +62,7 @@ my @hitlist = ();
 # -----------------------------------------------------------------------------
 &get_arguments();
 &parse_flows();
-&write_summary_file() if $flows_summary;
+&write_summary_file() if $output_file;
 &send_email() if $email_addr;
 
 # -----------------------------------------------------------------------------
@@ -70,7 +71,6 @@ my @hitlist = ();
 sub parse_flows {
         my $curr_line;
         my $curr_file;
-        my $flow_key;
         my ($timestamp, $epochstamp, $src_ip, $dst_ip, $hostname, $uri);
 
         $start_time = (times)[0];
@@ -104,8 +104,6 @@ sub parse_flows {
                                 $flow_cnt++;
                                 $flow_line_cnt++;
 
-# TODO: convert %flow_info to a hash of lists
-
                                 $flow_info{$src_ip}->{"id"} = $flow_cnt;
                                 $flow_info{$src_ip}->{"src_ip"} = $src_ip;
                                 $flow_info{$src_ip}->{"start_time"} = $timestamp;
@@ -136,7 +134,7 @@ sub parse_flows {
                                 }
                         }
 
-                        &timeout_flow($flow_key, $epochstamp);
+                        &timeout_flow($epochstamp);
                 }
         }
         $end_time = (times)[0];
@@ -154,12 +152,27 @@ sub content_check {
 
         $hostname = quotemeta($hostname);
         $uri = quotemeta($uri);
+
+        $history{$hostname} = -1 if (!defined $history{$hostname});
+        $history{$uri} = -1 if (!defined $history{$uri});
+
+        return 1 if (($history{$hostname} == 1) || ($history{$uri} == 1));
+        return 0 if (($history{$hostname} == 0) && ($history{$uri} == 0));
+ 
         foreach $word (@hitlist) {
-                chomp $word;
-                if (($hostname =~ /$word/i) || ($uri =~ /$word/i)) {
+                if ($hostname =~ /$word/i) {
+                        $history{$hostname} = 1;
+                        return 1;
+                }
+ 
+                if ($uri =~ /$word/i) {
+                        $history{$uri} = 1;
                         return 1;
                 }
         }
+
+        $history{$hostname} = 0;
+        $history{$uri} = 0;
 
         return 0;
 }
@@ -168,43 +181,39 @@ sub content_check {
 # Handle end of flow duties: flush to disk and delete hash entries
 # -----------------------------------------------------------------------------
 sub timeout_flow {
-        my $flow_key = shift;
         my $epochstamp = shift;
         my $flow_str;
+        my $ip;
         my $hostname;
 
-        foreach $flow_key (keys %flow_info) {
-                next unless (($epochstamp - $flow_info{$flow_key}->{"end_epoch"}) > $FLOW_TIMEOUT);
+        foreach $ip (keys %flow_info) {
+                next unless (($epochstamp - $flow_info{$ip}->{"end_epoch"}) > $FLOW_TIMEOUT);
 
                 # Set minimum/maximum flow length
-                if ($flow_info{$flow_key}->{"length"} < $flow_min_len) {
-                        $flow_min_len = $flow_info{$flow_key}->{"length"};
-                }
-                if ($flow_info{$flow_key}->{"length"} > $flow_max_len) {
-                        $flow_max_len = $flow_info{$flow_key}->{"length"};
-                }
+                $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
+                $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len); 
 
                 # Check if we have enough hits to be interested in the flow
-                if ($flow_info{$flow_key}->{"tagged_lines"} > $TAGGED_LIMIT) {
+                if ($flow_info{$ip}->{"tagged_lines"} > $TAGGED_LIMIT) {
                         $tagged_flows_cnt++;
-                        $total_tagged_lines_cnt += $flow_info{$flow_key}->{"tagged_lines"};
+                        $total_tagged_lines_cnt += $flow_info{$ip}->{"tagged_lines"};
 
                         # Copy data to output hash so we can prune and reformat
-                        $flow_str = "[$flow_info{$flow_key}->{'start_time'}]->[$flow_info{$flow_key}->{'end_time'}]";
-                        foreach $hostname (keys %{$tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}}}) {
-                                $output_flows{$flow_key}->{$flow_str}->{$hostname} = $tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}}->{$hostname};
+                        $flow_str = "[$flow_info{$ip}->{'start_time'}]->[$flow_info{$ip}->{'end_time'}]";
+                        foreach $hostname (keys %{$tagged_flows{$ip}->{$flow_info{$ip}->{"id"}}}) {
+                                $output_flows{$ip}->{$flow_str}->{$hostname} = $tagged_flows{$ip}->{$flow_info{$ip}->{"id"}}->{$hostname};
                         }
-                        delete $tagged_flows{$flow_key};
+                        delete $tagged_flows{$ip};
 
-                        &append_host_subfile("$host_detail/detail_$flow_key.txt", $flow_key) if $host_detail;
+                        &append_host_subfile("$host_detail/tagged_$ip.txt", $ip) if $host_detail;
                 } else {
                         # Not an interesting flow, but delete any tagged lines that do exist
-                        delete $tagged_flows{$flow_key}->{$flow_info{$flow_key}->{"id"}} if exists $tagged_flows{$flow_key};
-                        delete $tagged_flows{$flow_key} if (keys %{$tagged_flows{$flow_key}} == 0);
+                        delete $tagged_flows{$ip}->{$flow_info{$ip}->{"id"}} if exists $tagged_flows{$ip};
+                        delete $tagged_flows{$ip} if (keys %{$tagged_flows{$ip}} == 0);
                 }
 
-                delete $flow_info{$flow_key};
-                delete $flow_data_lines{$flow_key};
+                delete $flow_info{$ip};
+                delete $flow_data_lines{$ip};
         }
 
         return;
@@ -215,12 +224,12 @@ sub timeout_flow {
 # -----------------------------------------------------------------------------
 sub append_host_subfile {
         my $path = shift;
-        my $flow_key = shift;
+        my $ip = shift;
 
         open(HOSTFILE, ">>$path") || die "\nError: cannot open $path - $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
-        foreach (@{$flow_data_lines{$flow_key}}) {
+        foreach (@{$flow_data_lines{$ip}}) {
                 print HOSTFILE $_, "\n";
         }
         print HOSTFILE '<' x 80 . "\n";
@@ -253,7 +262,7 @@ sub write_summary_file {
         print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
 
         if ($hitlist_file) {
-                print OUTFILE "Tagged IPs:\t" . (keys %tagged_flows) . "\n";
+                print OUTFILE "Tagged IPs:\t" . (keys %output_flows) . "\n";
                 print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
                 print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
                 print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
@@ -318,7 +327,7 @@ sub send_email {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('d:e:l:o:s', \%opts) or &print_usage();
+        getopts('d:e:l:o:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -333,7 +342,6 @@ sub get_arguments {
         $email_addr = 0 unless ($email_addr = $opts{e});
         $hitlist_file = 0 unless ($hitlist_file = $opts{l});
         $output_file = 0 unless ($output_file = $opts{o});
-        $flows_summary = 0 unless ($flows_summary = $opts{s});
 
         # Check for required options and combinations
         if (!$output_file) {
@@ -348,7 +356,10 @@ sub get_arguments {
         # Read in option files
         if ($hitlist_file) {
                 open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file: $!\n";
-                        @hitlist = <HITLIST>;
+                        foreach (<HITLIST>) {
+                                chomp;
+                                push @hitlist, $_;
+                        }
                 close(HITLIST);
         }
 
@@ -361,6 +372,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-hs] [-d dir] [-e email] [-l file] [-o file] [input files]
+Usage: $PROG_NAME [-h] [-d dir] [-e email] [-l file] [-o file] [input files]
 USAGE
 }
