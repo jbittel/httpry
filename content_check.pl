@@ -54,7 +54,6 @@ my %flow_data_lines = (); # Holds actual log file lines for each flow
 my %tagged_flows = ();    # Ip/flow/hostname information for tagged flows
 my %output_flows = ();    # Pruned and cleaned tagged flows for display
 my %history = ();         # Holds history of content checks to avoid matching
-                          # -1 unmatched / 1 matched / 0 no match
 my @hitlist = ();
 
 # -----------------------------------------------------------------------------
@@ -144,7 +143,10 @@ sub parse_flows {
 }
 
 # -----------------------------------------------------------------------------
-# Search fields for specified content; returns true if match occurs
+# Search fields for specified content; returns true if match occurs; store
+# results of search in hash so we don't have to check the same text twice
+#
+# Potential hash values: -1 unmatched / 1 matched / 0 no match
 # -----------------------------------------------------------------------------
 sub content_check {
         my $hostname = shift;
@@ -241,7 +243,7 @@ sub append_host_subfile {
 }
 
 # -----------------------------------------------------------------------------
-# Remove text detail files to ensure they don't accumulate
+# Remove text detail files to ensure they don't accumulate between runs
 # -----------------------------------------------------------------------------
 sub delete_text_files {
         $host_detail =~ s/\/$//; # Remove trailing slash
