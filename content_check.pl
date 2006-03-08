@@ -377,6 +377,7 @@ sub get_arguments {
                 open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file: $!\n";
                         foreach (<HITLIST>) {
                                 chomp;
+                                next if /^#/;
                                 push @hitlist, $_;
                         }
                 close(HITLIST);
