@@ -153,7 +153,7 @@ IV. CHANGELOG
 ----------------------
 
 version 0.0.8
-   - Fix:
+   - Fix: crash on exit when using an input file
 
 version 0.0.7
    + Add: option to read settings from a config file (-c)

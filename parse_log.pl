@@ -18,7 +18,7 @@ use Socket qw(inet_ntoa inet_aton);
 # -----------------------------------------------------------------------------
 my $PATTERN = "\t";
 my $PROG_NAME = "parse_log.pl";
-my $PROG_VER = "0.0.6";
+my $PROG_VER = "0.0.1";
 my $SUMMARY_CAP = 15;
 
 # -----------------------------------------------------------------------------
@@ -80,7 +80,7 @@ sub init_plugins {
                 }
 
                 if ($plugin->can('init')) {
-                        if ($plugin->init() < 0) {
+                        if ($plugin->init() == 0) {
                                 print "Warning: plugin '$plugin' did not initialize properly...disabling\n";
                                 splice @callbacks, $i, 1;
                                 next;
