@@ -100,7 +100,7 @@ sub parse_flows {
                         $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
                         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
-                        if (!exists $flow_info{$src_ip}) {
+                        if (!exists $flow_info{$src_ip}) { # No existing flow so begin a new one
                                 $flow_cnt++;
                                 $flow_line_cnt++;
 
@@ -119,7 +119,7 @@ sub parse_flows {
                                         $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
                                         $flow_info{$src_ip}->{"tagged_lines"}++;
                                 }
-                        } else {
+                        } else { # Existing flow found so update data as necessary
                                 $flow_line_cnt++;
 
                                 $flow_info{$src_ip}->{"end_time"} = $timestamp;
@@ -229,7 +229,7 @@ sub append_host_subfile {
         my $path = shift;
         my $ip = shift;
 
-        open(HOSTFILE, ">>$path") || die "\nError: cannot open $path - $!\n";
+        open(HOSTFILE, ">>$path") || die "\nError: cannot open $path: $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
         foreach (@{$flow_data_lines{$ip}}) {
@@ -249,7 +249,7 @@ sub delete_text_files {
         $host_detail =~ s/\/$//; # Remove trailing slash
 
         # Iterate through directory and delete tagged_ files
-        opendir(DIR, $host_detail) || die "\nError: cannot open directory $host_detail\n";
+        opendir(DIR, $host_detail) || die "\nError: cannot open directory $host_detail: $!\n";
                 foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
                         unlink;
                 }
@@ -346,7 +346,7 @@ sub send_email {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('d:e:l:o:', \%opts) or &print_usage();
+        getopts('d:e:hl:o:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -393,5 +393,10 @@ sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
 Usage: $PROG_NAME [-h] [-d dir] [-e email] [-l file] [-o file] [input files]
+  -d ... directory for host detail records (implicit enable)
+  -e ... email recipient for output file
+  -h ... prints this help information and exits
+  -l ... hitlist file for content checks (implicit enable)
+  -o ... output file with summary and content check information
 USAGE
 }
