@@ -9,7 +9,6 @@
 
 package log_summary;
 
-#use strict;
 use Getopt::Std;
 use File::Basename;
 use MIME::Lite;
@@ -49,9 +48,14 @@ sub new {
 }
 
 sub init {
-        if (&load_config() == 0) {
+        my $self = shift;
+        my $plugin_dir = shift;
+        
+        if (&load_config($plugin_dir) == 0) {
                 return 0;
         }
+
+        return 1;
 }
 
 sub main {
@@ -89,7 +93,7 @@ sub write_output_file {
         my $subkey;
         my $count = 0;
 
-        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file - $!\n";
+        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file - $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
         print OUTFILE "Generated:\t".localtime()."\n";
@@ -164,7 +168,7 @@ sub send_email {
                 Disposition => 'attachment'
                 );
 
-        $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail - $!\n";
+        $msg->send('sendmail', $SENDMAIL) || die "Error: Cannot send mail - $!\n";
         
         return;
 }
@@ -173,12 +177,14 @@ sub send_email {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub load_config {
+        my $plugin_dir = shift;
+        
         # Load config file; by default in same directory as plugin
-        require "./plugins/" . __PACKAGE__ . ".cfg";
+        require "$plugin_dir/" . __PACKAGE__ . ".cfg";
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "\nError: no output file provided\n";
+                print "Error: no output file provided\n";
                 return 0;
         }
 
