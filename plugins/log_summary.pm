@@ -20,7 +20,6 @@ use Socket qw(inet_ntoa inet_aton);
 my $PROG_NAME = "log_summary.pm";
 my $PLUG_VER = "0.0.1";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
-my $PRUNE_LIMIT = 5;  # When pruning content hits tree, discard hits below this value
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -100,7 +99,6 @@ sub write_output_file {
         print OUTFILE "Total files:\t$file_cnt\n";
         print OUTFILE "Total size:\t$size_cnt MB\n";
         print OUTFILE "Total lines:\t$total_line_cnt\n";
-        print OUTFILE "Total time:\t".sprintf("%.2f", $end_time - $start_time)." secs\n";
 
         print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
         foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {

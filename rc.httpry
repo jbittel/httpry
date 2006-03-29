@@ -1,8 +1,6 @@
 #!/bin/sh
 
 #
-# rc.httpry 9/17/2005
-#
 # This is a start script written and tested under Slackware Linux. If you
 # are running the program under a different system and write your own
 # init script, please send it to me so I can include it in the package.

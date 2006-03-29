@@ -13,10 +13,10 @@ use Getopt::Std;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-#my $PATTERN = "\t";
 my $PROG_NAME = "parse_log.pl";
 my $PROG_VER = "0.0.1";
 my $VERBOSE = 1;
+my $PLUGIN_DIR = "./plugins";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -72,7 +72,7 @@ sub init_plugins {
                                 print "Warning: plugin '$plugin' did not initialize properly...disabling\n";
                                 splice @callbacks, $i, 1;
                         } else {
-                                print "Initialized $plugin" if $VERBOSE;
+                                print "Initialized $plugin\n" if $VERBOSE;
                                 $i++;
                         }
                 }
@@ -101,7 +101,7 @@ sub parse_logfiles {
 
         foreach $curr_file (@input_files) {
                 unless(open(INFILE, "$curr_file")) {
-                        print "\nError: Cannot open $curr_file - $!\n";
+                        print "Error: Cannot open $curr_file - $!\n";
                         next;
                 }
 
@@ -126,7 +126,7 @@ sub parse_logfiles {
 }
 
 # -----------------------------------------------------------------------------
-# Call terminate function in each loaded plugin
+# Call termination function in each loaded plugin
 # -----------------------------------------------------------------------------
 sub end_plugins {
         foreach $plugin (@callbacks) {
@@ -143,13 +143,13 @@ sub get_arguments {
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
         unless ($ARGV[0]) {
-                print "\nError: no input file provided\n";
+                print "Error: no input file provided\n";
                 &print_usage();
         }
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
-        $plugin_dir = "./plugins" unless ($plugin_dir = $opts{p});
+        $plugin_dir = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
         $convert_hex = 0 unless ($convert_hex = $opts{x});
 
         # Strip trailing slash from plugin directory path
