@@ -130,7 +130,7 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('p:h', \%opts) or &print_usage();
+        getopts('hp:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -155,6 +155,8 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-h] [-p dir]
+Usage: $PROG_NAME [-h] [-p dir] file1 [file2 ...]
+  -h ... print this help information and exit
+  -p ... load plugins from specified directory
 USAGE
 }

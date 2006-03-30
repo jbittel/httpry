@@ -161,13 +161,13 @@ sub content_check {
 
         return 1 if (($history{$hostname} == 1) || ($history{$uri} == 1));
         return 0 if (($history{$hostname} == 0) && ($history{$uri} == 0));
- 
+
         foreach $word (@hitlist) {
                 if ($hostname =~ /$word/i) {
                         $history{$hostname} = 1;
                         return 1;
                 }
- 
+
                 if ($uri =~ /$word/i) {
                         $history{$uri} = 1;
                         return 1;
@@ -194,7 +194,7 @@ sub timeout_flow {
 
                 # Set minimum/maximum flow length
                 $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
-                $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len); 
+                $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
 
                 # Check if we have enough hits to be interested in the flow
                 if ($flow_info{$ip}->{"tagged_lines"} > $TAGGED_LIMIT) {
@@ -254,7 +254,7 @@ sub delete_text_files {
                         unlink;
                 }
         closedir(DIR);
-        
+
         return;
 }
 
@@ -392,11 +392,11 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-h] [-d dir] [-e email] [-l file] [-o file] [input files]
+Usage: $PROG_NAME [-h] [-d dir] [-e email] [-l file] [-o file] file1 [file2 ...]
   -d ... directory for host detail records (implicit enable)
   -e ... email recipient for output file
-  -h ... prints this help information and exits
+  -h ... print this help information and exit
   -l ... hitlist file for content checks (implicit enable)
-  -o ... output file with summary and content check information
+  -o ... output file for summary and content check data
 USAGE
 }
