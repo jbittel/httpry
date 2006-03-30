@@ -29,14 +29,13 @@ my $plugin;
 my %opts;
 my @input_files;
 my $plugin_dir;
-my $convert_hex;
 
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
 &init_plugins($plugin_dir);
-#&parse_logfiles();
+#&process_logfiles();
 &end_plugins();
 
 # -----------------------------------------------------------------------------
@@ -93,28 +92,21 @@ sub register_plugin {
 }
 
 # -----------------------------------------------------------------------------
-# Core parsing engine, processes all input files based on options provided
+# Process all files, passing each line to all registered plugins
 # -----------------------------------------------------------------------------
-sub parse_logfiles {
+sub process_logfiles {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
 
         foreach $curr_file (@input_files) {
-                unless(open(INFILE, "$curr_file")) {
+                unless (open(INFILE, "$curr_file")) {
                         print "Error: Cannot open $curr_file - $!\n";
                         next;
                 }
 
                 foreach $curr_line (<INFILE>) {
                         chomp $curr_line;
-                        $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
                         next if $curr_line eq "";
-
-                        # TODO: should this be handled here or in each plugin as necessary?
-                        if ($convert_hex) {
-                                $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-                                $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-                        }
 
                         foreach $plugin (@callbacks) {
                                 $plugin->main($curr_line);
@@ -138,7 +130,7 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('p:hx', \%opts) or &print_usage();
+        getopts('p:h', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -150,7 +142,6 @@ sub get_arguments {
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
         $plugin_dir = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
-        $convert_hex = 0 unless ($convert_hex = $opts{x});
 
         # Strip trailing slash from plugin directory path
         if ($plugin_dir =~ /(.*)\/$/) {
@@ -164,6 +155,6 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 $PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-hx] [-p dir]
+Usage: $PROG_NAME [-h] [-p dir]
 USAGE
 }
