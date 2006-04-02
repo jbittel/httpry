@@ -19,7 +19,7 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 my $PATTERN = "\t";
 my $PROG_NAME = "content_check.pl";
-my $PROG_VER = "0.0.1";
+my $PROG_VER = "0.0.2";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
 my $TAGGED_LIMIT = 5;
@@ -76,7 +76,7 @@ sub parse_flows {
         $start_time = (times)[0];
         foreach $curr_file (@input_files) {
                 unless(open(INFILE, "$curr_file")) {
-                        print "\nWarning: skipping $curr_file: $!\n";
+                        print "Warning: skipping $curr_file: $!\n";
                         next;
                 }
 
@@ -210,7 +210,7 @@ sub timeout_flow {
 
                         &append_host_subfile("$host_detail/tagged_$ip.txt", $ip) if $host_detail;
                 } else {
-                        # Not an interesting flow, but delete any tagged lines that do exist
+                        # Not an interesting flow, so delete any tagged lines/IPs that exist
                         delete $tagged_flows{$ip}->{$flow_info{$ip}->{"id"}} if exists $tagged_flows{$ip};
                         delete $tagged_flows{$ip} if (keys %{$tagged_flows{$ip}} == 0);
                 }
@@ -229,7 +229,7 @@ sub append_host_subfile {
         my $path = shift;
         my $ip = shift;
 
-        open(HOSTFILE, ">>$path") || die "\nError: cannot open $path: $!\n";
+        open(HOSTFILE, ">>$path") || die "Error: cannot open $path: $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
         foreach (@{$flow_data_lines{$ip}}) {
@@ -243,13 +243,13 @@ sub append_host_subfile {
 }
 
 # -----------------------------------------------------------------------------
-# Remove text detail files to ensure they don't accumulate between runs
+# Remove text detail files to ensure they don't append between runs
 # -----------------------------------------------------------------------------
 sub delete_text_files {
         $host_detail =~ s/\/$//; # Remove trailing slash
 
         # Iterate through directory and delete tagged_ files
-        opendir(DIR, $host_detail) || die "\nError: cannot open directory $host_detail: $!\n";
+        opendir(DIR, $host_detail) || die "Error: cannot open directory $host_detail: $!\n";
                 foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
                         unlink;
                 }
@@ -266,7 +266,7 @@ sub write_summary_file {
         my $flow;
         my $hostname;
 
-        open(OUTFILE, ">$output_file") || die "\nError: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";
@@ -292,6 +292,7 @@ sub write_summary_file {
                                      sort
                                      map { inet_aton $_ } keys %output_flows) {
                                 print OUTFILE "$ip\n";
+
                                 foreach $flow (sort keys %{$output_flows{$ip}}) {
                                         print OUTFILE "\t$flow\n";
 
@@ -323,21 +324,21 @@ sub send_email {
                 To      => "$email_addr",
                 Subject => 'HTTPry Content Check Report - ' . localtime(),
                 Type    => 'multipart/mixed'
-                );
+        );
 
         $msg->attach(
                 Type => 'TEXT',
                 Data => 'HTTPry content check report for ' . localtime()
-                );
+        );
 
         $msg->attach(
                 Type        => 'TEXT',
                 Path        => "$output_file",
                 Filename    => "$output_filename",
                 Disposition => 'attachment'
-                );
+        );
 
-        $msg->send('sendmail', $SENDMAIL) || die "\nError: Cannot send mail: $!\n";
+        $msg->send('sendmail', $SENDMAIL) || die "Error: Cannot send mail: $!\n";
 
         return;
 }
@@ -351,7 +352,7 @@ sub get_arguments {
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
         unless ($ARGV[0]) {
-                print "\nError: no input file(s) provided\n";
+                print "Error: no input file(s) provided\n";
                 &print_usage();
         }
 
@@ -364,17 +365,17 @@ sub get_arguments {
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "\nError: no output file provided\n";
+                print "Error: no output file provided\n";
                 &print_usage();
         }
         if ($host_detail && !$hitlist_file) {
-                print "\nWarning: -d requires -l, ignoring\n";
+                print "Warning: -d requires -l, ignoring\n";
                 $host_detail = 0;
         }
 
         # Read in option files
         if ($hitlist_file) {
-                open(HITLIST, "$hitlist_file") || die "\nError: Cannot open $hitlist_file: $!\n";
+                open(HITLIST, "$hitlist_file") || die "Error: Cannot open $hitlist_file: $!\n";
                         foreach (<HITLIST>) {
                                 chomp;
                                 next if /^#/;

@@ -12,7 +12,6 @@ package log_summary;
 use Getopt::Std;
 use File::Basename;
 use MIME::Lite;
-use Socket qw(inet_ntoa inet_aton);
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -20,21 +19,16 @@ use Socket qw(inet_ntoa inet_aton);
 my $PROG_NAME = "log_summary.pm";
 my $PLUG_VER = "0.0.1";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
+my $PATTERN = "\t";
+my $SUMMARY_CAP = 10;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %ip_hits = ();
-my %host_hits = ();
-my %content_hits = ();
+my %top_hosts = ();
+my %top_talkers = ();
+my %filetypes = ();
 my $total_line_cnt = 0;
-my $line_cnt = 0;
-my $ip_cnt = 0;
-my $host_cnt = 0;
-my $size_cnt = 0;
-my $file_cnt = 0;
-my @hits;
-my @hitlist;
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -49,7 +43,7 @@ sub new {
 sub init {
         my $self = shift;
         my $plugin_dir = shift;
-        
+
         if (&load_config($plugin_dir) == 0) {
                 return 0;
         }
@@ -70,16 +64,42 @@ sub end {
 }
 
 # -----------------------------------------------------------------------------
-#
+# Retrieve and process command line arguments
+# -----------------------------------------------------------------------------
+sub load_config {
+        my $plugin_dir = shift;
+
+        # Load config file; by default in same directory as plugin
+        require "$plugin_dir/" . __PACKAGE__ . ".cfg";
+
+        # Check for required options and combinations
+        if (!$output_file) {
+                print "Error: no output file provided\n";
+                return 0;
+        }
+        $summary_cap = $SUMMARY_CAP unless ($summary_cap);
+
+        return 1;
+}
+
+# -----------------------------------------------------------------------------
+# Handle each line of data
 # -----------------------------------------------------------------------------
 sub process_data {
         my $curr_line = shift;
 
         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+        return if (!$hostname or !$src_ip or !$uri); # Malformed line
 
-        next if (!$hostname or !$src_ip or !$uri);
-        
         # Gather statistics
+        $total_line_cnt++;
+        $top_hosts{$hostname}++;
+        $top_talkers{$src_ip}++;
+
+        if ($filetype && ($uri =~ /\.([\w\d]{2,5}?)$/)) {
+                $ext_cnt++;
+                $filetypes{$1}++;
+        }
 
         return;
 }
@@ -89,20 +109,20 @@ sub process_data {
 # -----------------------------------------------------------------------------
 sub write_output_file {
         my $key;
-        my $subkey;
         my $count = 0;
 
-        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file - $!\n";
+        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
-        print OUTFILE "Generated:\t".localtime()."\n";
-        print OUTFILE "Total files:\t$file_cnt\n";
-        print OUTFILE "Total size:\t$size_cnt MB\n";
+        print OUTFILE "Generated:\t" . localtime() . "\n";
         print OUTFILE "Total lines:\t$total_line_cnt\n";
+        print OUTFILE "Client count:\t" . keys(%top_talkers) . "\n";
+        print OUTFILE "Server count:\t" . keys(%top_hosts) . "\n";
+        print OUTFILE "Extension count:\t" . keys(%filetypes) . "\n" if ($filetype);
 
         print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
         foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
-                print OUTFILE "$key\t$top_hosts{$key}\t".percent_of($top_hosts{$key}, $line_cnt)."%\n";
+                print OUTFILE "$key\t$top_hosts{$key}\t" . percent_of($top_hosts{$key}, $total_line_cnt) . "%\n";
                 $count++;
                 last if ($count == $summary_cap);
         }
@@ -110,7 +130,7 @@ sub write_output_file {
         $count = 0;
         print OUTFILE "\n\nTOP $summary_cap TOP TALKERS\n\n";
         foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
-                print OUTFILE "$key\t$top_talkers{$key}\t".percent_of($top_talkers{$key}, $line_cnt)."%\n";
+                print OUTFILE "$key\t$top_talkers{$key}\t" . percent_of($top_talkers{$key}, $total_line_cnt) . "%\n";
                 $count++;
                 last if ($count == $summary_cap);
         }
@@ -119,14 +139,14 @@ sub write_output_file {
                 $count = 0;
                 print OUTFILE "\n\nTOP $summary_cap FILE EXTENSIONS\n\n";
                 foreach $key (sort { $filetypes{$b} <=> $filetypes{$a} } keys %filetypes) {
-                        print OUTFILE "$key\t$filetypes{$key}\t".percent_of($filetypes{$key}, $ext_cnt)."%\n";
+                        print OUTFILE "$key\t$filetypes{$key}\t" . percent_of($filetypes{$key}, $ext_cnt) . "%\n";
                         $count++;
                         last if ($count == $summary_cap);
                 }
         }
 
         close(OUTFILE);
-        
+
         return;
 }
 
@@ -152,41 +172,23 @@ sub send_email {
                 To      => "$email_addr",
                 Subject => 'HTTPry Log Report - ' . localtime(),
                 Type    => 'multipart/mixed'
-                );
+        );
 
         $msg->attach(
                 Type => 'TEXT',
                 Data => 'HTTPry log report for ' . localtime()
-                );
+        );
 
         $msg->attach(
                 Type        => 'TEXT',
                 Path        => "$output_file",
                 Filename    => "$output_filename",
                 Disposition => 'attachment'
-                );
+        );
 
-        $msg->send('sendmail', $SENDMAIL) || die "Error: Cannot send mail - $!\n";
-        
+        $msg->send('sendmail', $SENDMAIL) || die "Error: Cannot send mail: $!\n";
+
         return;
-}
-
-# -----------------------------------------------------------------------------
-# Retrieve and process command line arguments
-# -----------------------------------------------------------------------------
-sub load_config {
-        my $plugin_dir = shift;
-        
-        # Load config file; by default in same directory as plugin
-        require "$plugin_dir/" . __PACKAGE__ . ".cfg";
-
-        # Check for required options and combinations
-        if (!$output_file) {
-                print "Error: no output file provided\n";
-                return 0;
-        }
-
-        return 1;
 }
 
 1;
