@@ -9,7 +9,6 @@
 
 package log_summary;
 
-use Getopt::Std;
 use File::Basename;
 use MIME::Lite;
 
@@ -64,13 +63,15 @@ sub end {
 }
 
 # -----------------------------------------------------------------------------
-# Retrieve and process command line arguments
+# Load config file and check for required options
 # -----------------------------------------------------------------------------
 sub load_config {
         my $plugin_dir = shift;
 
         # Load config file; by default in same directory as plugin
-        require "$plugin_dir/" . __PACKAGE__ . ".cfg";
+        if (-e "$plugin_dir/" . __PACKAGE__ . ".cfg") {
+                require "$plugin_dir/" . __PACKAGE__ . ".cfg";
+        }
 
         # Check for required options and combinations
         if (!$output_file) {
