@@ -3,7 +3,7 @@
 #
 # process_log.pm 6/25/2005
 #
-# Copyright (c) 2005, Jason Bittel <jbittel@corban.edu>. All rights reserved.
+# Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
 #
 
@@ -78,7 +78,7 @@ sub load_config {
                 print "Error: no output file provided\n";
                 return 0;
         }
-        $summary_cap = $SUMMARY_CAP unless ($summary_cap);
+        $summary_cap = $SUMMARY_CAP unless ($summary_cap > 0);
 
         return 1;
 }

@@ -6,7 +6,7 @@
 
   config.h 11/16/2005
 
-  Copyright (c) 2005, Jason Bittel <jbittel@corban.edu>. All rights reserved.
+  Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
   See included LICENSE file for specific licensing information
 
   Most of these shouldn't be changed from the defaults, I'm warning you
