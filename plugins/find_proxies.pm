@@ -1,33 +1,31 @@
 #!/usr/bin/perl -w
 
 #
-# process_log.pm 6/25/2005
+# find_proxies.pm 4/3/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
 #
 
-package log_summary;
+package find_proxies;
 
 use File::Basename;
 use MIME::Lite;
+use Socket qw(inet_ntoa inet_aton);
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PROG_NAME = "log_summary.pm";
+my $PROG_NAME = "find_proxies.pm";
 my $PLUG_VER = "0.0.1";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $PATTERN = "\t";
-my $SUMMARY_CAP = 10;
+my $PRUNE_LIMIT = 15;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %top_hosts = ();
-my %top_talkers = ();
-my %filetypes = ();
-my $total_line_cnt = 0;
+my %proxy_lines = ();
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -58,6 +56,7 @@ sub main {
 }
 
 sub end {
+        &prune_hits();
         &write_output_file();
         &send_email() if $email_addr;
 }
@@ -78,7 +77,7 @@ sub load_config {
                 print "Error: no output file provided\n";
                 return 0;
         }
-        $summary_cap = $SUMMARY_CAP unless ($summary_cap > 0);
+        $prune_limit = $PRUNE_LIMIT unless ($prune_limit > 0);
 
         return 1;
 }
@@ -88,77 +87,96 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub process_data {
         my $curr_line = shift;
+        my $word;
+
+        # Strip non-printable chars
+        $curr_line =~ tr/\x80-\xFF//d;
+
+        # Convert hex characters to ASCII
+        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        return if (!$hostname or !$src_ip or !$uri); # Malformed line
+        return if (!$hostname or !$uri); # Malformed line
 
-        # Gather statistics
-        $total_line_cnt++;
-        $top_hosts{$hostname}++;
-        $top_talkers{$src_ip}++;
+        # Perform hostname and uri keyword search
+        foreach $word (@proxy_keywords) {
+                if ($hostname =~ /$word/i) {
+                        $proxy_lines{$src_ip}->{$hostname}++;
+                        return;
+                }
+                
+                if ($uri =~ /$word/i) {
+                        $proxy_lines{$src_ip}->{$hostname}++;
+                        return;
+                }
+        }
 
-        if ($filetype && ($uri =~ /\.([\w\d]{2,5}?)$/)) {
-                $ext_cnt++;
-                $filetypes{$1}++;
+        # Perform uri embedded request search
+        # TODO: this works, but appears to generate too many
+        # false positives to be useful
+        if ($uri =~ /http:\/\/[^\/:]+/) {
+                $proxy_lines{$src_ip}->{$hostname}++;                        
         }
 
         return;
+}
+
+# -----------------------------------------------------------------------------
+# Remove hits from results tree that are below our level of interest
+# -----------------------------------------------------------------------------
+sub prune_hits {
+        my $ip;
+        my $hostname;
+
+        foreach $ip (keys %proxy_lines) {
+                # Delete individual hostnames/counts that are below the limit
+                foreach $hostname (keys %{$proxy_lines{$ip}}) {
+                        if ($proxy_lines{$ip}->{$hostname} < $prune_limit) {
+                                delete $proxy_lines{$ip}->{$hostname};
+                        }
+                }
+
+                # If all hostnames were deleted, remove the empty IP
+                unless (keys %{$proxy_lines{$ip}}) {
+                        delete $proxy_lines{$ip};
+                }
+        }
+
 }
 
 # -----------------------------------------------------------------------------
 # Write collected information to specified output file
 # -----------------------------------------------------------------------------
 sub write_output_file {
-        my $key;
+        my $ip;
+        my $hostname;
         my $count = 0;
 
         open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nSUMMARY STATS\n\n";
+        print OUTFILE "\n\nSUSPECTED PROXIES\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";
-        print OUTFILE "Total lines:\t$total_line_cnt\n";
-        print OUTFILE "Client count:\t" . keys(%top_talkers) . "\n";
-        print OUTFILE "Server count:\t" . keys(%top_hosts) . "\n";
-        print OUTFILE "Extension count:\t" . keys(%filetypes) . "\n" if ($filetype);
+        print OUTFILE "\n\n";
 
-        print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
-        foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
-                print OUTFILE "$key\t$top_hosts{$key}\t" . percent_of($top_hosts{$key}, $total_line_cnt) . "%\n";
-                $count++;
-                last if ($count == $summary_cap);
-        }
+        if ((keys %proxy_lines) == 0) {
+                print OUTFILE "No suspected proxies found\n";
+        } else {
+                foreach $ip (map { inet_ntoa $_ }
+                             sort
+                             map { inet_aton $_ } keys %proxy_lines) {
+                        print OUTFILE "$ip\n";
 
-        $count = 0;
-        print OUTFILE "\n\nTOP $summary_cap TOP TALKERS\n\n";
-        foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
-                print OUTFILE "$key\t$top_talkers{$key}\t" . percent_of($top_talkers{$key}, $total_line_cnt) . "%\n";
-                $count++;
-                last if ($count == $summary_cap);
-        }
-
-        if ($filetype) {
-                $count = 0;
-                print OUTFILE "\n\nTOP $summary_cap FILE EXTENSIONS\n\n";
-                foreach $key (sort { $filetypes{$b} <=> $filetypes{$a} } keys %filetypes) {
-                        print OUTFILE "$key\t$filetypes{$key}\t" . percent_of($filetypes{$key}, $ext_cnt) . "%\n";
-                        $count++;
-                        last if ($count == $summary_cap);
+                        foreach $hostname (sort keys %{$proxy_lines{$ip}}) {
+                                print OUTFILE "\t$hostname\t$proxy_lines{$ip}->{$hostname}\n";
+                        }
+                        print OUTFILE "\n";
                 }
         }
 
         close(OUTFILE);
 
         return;
-}
-
-# -----------------------------------------------------------------------------
-# Calculate ratio information
-# -----------------------------------------------------------------------------
-sub percent_of {
-        my $subset = shift;
-        my $total = shift;
-
-        return sprintf("%.1f", ($subset / $total) * 100);
 }
 
 # -----------------------------------------------------------------------------
@@ -171,13 +189,13 @@ sub send_email {
         $msg = MIME::Lite->new(
                 From    => 'admin@corban.edu',
                 To      => "$email_addr",
-                Subject => 'HTTPry Log Summary - ' . localtime(),
+                Subject => 'HTTPry Proxy Search - ' . localtime(),
                 Type    => 'multipart/mixed'
         );
 
         $msg->attach(
                 Type => 'TEXT',
-                Data => 'HTTPry log summary for ' . localtime()
+                Data => 'HTTPry proxy search for ' . localtime()
         );
 
         $msg->attach(
