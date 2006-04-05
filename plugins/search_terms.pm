@@ -9,6 +9,8 @@
 
 package search_terms;
 
+use CGI qw(standard);
+
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
@@ -79,6 +81,7 @@ sub load_config {
 sub process_data {
         my $curr_line = shift;
         my $term;
+        my $query;
         
         # Strip non-printable chars
         $curr_line =~ tr/\x80-\xFF//d;
@@ -90,11 +93,11 @@ sub process_data {
         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
         return if (!$hostname or !$uri); # Malformed line
 
-        # Handle Google searches
+        # Parse Google services
         if ($hostname =~ /google\.com$/) {
-                if ($uri =~ /q=(.*?)&/) {
-                        $term = $1;
+                $query = new CGI($uri);
 
+                if ($term = $query->param('q')) {
                         # Clean up search term
                         $term =~ s/"//g;
                         $term =~ s/\+/ /g;
@@ -106,8 +109,24 @@ sub process_data {
                         return if ($term =~ /^http:/);
                         
                         $search_terms{$hostname}->{$term}++;
-                        return;
                 }
+
+                return;
+        }
+
+        # Parse YouTube searches
+        if ($hostname =~ /youtube\.com$/) {
+                $query = new CGI($uri);
+
+                if ($term = $query->param('search')) {
+                        $search_terms{$hostname}->{$term}++;
+                }elsif ($term = $query->param('tag')) {
+                        $search_terms{$hostname}->{$term}++;
+                }elsif ($term = $query->param('related')) {
+                        $search_terms{$hostname}->{$term}++;
+                }
+
+                return;
         }
                 
         return;
