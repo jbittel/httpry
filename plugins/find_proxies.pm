@@ -105,7 +105,7 @@ sub process_data {
                         $proxy_lines{$src_ip}->{$hostname}++;
                         return;
                 }
-                
+
                 if ($uri =~ /$word/i) {
                         $proxy_lines{$src_ip}->{$hostname}++;
                         return;
@@ -114,9 +114,9 @@ sub process_data {
 
         # Perform uri embedded request search
         # TODO: this works, but appears to generate too many
-        # false positives to be useful
-        if ($uri =~ /http:\/\/[^\/:]+/) {
-                $proxy_lines{$src_ip}->{$hostname}++;                        
+        # false positives to be useful as written
+        if ($uri =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
+                $proxy_lines{$src_ip}->{$hostname}++;
         }
 
         return;
