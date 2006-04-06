@@ -15,12 +15,13 @@ use Getopt::Std;
 # -----------------------------------------------------------------------------
 my $PROG_NAME = "parse_log.pl";
 my $PROG_VER = "0.0.1";
-my $VERBOSE = 1;
+my $VERBOSE = 0;
 my $PLUGIN_DIR = "./plugins";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
+my %nameof = ();
 my @callbacks = ();
 my @plugins = ();
 my $plugin;
@@ -61,17 +62,17 @@ sub init_plugins {
 
         foreach $plugin (@callbacks) {
                 unless ($plugin->can('main')) {
-                        print "Warning: plugin '$plugin' does not contain a required main() function...disabling\n";
+                        print "Warning: plugin '$nameof{$plugin}' does not contain a required main() function...disabling\n";
                         splice @callbacks, $i, 1;
                         next;
                 }
 
                 if ($plugin->can('init')) {
                         if ($plugin->init($plugin_dir) == 0) {
-                                print "Warning: plugin '$plugin' did not initialize properly...disabling\n";
+                                print "Warning: plugin '$nameof{$plugin}' did not initialize properly...disabling\n";
                                 splice @callbacks, $i, 1;
                         } else {
-                                print "Initialized $plugin\n" if $VERBOSE;
+                                print "Initialized plugin: $nameof{$plugin}\n" if $VERBOSE;
                                 $i++;
                         }
                 }
@@ -89,6 +90,9 @@ sub register_plugin {
         } else {
                 print "Warning: plugin '$plugin' does not contain a required new() function...disabling\n";
         }
+
+        # Save a plaintext copy of the plugin name so we can use it in output text
+        $nameof{$callbacks[-1]} = $plugin;
 }
 
 # -----------------------------------------------------------------------------
@@ -100,7 +104,7 @@ sub process_logfiles {
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
-                        print "Error: Cannot open $curr_file - $!\n";
+                        print "Error: Cannot open $curr_file: $!\n";
                         next;
                 }
 
@@ -135,7 +139,7 @@ sub get_arguments {
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
         unless ($ARGV[0]) {
-                print "Error: no input file provided\n";
+                print "Error: no input file(s) provided\n";
                 &print_usage();
         }
 
