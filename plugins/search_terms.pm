@@ -120,9 +120,20 @@ sub process_data {
 
                 if ($term = $query->param('search')) {
                         $search_terms{$hostname}->{$term}++;
-                }elsif ($term = $query->param('tag')) {
+                } elsif ($term = $query->param('tag')) {
                         $search_terms{$hostname}->{$term}++;
-                }elsif ($term = $query->param('related')) {
+                } elsif ($term = $query->param('related')) {
+                        $search_terms{$hostname}->{$term}++;
+                }
+
+                return;
+        }
+
+        # Parse Yahoo searches
+        if ($hostname =~ /yahoo\.com$/) {
+                $query = new CGI($uri);
+
+                if ($term = $query->param('p')) {
                         $search_terms{$hostname}->{$term}++;
                 }
 
