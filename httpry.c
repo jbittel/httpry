@@ -102,7 +102,8 @@ void parse_config(char *filename) {
                 if (!len) continue;
                 if (*line == '#') continue;
 
-                if (sscanf(line, "%[A-Za-z]=%[^=]", name, value) != 2) {
+                /* TODO: rewrite this so that we can properly handle whitespace chars */
+                if (sscanf(line, "%[A-Za-z] = %[^=]", name, value) != 2) {
                         warn("Bad data in config file at line %d\n", line_count);
                         continue;
                 }
@@ -461,6 +462,8 @@ void cleanup_exit(int exit_value) {
                         info("  %d packets parsed\n", pkt_parsed);
                 }
         }
+
+        if (use_infile) free(use_infile);
 
         exit(exit_value);
 }
