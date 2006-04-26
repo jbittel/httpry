@@ -24,6 +24,14 @@ traffic as it is parsed, or as a daemon process that logs to an output file. It
 is written to be as lightweight and flexible as possible, so that it can be
 easily adaptable to different applications.
 
+One question I though of when starting this project was "has this already been
+done?" From the perspective I was approaching the problem, I didn't find a
+pre-existing solution. Certainly there are several existing tools that can
+be combined to provide a similar output, but none of those combinations seemed
+to have the precise combination of features and performance I was looking for.
+If you find a tool or set of tools that you feel is superior to httpry, let me
+know as I'd like to take a look at it.
+
 "How is this tool useful?" you may ask. Well, here's a few ideas that have
 occurred to me:
 
@@ -154,6 +162,7 @@ IV. CHANGELOG
 
 version 0.0.8
    - Fix: crash on exit when using an input file
+   - Fix: handle whitespace in config file lines
 
 version 0.0.7
    + Add: option to read settings from a config file (-c)

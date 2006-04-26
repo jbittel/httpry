@@ -27,6 +27,14 @@ struct http_hdr {
         char *user_agent;
 };
 
+/* Macros for logging/displaying status messages */
+#define info(x...) fprintf(stderr, x)
+#define warn(x...) fprintf(stderr, "Warning: " x)
+#define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
+#define die(x...) { fprintf(stderr, "Error: " x); cleanup_exit(EXIT_FAILURE); }
+#define log_die(x...) { log(x); die(x); }
+
+
 /* These structs are pulled directly from the FreeBSD 5.3 source. They are
    included here to prevent the code breaking due to minor architectural
    differences among platforms.

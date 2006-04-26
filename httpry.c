@@ -34,13 +34,6 @@
 #include "httpry.h"
 #include "config.h"
 
-/* Macros for logging/displaying status messages */
-#define info(x...) fprintf(stderr, x)
-#define warn(x...) fprintf(stderr, "Warning: " x)
-#define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
-#define die(x...) { fprintf(stderr, "Error: " x); cleanup_exit(EXIT_FAILURE); }
-#define log_die(x...) { log(x); die(x); }
-
 /* Function declarations */
 void parse_config(char *filename);
 void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
@@ -80,8 +73,8 @@ void parse_config(char *filename) {
         FILE *config_file;
         char buf[MAX_CONFIG_LEN];
         char *line;
-        char name[MAX_CONFIG_LEN];
-        char value[MAX_CONFIG_LEN];
+        char *name;
+        char *value;
         int line_count = 0;
         int len;
 
@@ -102,11 +95,20 @@ void parse_config(char *filename) {
                 if (!len) continue;
                 if (*line == '#') continue;
 
-                /* TODO: rewrite this so that we can properly handle whitespace chars */
-                if (sscanf(line, "%[A-Za-z] = %[^=]", name, value) != 2) {
+                /* Parse each line into name/value pairs */
+                name = line;
+                if ((value = strchr(line, '=')) == NULL) {
                         warn("Bad data in config file at line %d\n", line_count);
                         continue;
                 }
+                *value++ = '\0';
+
+                /* Strip inner spaces from name and value */
+                len = strlen(name);
+                while (len && isspace(*(name + len - 1)))
+                        *(name + (len--) - 1) = '\0';
+                while (isspace(*value)) value++;
+
 
                 /* Test parsed name/value pairs and set values accordingly
                    Only set if value is default to prevent overwriting arguments */
@@ -133,7 +135,7 @@ void parse_config(char *filename) {
                 } else if (!strcmp(name, "BinaryFile") && !use_binfile) {
                         use_binfile = safe_strdup(value);
                 } else {
-                        warn("Config file option '%s' at line %d not recognized...skipping", name, line_count);
+                        warn("Config file option '%s' at line %d not recognized...skipping\n", name, line_count);
                         continue;
                 }
         }
@@ -279,7 +281,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         payload = (u_char *)(pkt + size_eth + size_ip + (tcp->th_off * 4));
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
-        if (size_data == 0) return; /* Bail early if no data to parse */
+        if (size_data <= 0) return; /* Bail early if no data to parse */
 
         /* Copy packet payload to editable buffer */
         if ((data = malloc(size_data + 1)) == NULL) {
