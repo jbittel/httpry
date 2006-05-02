@@ -17,13 +17,32 @@
 #include <netinet/if_ether.h>
 #include <netinet/tcp.h>
 
-/* HTTP request header fields */
+/* Full list of HTTP/1.1 request line and
+   request header fields, per RFC2616 */
 struct http_hdr {
         char *method;
         char *uri;
         char *version;
-        char *hostname;
+        
+        char *accept;
+        char *accept_charset;
+        char *accept_encoding;
+        char *accept_language;
+        char *authorization;
+        char *expect;
+        char *from;
+        char *host;
+        char *if_match;
+
+        char *if_modified_since;
+        char *if_none_match;
+        char *if_range;
+        char *if_unmodified_since;
+        char *max_forwards;
+        char *proxy_authorization;
+        char *range;
         char *referer;
+        char *te;
         char *user_agent;
 };
 

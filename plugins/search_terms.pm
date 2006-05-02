@@ -93,10 +93,10 @@ sub process_data {
         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
         return if (!$hostname or !$uri); # Malformed line
 
-        # These results can end up being a little messy, but the data seems
+        # These results can end up being a little messy, but it seems
         # most useful to simply dump out all search terms and let the user
         # parse through what they find interesting. It's hard to strike a
-        # balance to clean up the results that can apply to all users.
+        # balance that cleans up the results and applies to all users.
 
         # Parse Google services
         if ($hostname =~ /google\.com$/) {

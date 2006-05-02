@@ -1,9 +1,8 @@
 #
 # Makefile 8/12/2005
 #
-# This is a universal makefile for httpry. It currently has only been
-# tested under Linux and FreeBSD. If you should compile and use the
-# program under a different OS, please let me know.
+# This is (hopefully) a universal makefile for httpry. Currently, it
+# has only been tested under Linux.
 #
 
 CC	= gcc
@@ -13,9 +12,10 @@ PROG	= httpry
 
 $(PROG): $(PROG).c
 	@echo "--------------------------------------------------"
-	@echo "This program has only been tested under Linux and"
-	@echo "FreeBSD. If you should run it under a different"
-	@echo "system, please let me know your experience."
+	@echo "This program has only been fully tested under"
+	@echo "Linux and may not compile or run properly under a"
+	@echo "different system. I'm always interested in"
+	@echo "feedback or help in this area."
 	@echo "--------------------------------------------------"
 	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c $(LIBS)
 

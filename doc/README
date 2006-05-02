@@ -163,6 +163,7 @@ IV. CHANGELOG
 version 0.0.8
    - Fix: crash on exit when using an input file
    - Fix: handle whitespace in config file lines
+   + Add: parse all RFC2616 request header fields
 
 version 0.0.7
    + Add: option to read settings from a config file (-c)
@@ -203,7 +204,6 @@ program version number I'm targeting to focus on that particular option.
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
 * Configurable output format string (.8)
-* More extensive disassembly of the HTTP protocol (.8)
 * Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets

@@ -290,26 +290,23 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         memset(data, '\0', size_data + 1);
         strncpy(data, payload, size_data);
 
-        /* Parse request line */
+        /* Parse valid request line, bail if malformed */
         if ((http.method = strtok(data, DELIM)) == NULL) {
                 free(data);
                 return;
         }
-
+        /* Not all HTTP/1.1 methods parsed as we're currently
+           only interested in data requested from the server */
         if (strncmp(http.method, GET_REQUEST, 4) != 0 &&
             strncmp(http.method, HEAD_REQUEST, 5) != 0) {
                 free(data);
                 return;
         }
-
-        /* Parse URI field in request string */
         if ((http.uri = strchr(http.method, SPACE_CHAR)) == NULL) {
                 free(data);
                 return;
         }
         *http.uri++ = '\0';
-
-        /* Parse version field in request string */
         if ((http.version = strchr(http.uri, SPACE_CHAR)) == NULL) {
                 free(data);
                 return;
@@ -317,19 +314,51 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         *http.version++ = '\0';
 
         /* Iterate through HTTP request header lines */
-        http.hostname = NULL;
+        http.host = NULL;
         while ((req_header = strtok(NULL, DELIM)) != NULL) {
-                if (strncmp(req_header, "Host: ", 6) == 0) {
-                        http.hostname = req_header + 6;
+                if (strncmp(req_header, "Accept: ", 8) == 0) {
+                        http.accept = req_header + 8;
+                } else if (strncmp(req_header, "Accept-Charset: ", 16) == 0) {
+                        http.accept_charset = req_header + 16;
+                } else if (strncmp(req_header, "Accept-Encoding: ", 17) == 0) {
+                        http.accept_encoding = req_header + 17;
+                } else if (strncmp(req_header, "Accept-Language: ", 17) == 0) {
+                        http.accept_language = req_header + 17;
+                } else if (strncmp(req_header, "Authorization: ", 15) == 0) {
+                        http.authorization = req_header + 15;
+                } else if (strncmp(req_header, "Expect: ", 8) == 0) {
+                        http.expect = req_header + 8;
+                } else if (strncmp(req_header, "From: ", 6) == 0) {
+                        http.from = req_header + 6;
+                } else if (strncmp(req_header, "Host: ", 6) == 0) {
+                        http.host = req_header + 6;
+                } else if (strncmp(req_header, "If-Match: ", 10) == 0) {
+                        http.if_match = req_header + 10;
+                } else if (strncmp(req_header, "If-Modified-Since: ", 19) == 0) {
+                        http.if_modified_since = req_header + 19;
+                } else if (strncmp(req_header, "If-None-Match: ", 15) == 0) {
+                        http.if_none_match = req_header + 15;
+                } else if (strncmp(req_header, "If-Range: ", 10) == 0) {
+                        http.if_range = req_header + 10;
+                } else if (strncmp(req_header, "If-Unmodified-Since: ", 21) == 0) {
+                        http.if_unmodified_since = req_header + 21;
+                } else if (strncmp(req_header, "Max-Forwards: ", 14) == 0) {
+                        http.max_forwards = req_header + 14;
+                } else if (strncmp(req_header, "Proxy-Authorization: ", 21) == 0) {
+                        http.proxy_authorization = req_header + 21;
+                } else if (strncmp(req_header, "Range: ", 7) == 0) {
+                        http.range = req_header + 7;
                 } else if (strncmp(req_header, "Referer: ", 9) == 0) {
                         http.referer = req_header + 9;
+                } else if (strncmp(req_header, "TE: ", 4) == 0) {
+                        http.te = req_header + 4;
                 } else if (strncmp(req_header, "User-Agent: ", 12) == 0) {
                         http.user_agent = req_header + 12;
                 }
         }
-
-        if (http.hostname == NULL) { /* No hostname found */
-                http.hostname = "-";
+        
+        if (http.host == NULL) { /* No hostname found */
+                http.host = "-";
         }
 
         /* Grab source/destination IP addresses */
@@ -342,11 +371,11 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
         /* Print data to stdout/output file */
         if (!extended_info) {
-                printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.hostname, http.uri);
+                printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.host, http.uri);
         } else {
                 printf("%s\t%s:%d\t%s:%d\t%s\t%s\t%s\t%s\n",
                        ts, saddr, ntohs(tcp->th_sport), daddr, ntohs(tcp->th_dport),
-                       http.hostname, http.uri, http.referer, http.user_agent);
+                       http.host, http.uri, http.referer, http.user_agent);
         }
 
         free(data);
