@@ -9,7 +9,7 @@
   Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
   See included LICENSE file for specific licensing information
 
-  Most of these shouldn't be changed from the defaults, I'm warning you
+  Most of these shouldn't be changed from the defaults, I'm warning you!
 
 */
 
@@ -29,6 +29,10 @@
 /* Default packet capture filter; must be standard Pcap format
    *** Can be overridden with -l */
 #define DEFAULT_CAPFILTER "tcp dst port 80"
+
+/* Default output format string
+   *** Can be overridden with -s */
+#define DEFAULT_FORMAT "Host,URI"
 
 /* Line terminator for HTTP header; should never change! */
 #define DELIM "\r\n"

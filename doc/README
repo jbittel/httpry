@@ -24,13 +24,13 @@ traffic as it is parsed, or as a daemon process that logs to an output file. It
 is written to be as lightweight and flexible as possible, so that it can be
 easily adaptable to different applications.
 
-One question I though of when starting this project was "has this already been
-done?" From the perspective I was approaching the problem, I didn't find a
-pre-existing solution. Certainly there are several existing tools that can
+The first question I asked myself when starting this project was "has this
+already been done?" From the perspective I was approaching the problem, I couldn't
+find a pre-existing solution. Certainly there are several existing tools that can
 be combined to provide a similar output, but none of those combinations seemed
-to have the precise combination of features and performance I was looking for.
-If you find a tool or set of tools that you feel is superior to httpry, let me
-know as I'd like to take a look at it.
+to have the precise blend of features and performance I was looking for. If you
+find a tool or set of tools that you feel is superior to httpry, let me know as
+I'd like to take a look at it.
 
 "How is this tool useful?" you may ask. Well, here's a few ideas that have
 occurred to me:
@@ -81,12 +81,12 @@ III. USAGE
 ----------------------
 
 Running the program with the -h switch will print out an abbreviated description
-of the available options. However, this is merely an abbreviated description
-meant for quick reference and not an understanding of program behavior. This
-section describes these options in greater detail.
+of the available options. However, that switch is meant for quick reference and
+not complete documentation of program behavior. This section describes these
+options in greater detail.
 
-httpry [-dhpvx] [-b file] [-c count] [-f file] [-i interface] [-l filter]
-       [-n count] [-o file] [-r dir] [-u user]
+httpry [-dhpv] [-b file] [-c count] [-f file] [-i interface] [-l filter]
+       [-n count] [-o file] [-r dir] [-s string] [-u user]
 
 -b <file> :
 Dumps a binary packet capture output file to the specified location. Note that
@@ -141,6 +141,8 @@ not be required.
 Allows a running directory to be specified when running in daemon mode. By
 default this is set to '/', which should be adequate for most uses.
 
+-s <string> :
+
 -u <user> :
 Allows an alternate user to take ownership of the process. This is
 particularly useful when running in daemon mode. Note that you still need root
@@ -151,19 +153,17 @@ credentials once initialization is complete.
 Displays the program name and version number, after which the program
 terminates.
 
--x :
-Causes the program to include additional information in the output string
-such as client/server port numbers, HTTP referrer and HTTP user agent.
-
 
 ----------------------
 IV. CHANGELOG
 ----------------------
 
 version 0.0.8
-   - Fix: crash on exit when using an input file
-   - Fix: handle whitespace in config file lines
+   - Fix: crash on exit when reading from an input file
+   - Fix: handle whitespace properly in config file lines
    + Add: parse all RFC2616 request header fields
+   + Add: configurable output data format (-s)
+   = Chg: removed extended options switch (-x)
 
 version 0.0.7
    + Add: option to read settings from a config file (-c)
@@ -207,7 +207,7 @@ program version number I'm targeting to focus on that particular option.
 * Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
-* Handle unrecognized/non-standard request header fields
+* Handle non-standard entity request header fields
 
 
 ----------------------
