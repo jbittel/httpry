@@ -207,6 +207,7 @@ program version number I'm targeting to focus on that particular option.
 * Option to fallback on rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
+* Handle unrecognized/non-standard request header fields
 
 
 ----------------------

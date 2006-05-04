@@ -68,6 +68,11 @@ static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
 static int pkt_parsed = 0;
 
+struct pkt_hdr packet;
+struct http_hdr http;  /* HTTP request header fields */
+
+char **format_str[5];
+
 /* Read options in from config file */
 void parse_config(char *filename) {
         FILE *config_file;
@@ -257,13 +262,10 @@ void get_packets(pcap_t *pcap_hnd, int pkt_count) {
 
 /* Process each packet that passes the capture filter */
 void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
-        char saddr[INET_ADDRSTRLEN];
-        char daddr[INET_ADDRSTRLEN];
-        char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
         struct tm *pkt_time;
         char *data;            /* Editable copy of packet data */
-        struct http_hdr http;  /* HTTP request header fields */
         char *req_header;      /* Request header line */
+        int i;
 
         const struct pkt_eth *eth; /* These structs define the layout of the packet */
         const struct pkt_ip *ip;
@@ -362,20 +364,17 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         }
 
         /* Grab source/destination IP addresses */
-        strncpy(saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
-        strncpy(daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
+        strncpy(packet.saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
+        strncpy(packet.daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
-        strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
+        strftime(packet.ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
         /* Print data to stdout/output file */
-        if (!extended_info) {
-                printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.host, http.uri);
-        } else {
-                printf("%s\t%s:%d\t%s:%d\t%s\t%s\t%s\t%s\n",
-                       ts, saddr, ntohs(tcp->th_sport), daddr, ntohs(tcp->th_dport),
-                       http.host, http.uri, http.referer, http.user_agent);
+        /*printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.host, http.uri);*/
+        for (i = 0; i <= 4; i++) {
+                printf("%s\t", **(format_str[i]));
         }
 
         free(data);
@@ -588,6 +587,13 @@ int main(int argc, char *argv[]) {
         if (!capfilter) capfilter = safe_strdup(default_capfilter);
         if (!run_dir) run_dir = safe_strdup(default_rundir);
         signal(SIGINT, handle_signal);
+
+        /*printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.host, http.uri);*/
+        /*format_str[0] = &packet.ts;
+        format_str[1] = &packet.saddr;
+        format_str[2] = &packet.daddr;*/
+        format_str[3] = &http.host;
+        format_str[4] = &http.uri;
 
         /* Set up packet capture */
         get_dev_info(&dev, &net, interface);

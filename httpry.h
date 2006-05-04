@@ -17,6 +17,13 @@
 #include <netinet/if_ether.h>
 #include <netinet/tcp.h>
 
+
+struct pkt_hdr {
+        char saddr[INET_ADDRSTRLEN];
+        char daddr[INET_ADDRSTRLEN];
+        char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
+};
+
 /* Full list of HTTP/1.1 request line and
    request header fields, per RFC2616 */
 struct http_hdr {
