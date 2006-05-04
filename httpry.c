@@ -353,8 +353,8 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         if ((data = malloc(size_data + 1)) == NULL) {
                 log_die("Cannot allocate memory for packet data\n");
         }
-        memset(data, '\0', size_data + 1);
         strncpy(data, payload, size_data);
+        data[size_data] = '\0';
 
         http.method = NULL;
         http.uri = NULL;
