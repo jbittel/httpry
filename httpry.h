@@ -17,7 +17,6 @@
 #include <netinet/if_ether.h>
 #include <netinet/tcp.h>
 
-
 struct pkt_hdr {
         char saddr[INET_ADDRSTRLEN];
         char daddr[INET_ADDRSTRLEN];
@@ -30,7 +29,7 @@ struct http_hdr {
         char *method;
         char *uri;
         char *version;
-        
+
         char *accept;
         char *accept_charset;
         char *accept_encoding;

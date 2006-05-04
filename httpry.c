@@ -68,10 +68,10 @@ static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
 static int pkt_parsed = 0;
 
-struct pkt_hdr packet;
-struct http_hdr http;  /* HTTP request header fields */
+static struct pkt_hdr packet;
+static struct http_hdr http;  /* HTTP request header fields */
 
-char **format_str[5];
+static char **format_str[5];
 
 /* Read options in from config file */
 void parse_config(char *filename) {
@@ -146,6 +146,17 @@ void parse_config(char *filename) {
         }
 
         fclose(config_file);
+
+        return;
+}
+
+/* Parse format string to determine output fields */
+void parse_format_string() {
+        format_str[0] = &packet.ts;
+        format_str[1] = &packet.saddr;
+        format_str[2] = &packet.daddr;
+        format_str[3] = &http.host;
+        format_str[4] = &http.uri;
 
         return;
 }
@@ -265,7 +276,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         struct tm *pkt_time;
         char *data;            /* Editable copy of packet data */
         char *req_header;      /* Request header line */
-        int i;
+        /*int i;*/
 
         const struct pkt_eth *eth; /* These structs define the layout of the packet */
         const struct pkt_ip *ip;
@@ -358,7 +369,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
                         http.user_agent = req_header + 12;
                 }
         }
-        
+
         if (http.host == NULL) { /* No hostname found */
                 http.host = "-";
         }
@@ -373,9 +384,11 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
         /* Print data to stdout/output file */
         /*printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.host, http.uri);*/
-        for (i = 0; i <= 4; i++) {
-                printf("%s\t", **(format_str[i]));
-        }
+        /*for (i = 0; i <= 4; i++) {
+                printf("%s\t", *(format_str[i]));
+        }*/
+        printf("%s\n", *(format_str[3]));
+        printf("%s\n", *(format_str[4]));
 
         free(data);
 
@@ -587,13 +600,7 @@ int main(int argc, char *argv[]) {
         if (!capfilter) capfilter = safe_strdup(default_capfilter);
         if (!run_dir) run_dir = safe_strdup(default_rundir);
         signal(SIGINT, handle_signal);
-
-        /*printf("%s\t%s\t%s\t%s\t%s\n", ts, saddr, daddr, http.host, http.uri);*/
-        /*format_str[0] = &packet.ts;
-        format_str[1] = &packet.saddr;
-        format_str[2] = &packet.daddr;*/
-        format_str[3] = &http.host;
-        format_str[4] = &http.uri;
+        parse_format_string();
 
         /* Set up packet capture */
         get_dev_info(&dev, &net, interface);
