@@ -54,18 +54,18 @@ void display_help();
 extern int getopt(int argc, char *const argv[], const char *optstring);
 
 /* Program flags/options, set by arguments or config file */
-static char *use_binfile   = NULL;
-static int   pkt_count     = -1;
-static int   daemon_mode   = 0;
-static char *use_infile    = NULL;
-static char *interface     = NULL;
-static char *capfilter     = NULL;
-static char *use_outfile   = NULL;
-static int   set_promisc   = 1;
-static char *new_user      = NULL;
-static char *out_format    = NULL;
-static char *run_dir       = NULL;
-static char *use_config    = NULL;
+static char *use_binfile = NULL;
+static int   pkt_count   = -1;
+static int   daemon_mode = 0;
+static char *use_infile  = NULL;
+static char *interface   = NULL;
+static char *capfilter   = NULL;
+static char *use_outfile = NULL;
+static int   set_promisc = 1;
+static char *new_user    = NULL;
+static char *out_format  = NULL;
+static char *run_dir     = NULL;
+static char *use_config  = NULL;
 
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
@@ -114,8 +114,8 @@ void parse_config(char *filename) {
                         *(name + (len--) - 1) = '\0';
                 while (isspace(*value)) value++;
 
-                /* Test parsed name/value pairs and set values accordingly
-                   Only set if value is default to prevent overwriting arguments */
+                /* Test parsed name/value pairs and set values accordingly; only
+                   set if default value is unchanged to prevent overwriting arguments */
                 if (!strcmp(name, "DaemonMode") && !daemon_mode) {
                         daemon_mode = atoi(value);
                 } else if (!strcmp(name, "InputFile") && !use_infile) {
@@ -356,29 +356,6 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         strncpy(data, payload, size_data);
         data[size_data] = '\0';
 
-        http.method = NULL;
-        http.uri = NULL;
-        http.version = NULL;
-        http.accept = NULL;
-        http.accept_charset = NULL;
-        http.accept_encoding = NULL;
-        http.accept_language = NULL;
-        http.authorization = NULL;
-        http.expect = NULL;
-        http.from = NULL;
-        http.host = NULL;
-        http.if_match = NULL;
-        http.if_modified_since = NULL;
-        http.if_none_match = NULL;
-        http.if_range = NULL;
-        http.if_unmodified_since = NULL;
-        http.max_forwards = NULL;
-        http.proxy_authorization = NULL;
-        http.range = NULL;
-        http.referer = NULL;
-        http.te = NULL;
-        http.user_agent = NULL;
-
         /* Parse valid request line, bail if malformed */
         if ((http.method = strtok(data, DELIM)) == NULL) {
                 free(data);
@@ -401,6 +378,30 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
                 return;
         }
         *http.version++ = '\0';
+
+        /* Ensure these pointers are cleared so we don't get garbage from previous packets */
+        /*http.method = NULL;
+        http.uri = NULL;
+        http.version = NULL;*/
+        http.accept = NULL;
+        http.accept_charset = NULL;
+        http.accept_encoding = NULL;
+        http.accept_language = NULL;
+        http.authorization = NULL;
+        http.expect = NULL;
+        http.from = NULL;
+        http.host = NULL;
+        http.if_match = NULL;
+        http.if_modified_since = NULL;
+        http.if_none_match = NULL;
+        http.if_range = NULL;
+        http.if_unmodified_since = NULL;
+        http.max_forwards = NULL;
+        http.proxy_authorization = NULL;
+        http.range = NULL;
+        http.referer = NULL;
+        http.te = NULL;
+        http.user_agent = NULL;
 
         /* Parse each HTTP request header line */
         while ((req_header = strtok(NULL, DELIM)) != NULL) {
