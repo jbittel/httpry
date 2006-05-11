@@ -22,24 +22,25 @@ intended to perform analysis itself, but instead to capture, parse and/or log
 the traffic for later analysis. It can be run in real-time displaying the
 traffic as it is parsed, or as a daemon process that logs to an output file. It
 is written to be as lightweight and flexible as possible, so that it can be
-easily adaptable to different applications.
+easily adaptable to different applications. Note that currently it only captures
+client-side requests as that is the particular data of interest to me.
 
 The first question I asked myself when starting this project was "has this
 already been done?" From the perspective I was approaching the problem, I couldn't
 find a pre-existing solution. Certainly there are several existing tools that can
-be combined to provide a similar output, but none of those combinations seemed
+be combined to provide similar output, but none of those combinations seemed
 to have the precise blend of features and performance I was looking for. If you
 find a tool or set of tools that you feel is superior to httpry, let me know as
 I'd like to take a look at it.
 
-"How is this tool useful?" you may ask. Well, here's a few ideas that have
+"How is this tool useful?" you may ask next. Well, here's a few ideas that have
 occurred to me:
 
- - Seeing what users on your network are looking at
- - Checking for proper server configuration (or improper, as the case may be)
- - Researching patterns in HTTP usage
- - Checking for dangerous downloaded files
- - Verifying the enforcement of HTTP policy on your network
+ - See what users on your network are looking at
+ - Check for proper server configuration (or improper, as the case may be)
+ - Research patterns in HTTP usage
+ - Watch for dangerous downloaded files
+ - Verify the enforcement of HTTP policy on your network
  - Simple curiosity
  - It's just plain fun to watch in realtime
 
@@ -63,7 +64,7 @@ I was hoping you'd ask! Installing httpry is as simple as:
  # make install
 
 These commands will compile the latest version of the code and then install it
-appropriately in /usr/sbin. Along with httpry itself, there are several other
+appropriately in /usr/sbin. Along with httpry itself, there are several Perl
 scripts included. These tools may either be useful as-is, or as a starting point
 for your own log parsing tools. Additionally, there is an included rc.httpry
 file for automatically starting the program under Linux. This file has only been
@@ -142,6 +143,8 @@ Allows a running directory to be specified when running in daemon mode. By
 default this is set to '/', which should be adequate for most uses.
 
 -s <string> :
+Specifies a comma-delimited string that defines the HTTP fields to output. See
+the included documentation for the allowed options to use in this string.
 
 -u <user> :
 Allows an alternate user to take ownership of the process. This is
@@ -158,12 +161,18 @@ terminates.
 IV. CHANGELOG
 ----------------------
 
+Note that this changelog does not refer to the included Perl scripts, which
+are often updated significantly between releases as well. It only lists
+significant changes and updates to the core httpry program.
+
 version 0.0.8
    - Fix: crash on exit when reading from an input file
    - Fix: handle whitespace properly in config file lines
-   + Add: parse all RFC2616 request header fields
+   + Add: allow user to specify set of HTTP fields to output
    + Add: configurable output data format (-s)
    = Chg: removed extended options switch (-x)
+   = Chg: parsed HTTP header fields stored in dynamic list
+   = Chg: error/log/warn macros encapsulated in header file
 
 version 0.0.7
    + Add: option to read settings from a config file (-c)
@@ -201,6 +210,8 @@ them are necessarily good ideas, but they are a source of inspiration and
 consideration as I continue improving the project. A number indicates the
 program version number I'm targeting to focus on that particular option.
 
+* Make all output fields dynamic, including packet information
+* Parse server response side of the conversation
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
 * Option to fallback on rDNS when Host: string unavailable

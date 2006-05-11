@@ -1,9 +1,9 @@
-.TH httpry 1 "April 2006"
+.TH httpry 1 "May 2006"
 .SH NAME
 httpry - HTTP logging and information display tool
 .SH SYNOPSIS
 .B httpry
-.I httpry [-dhpvx] [-b file] [-c count] [-f file] [-i interface] [-l filter] [-n count] [-o file] [-r dir] [-u user]
+.I httpry [-dhpv] [-b file] [-c count] [-f file] [-i interface] [-l filter] [-n count] [-o file] [-r dir] [-s string] [-u user]
 .br
 .SH DESCRIPTION
 .PP
@@ -70,6 +70,10 @@ Allows a running directory to be specified when running in daemon mode. By
 default
 this is set to '/', which should be adequate for most uses.
 .TP
+\fB-s\fR string
+Specifies a comma-delimited string that defines the HTTP fields to output. See
+the included documentation for the allowed options to use in this string.
+.TP
 \fB-u\fR user
 Allows an alternate user to take ownership of the process. This is
 particularly useful when running in daemon mode. Note that you still need root
@@ -79,10 +83,6 @@ credentials once initialization is complete.
 \fB-v\fR
 Displays the program name and version number, after which the program
 terminates.
-.TP
-\fB-x\fR
-Causes the program to include additional information in the output string
-such as client/server port numbers, HTTP referrer and HTTP user agent.
 .SH BUGS
 There are no known issues that I am aware of.
 .SH AUTHOR

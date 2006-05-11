@@ -1,0 +1,50 @@
+One feature that httpry allows is for the user to specify the output format
+string that the program prints. This string is a comma-delimited list of
+elements with *no* spaces between elements and capitalization is important.
+Duplicate entries will be skipped and the parser will whine at you, so don't
+do it. For example, the default format that is used if none is specified
+consists of:
+
+        Host,URI
+
+This prints the hostname of the server and the URI of the requested resource.
+There are three specific fields that can be specified from the request line:
+Method, URI and Version. The request header fields are dynamically parsed and
+so you can specify any request header that you require, even custom headers
+not included in the HTTP standard. For reference, here is a list of the
+standard RFC2616 headers:
+
+        Accept
+        Accept-Charset
+        Accept-Encoding
+        Accept-Language
+        Authorization
+        Expect
+        From
+        Host
+        If-Match
+        If-Modified-Since
+        If-None-Match
+        If-Range
+        If-Unmodified-Since
+        Max-Forwards
+        Proxy-Authorization
+        Range
+        Referer
+        TE
+        User-Agent
+
+There are of course other request header fields, but this should give you a
+starting point. This means that you could build output format strings
+consisting of:
+
+        Host,User-Agent
+        Referer,URI,Version
+        If-Modified-Since,Method
+        Host,URI,Method,If-Modified-Since,Referer,User-Agent
+        ...etc...
+
+There is no limit on the length of the string. This provides a relatively
+flexible method for specifying the output string, while still supporting
+unknown fields that might be needed. Additionally, the input ordering is
+maintained so you can position the fields as necessary. 

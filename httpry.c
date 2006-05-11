@@ -69,7 +69,7 @@ static char *use_config  = NULL;
 
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
-static unsigned pkt_parsed = 0;
+static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
 NODE *format_str;
 
 /* Read options in from config file */
@@ -345,15 +345,11 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
         /* Parse each HTTP request header line */
         while ((req_header = strtok(NULL, DELIM)) != NULL) {
-                /*req_name = req_header;*/
                 if ((req_value = strchr(req_header, ':')) == NULL) continue;
-
                 *req_value++ = '\0';
                 while (isspace(*req_value)) req_value++;
-                /*strip_whitespace(req_value);*/
-
+                
                 if ((element = find_node(format_str, req_header)) == NULL) continue;
-
                 element->value = req_value;
         }
 
