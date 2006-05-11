@@ -215,7 +215,7 @@ void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net) {
 
         /* Compile filter string */
         if (pcap_compile(pcap_hnd, &filter, cap_filter, 0, net) == -1) {
-                die("Bad capture filter syntax in '%s'\n", cap_filter);
+                log_die("Bad capture filter syntax in '%s'\n", cap_filter);
         }
 
         /* Apply compiled filter to pcap handle */
@@ -436,11 +436,11 @@ void runas_daemon(char *run_dir) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        info("Caught SIGINT, cleaning up...\n");
+                        info("Caught SIGINT, shutting down...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
                 case SIGTERM:
-                        info("Caught SIGTERM, cleaning up...\n");
+                        info("Caught SIGTERM, shutting down...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
         }
@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
         extern int optopt;
 
         /* Process command line arguments */
-        while ((arg = getopt(argc, argv, "b:c:df:hi:l:n:o:pr:s:u:vx")) != -1) {
+        while ((arg = getopt(argc, argv, "b:c:df:hi:l:n:o:pr:s:u:v")) != -1) {
                 switch (arg) {
                         case 'b': use_binfile = safe_strdup(optarg); break;
                         case 'c': use_config = safe_strdup(optarg); break;
@@ -558,26 +558,24 @@ int main(int argc, char *argv[]) {
                         case 'v': display_version(); break;
                         case '?': if (isprint(optopt)) {
                                           warn("Unknown parameter '-%c'\n", optopt);
-                                          display_help();
                                   } else {
                                           warn("Unknown parameter\n");
-                                          display_help();
                                   }
-                        default:  display_help(); /* Shouldn't be reached */
+                        default:  display_help(); /* Only reached if bad parameter provided */
                 }
         }
 
         if (use_config) parse_config(use_config);
 
-        /* Test for error and warn conditions */
+        /* Test for error and warning conditions */
         if ((getuid() != 0) && !use_infile) {
-                die("Root priviledges required to access the NIC\n");
+                log_die("Root priviledges required to access the NIC\n");
         }
         if (daemon_mode && !use_outfile) {
-                die("Daemon mode requires an output file\n");
+                log_die("Daemon mode requires an output file\n");
         }
-        if ((pkt_count < 1) && (pkt_count != -1)) {
-                die("Invalid -n value: must be -1 or greater than 0\n");
+        if (pkt_count < -1) {
+                log_die("Invalid -n value of '%d': must be -1 or greater\n", pkt_count);
         }
 
         /* General program setup */
