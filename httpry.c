@@ -13,9 +13,7 @@
 
 #define _BSD_SOURCE 1 /* Needed for Linux/BSD compatibility */
 #define TO_MS 0
-#define MAX_TIME_LEN 20
 #define MAX_CONFIG_LEN 512
-#define MAX_FORMAT_OPT 22
 #define SPACE_CHAR '\x20'
 
 #include <ctype.h>
@@ -28,12 +26,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 #include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include "httpry.h"
 #include "config.h"
+#include "list.h"
 
 /* Function declarations */
 void parse_config(char *filename);
@@ -48,7 +46,6 @@ void runas_daemon(char *run_dir);
 void handle_signal(int sig);
 char* safe_strdup(char *curr_str);
 char* strip_whitespace(char *str); 
-void cleanup_exit(int exit_value);
 void display_version();
 void display_help();
 extern int getopt(int argc, char *const argv[], const char *optstring);
@@ -74,8 +71,9 @@ static int pkt_parsed = 0;
 static struct pkt_hdr packet;
 static struct http_hdr http;  /* HTTP request header fields */
 
-static char **format_str[MAX_FORMAT_OPT];
-static int format_cnt = 0;
+/*static char **format_str[MAX_FORMAT_OPT];
+static int format_cnt = 0;*/
+NODE *format_str;
 
 /* Read options in from config file */
 void parse_config(char *filename) {
@@ -153,62 +151,16 @@ void parse_config(char *filename) {
 void parse_format_string(char *str) {
         char *element = NULL;
         
+        format_str = create_node();
         str = strip_whitespace(str);
 
         element = strtok(str, ",");
-        while ((element != NULL) && (format_cnt < MAX_FORMAT_OPT)) {
-                if (strncmp(element, "Method", 6) == 0) { /* HTTP request line */
-                        format_str[format_cnt] = &http.method; 
-                } else if (strncmp(element, "URI", 3) == 0) {
-                        format_str[format_cnt] = &http.uri; 
-                } else if (strncmp(element, "Version", 7) == 0) {
-                        format_str[format_cnt] = &http.version; 
-                } else if (strncmp(element, "Accept", 6) == 0) { /* HTTP request headers */
-                        format_str[format_cnt] = &http.accept; 
-                } else if (strncmp(element, "Accept-Charset", 14) == 0) {
-                        format_str[format_cnt] = &http.accept_charset; 
-                } else if (strncmp(element, "Accept-Encoding", 15) == 0) {
-                        format_str[format_cnt] = &http.accept_encoding; 
-                } else if (strncmp(element, "Accept-Language", 15) == 0) {
-                        format_str[format_cnt] = &http.accept_language; 
-                } else if (strncmp(element, "Authorization", 13) == 0) {
-                        format_str[format_cnt] = &http.authorization; 
-                } else if (strncmp(element, "Expect", 6) == 0) {
-                        format_str[format_cnt] = &http.expect; 
-                } else if (strncmp(element, "From", 4) == 0) {
-                        format_str[format_cnt] = &http.from; 
-                } else if (strncmp(element, "Host", 4) == 0) {
-                        format_str[format_cnt] = &http.host; 
-                } else if (strncmp(element, "If-Match", 8) == 0) {
-                        format_str[format_cnt] = &http.if_match; 
-                } else if (strncmp(element, "If-Modified-Since", 17) == 0) {
-                        format_str[format_cnt] = &http.if_modified_since; 
-                } else if (strncmp(element, "If-None-Match", 13) == 0) {
-                        format_str[format_cnt] = &http.if_none_match; 
-                } else if (strncmp(element, "If-Range", 8) == 0) {
-                        format_str[format_cnt] = &http.if_range; 
-                } else if (strncmp(element, "If-Unmodified-Since", 19) == 0) {
-                        format_str[format_cnt] = &http.if_unmodified_since; 
-                } else if (strncmp(element, "Max-Forwards", 12) == 0) {
-                        format_str[format_cnt] = &http.max_forwards; 
-                } else if (strncmp(element, "Proxy-Authorization", 19) == 0) {
-                        format_str[format_cnt] = &http.proxy_authorization; 
-                } else if (strncmp(element, "Range", 5) == 0) {
-                        format_str[format_cnt] = &http.range; 
-                } else if (strncmp(element, "Referer", 7) == 0) {
-                        format_str[format_cnt] = &http.referer; 
-                } else if (strncmp(element, "TE", 2) == 0) {
-                        format_str[format_cnt] = &http.te; 
-                } else if (strncmp(element, "User-Agent", 10) == 0) {
-                        format_str[format_cnt] = &http.user_agent; 
-                } else {
-                        warn("Format string element '%s' not recognized...skipping\n", element);
-                        element = strtok(NULL, ",");
-                        continue;
+        while (element != NULL) {
+                if (insert_node(format_str, element) == 0) {
+                        warn("Format element '%s' already provided...skipping\n", element);
                 }
                 
                 element = strtok(NULL, ",");
-                format_cnt++;
         }
 
         return;
@@ -329,7 +281,9 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         struct tm *pkt_time;
         char *data;            /* Editable copy of packet data */
         char *req_header;      /* Request header line */
-        int i;
+        /*char *req_name;*/
+        char *req_value;
+        NODE *element;
 
         const struct pkt_eth *eth; /* These structs define the layout of the packet */
         const struct pkt_ip *ip;
@@ -379,71 +333,28 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         }
         *http.version++ = '\0';
 
-        /* Ensure these pointers are cleared so we don't get garbage from previous packets */
-        /*http.method = NULL;
-        http.uri = NULL;
-        http.version = NULL;*/
-        http.accept = NULL;
-        http.accept_charset = NULL;
-        http.accept_encoding = NULL;
-        http.accept_language = NULL;
-        http.authorization = NULL;
-        http.expect = NULL;
-        http.from = NULL;
-        http.host = NULL;
-        http.if_match = NULL;
-        http.if_modified_since = NULL;
-        http.if_none_match = NULL;
-        http.if_range = NULL;
-        http.if_unmodified_since = NULL;
-        http.max_forwards = NULL;
-        http.proxy_authorization = NULL;
-        http.range = NULL;
-        http.referer = NULL;
-        http.te = NULL;
-        http.user_agent = NULL;
+        if ((element = find_node(format_str, "Method")) != NULL) {
+                element->value = http.method;
+        }
+        if ((element = find_node(format_str, "URI")) != NULL) {
+                element->value = http.uri;
+        }
+        if ((element = find_node(format_str, "Version")) != NULL) {
+                element->value = http.version;
+        }
 
         /* Parse each HTTP request header line */
         while ((req_header = strtok(NULL, DELIM)) != NULL) {
-                if (strncmp(req_header, "Accept: ", 8) == 0) {
-                        http.accept = req_header + 8;
-                } else if (strncmp(req_header, "Accept-Charset: ", 16) == 0) {
-                        http.accept_charset = req_header + 16;
-                } else if (strncmp(req_header, "Accept-Encoding: ", 17) == 0) {
-                        http.accept_encoding = req_header + 17;
-                } else if (strncmp(req_header, "Accept-Language: ", 17) == 0) {
-                        http.accept_language = req_header + 17;
-                } else if (strncmp(req_header, "Authorization: ", 15) == 0) {
-                        http.authorization = req_header + 15;
-                } else if (strncmp(req_header, "Expect: ", 8) == 0) {
-                        http.expect = req_header + 8;
-                } else if (strncmp(req_header, "From: ", 6) == 0) {
-                        http.from = req_header + 6;
-                } else if (strncmp(req_header, "Host: ", 6) == 0) {
-                        http.host = req_header + 6;
-                } else if (strncmp(req_header, "If-Match: ", 10) == 0) {
-                        http.if_match = req_header + 10;
-                } else if (strncmp(req_header, "If-Modified-Since: ", 19) == 0) {
-                        http.if_modified_since = req_header + 19;
-                } else if (strncmp(req_header, "If-None-Match: ", 15) == 0) {
-                        http.if_none_match = req_header + 15;
-                } else if (strncmp(req_header, "If-Range: ", 10) == 0) {
-                        http.if_range = req_header + 10;
-                } else if (strncmp(req_header, "If-Unmodified-Since: ", 21) == 0) {
-                        http.if_unmodified_since = req_header + 21;
-                } else if (strncmp(req_header, "Max-Forwards: ", 14) == 0) {
-                        http.max_forwards = req_header + 14;
-                } else if (strncmp(req_header, "Proxy-Authorization: ", 21) == 0) {
-                        http.proxy_authorization = req_header + 21;
-                } else if (strncmp(req_header, "Range: ", 7) == 0) {
-                        http.range = req_header + 7;
-                } else if (strncmp(req_header, "Referer: ", 9) == 0) {
-                        http.referer = req_header + 9;
-                } else if (strncmp(req_header, "TE: ", 4) == 0) {
-                        http.te = req_header + 4;
-                } else if (strncmp(req_header, "User-Agent: ", 12) == 0) {
-                        http.user_agent = req_header + 12;
-                }
+                /*req_name = req_header;*/
+                if ((req_value = strchr(req_header, ':')) == NULL) continue;
+
+                *req_value++ = '\0';
+                while (isspace(*req_value)) req_value++;
+                /*strip_whitespace(req_value);*/
+
+                if ((element = find_node(format_str, req_header)) == NULL) continue;
+
+                element->value = req_value;
         }
 
         /* Grab source/destination IP addresses */
@@ -456,14 +367,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 
         /* Print data to stdout/output file according to format array */
         printf("%s\t%s\t%s\t", packet.ts, packet.saddr, packet.daddr);
-        for (i = 0; i < format_cnt; i++) {
-                if (*(format_str[i]) != NULL) {
-                        printf("%s\t", *(format_str[i]));
-                } else {
-                        printf("-\t");
-                }
-        }
-        printf("\n");
+        print_list(format_str); 
 
         free(data);
 

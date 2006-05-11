@@ -16,6 +16,19 @@
 #include <net/if.h>
 #include <netinet/if_ether.h>
 #include <netinet/tcp.h>
+#include <syslog.h>
+
+#define MAX_TIME_LEN 20
+
+/* Macros for logging/displaying status messages */
+#define info(x...) fprintf(stderr, x)
+#define warn(x...) fprintf(stderr, "Warning: " x)
+#define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
+#define die(x...) { fprintf(stderr, "Error: " x); cleanup_exit(EXIT_FAILURE); }
+#define log_die(x...) { log(x); die(x); }
+
+/* Function prototypes */
+void cleanup_exit(int exit_value);
 
 struct pkt_hdr {
         char saddr[INET_ADDRSTRLEN];
@@ -30,7 +43,7 @@ struct http_hdr {
         char *uri;
         char *version;
 
-        char *accept;
+/*        char *accept;
         char *accept_charset;
         char *accept_encoding;
         char *accept_language;
@@ -49,16 +62,8 @@ struct http_hdr {
         char *range;
         char *referer;
         char *te;
-        char *user_agent;
+        char *user_agent;*/
 };
-
-/* Macros for logging/displaying status messages */
-#define info(x...) fprintf(stderr, x)
-#define warn(x...) fprintf(stderr, "Warning: " x)
-#define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
-#define die(x...) { fprintf(stderr, "Error: " x); cleanup_exit(EXIT_FAILURE); }
-#define log_die(x...) { log(x); die(x); }
-
 
 /* These structs are pulled directly from the FreeBSD 5.3 source. They are
    included here to prevent the code breaking due to minor architectural

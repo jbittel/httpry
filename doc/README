@@ -201,8 +201,6 @@ them are necessarily good ideas, but they are a source of inspiration and
 consideration as I continue improving the project. A number indicates the
 program version number I'm targeting to focus on that particular option.
 
-* Handle non-standard entity request header fields
-* Parse all RFC4229 HTTP request header fields and/or allow custom list
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
 * Option to fallback on rDNS when Host: string unavailable

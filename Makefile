@@ -17,7 +17,7 @@ $(PROG): $(PROG).c
 	@echo "different system. I'm always interested in"
 	@echo "feedback or help in this area."
 	@echo "--------------------------------------------------"
-	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c $(LIBS)
+	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c list.c $(LIBS)
 
 all:
 	$(PROG)
