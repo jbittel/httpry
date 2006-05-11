@@ -14,6 +14,7 @@
 #define _BSD_SOURCE 1 /* Needed for Linux/BSD compatibility */
 #define TO_MS 0
 #define MAX_CONFIG_LEN 512
+#define MAX_TIME_LEN 20
 #define SPACE_CHAR '\x20'
 
 #include <ctype.h>
@@ -29,8 +30,9 @@
 #include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "httpry.h"
 #include "config.h"
+#include "error.h"
+#include "httpry.h"
 #include "list.h"
 
 /* Function declarations */
@@ -45,7 +47,8 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
 void runas_daemon(char *run_dir);
 void handle_signal(int sig);
 char* safe_strdup(char *curr_str);
-char* strip_whitespace(char *str); 
+char* strip_whitespace(char *str);
+void cleanup_exit(int exit_value);
 void display_version();
 void display_help();
 extern int getopt(int argc, char *const argv[], const char *optstring);
@@ -66,13 +69,7 @@ static char *use_config  = NULL;
 
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
-static int pkt_parsed = 0;
-
-static struct pkt_hdr packet;
-static struct http_hdr http;  /* HTTP request header fields */
-
-/*static char **format_str[MAX_FORMAT_OPT];
-static int format_cnt = 0;*/
+static unsigned pkt_parsed = 0;
 NODE *format_str;
 
 /* Read options in from config file */
@@ -150,7 +147,7 @@ void parse_config(char *filename) {
 /* Parse format string to determine output fields */
 void parse_format_string(char *str) {
         char *element = NULL;
-        
+
         format_str = create_node();
         str = strip_whitespace(str);
 
@@ -159,7 +156,7 @@ void parse_format_string(char *str) {
                 if (insert_node(format_str, element) == 0) {
                         warn("Format element '%s' already provided...skipping\n", element);
                 }
-                
+
                 element = strtok(NULL, ",");
         }
 
@@ -280,10 +277,13 @@ void get_packets(pcap_t *pcap_hnd, int pkt_count) {
 void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
         char *data;            /* Editable copy of packet data */
-        char *req_header;      /* Request header line */
-        /*char *req_name;*/
+        char *req_header;      /* Buffer for each request header line */
         char *req_value;
         NODE *element;
+        HTTP http;
+        char saddr[INET_ADDRSTRLEN];
+        char daddr[INET_ADDRSTRLEN];
+        char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
 
         const struct pkt_eth *eth; /* These structs define the layout of the packet */
         const struct pkt_ip *ip;
@@ -358,16 +358,16 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         }
 
         /* Grab source/destination IP addresses */
-        strncpy(packet.saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
-        strncpy(packet.daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
+        strncpy(saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
+        strncpy(daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
-        strftime(packet.ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
+        strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
         /* Print data to stdout/output file according to format array */
-        printf("%s\t%s\t%s\t", packet.ts, packet.saddr, packet.daddr);
-        print_list(format_str); 
+        printf("%s\t%s\t%s\t", ts, saddr, daddr);
+        print_list(format_str);
 
         free(data);
 
@@ -436,15 +436,15 @@ void runas_daemon(char *run_dir) {
         return;
 }
 
-/* Handle a limited set of signals when in daemon mode */
+/* Perform clean shutdown if proper signal received */
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        info("\nCaught SIGINT, cleaning up...\n");
+                        info("Caught SIGINT, cleaning up...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
                 case SIGTERM:
-                        info("\nCaught SIGTERM, cleaning up...\n");
+                        info("Caught SIGTERM, cleaning up...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
         }
@@ -466,7 +466,7 @@ char* safe_strdup(char *curr_str) {
 /* Strip leading and trailing spaces from parameter string */
 char* strip_whitespace(char *str) {
         int len;
-        
+
         while (isspace(*str)) str++;
         len = strlen(str);
         while (len && isspace(*(str + len - 1)))
@@ -542,7 +542,7 @@ int main(int argc, char *argv[]) {
         int arg;
         extern char *optarg;
         extern int optopt;
-        
+
         /* Process command line arguments */
         while ((arg = getopt(argc, argv, "b:c:df:hi:l:n:o:pr:s:u:vx")) != -1) {
                 switch (arg) {

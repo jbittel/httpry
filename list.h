@@ -13,7 +13,7 @@
 
 typedef struct node NODE;
 struct node {
-        char name[30];
+        char *name;
         char *value;
         NODE *next;
 };

@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "error.h"
 #include "list.h"
 
 /* Create a new node for insertion into an existing list */
@@ -21,11 +22,10 @@ NODE *create_node() {
         NODE *list;
 
         if ((list = (NODE *) malloc(sizeof(NODE))) == NULL) {
-                /*log_die("Cannot malloc memory for new node");*/
-                return NULL;
+                log_die("Cannot allocate memory for new node\n");
         }
 
-        list->name[0] = '\0';
+        list->name = NULL;
         list->value = NULL;
         list->next = NULL;
 
@@ -48,7 +48,7 @@ NODE *find_node(NODE *list, char *str) {
 /* Insert a new unique node at the end of the list and append a new tail */
 int insert_node(NODE *list, char *str) {
         NODE *tail;
-        
+
         if (find_node(list, str) != NULL) {
                 return 0; /* A node with that name already exists */
         }
@@ -60,9 +60,13 @@ int insert_node(NODE *list, char *str) {
 
         /* Create new list tail */
         tail = create_node();
-       
+
         /* Populate node with new data */
+        if ((list->name = malloc(strlen(str) + 1)) == NULL) {
+                log_die("Cannot allocate memory for node name\n");
+        }
         strncpy(list->name, str, strlen(str));
+        list->name[strlen(str)] = '\0';
         list->value = NULL;
         list->next = tail;
 

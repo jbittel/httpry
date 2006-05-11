@@ -16,58 +16,19 @@
 #include <net/if.h>
 #include <netinet/if_ether.h>
 #include <netinet/tcp.h>
-#include <syslog.h>
 
-#define MAX_TIME_LEN 20
-
-/* Macros for logging/displaying status messages */
-#define info(x...) fprintf(stderr, x)
-#define warn(x...) fprintf(stderr, "Warning: " x)
-#define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
-#define die(x...) { fprintf(stderr, "Error: " x); cleanup_exit(EXIT_FAILURE); }
-#define log_die(x...) { log(x); die(x); }
-
-/* Function prototypes */
-void cleanup_exit(int exit_value);
-
-struct pkt_hdr {
-        char saddr[INET_ADDRSTRLEN];
-        char daddr[INET_ADDRSTRLEN];
-        char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
-};
-
-/* Full list of HTTP/1.1 request line and
-   request header fields, per RFC2616 */
+/* RFC2616 request line fields; request header fields
+ * are parsed dynamically according to the format string */
+typedef struct http_hdr HTTP;
 struct http_hdr {
         char *method;
         char *uri;
         char *version;
-
-/*        char *accept;
-        char *accept_charset;
-        char *accept_encoding;
-        char *accept_language;
-        char *authorization;
-        char *expect;
-        char *from;
-        char *host;
-        char *if_match;
-
-        char *if_modified_since;
-        char *if_none_match;
-        char *if_range;
-        char *if_unmodified_since;
-        char *max_forwards;
-        char *proxy_authorization;
-        char *range;
-        char *referer;
-        char *te;
-        char *user_agent;*/
 };
 
 /* These structs are pulled directly from the FreeBSD 5.3 source. They are
-   included here to prevent the code breaking due to minor architectural
-   differences among platforms.
+ * included here to prevent the code breaking due to minor architectural
+ * differences among platforms.
  */
 
 /* Ethernet header */
