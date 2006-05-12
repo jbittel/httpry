@@ -34,6 +34,7 @@
 #include "error.h"
 #include "httpry.h"
 #include "list.h"
+#include "tcp.h"
 
 /* Function declarations */
 void parse_config(char *filename);
