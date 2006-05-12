@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# process_log.pm 6/25/2005
+# log_summary.pm | created: 6/25/2005
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -15,8 +15,6 @@ use MIME::Lite;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PROG_NAME = "log_summary.pm";
-my $PLUG_VER = "0.0.1";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $PATTERN = "\t";
 my $SUMMARY_CAP = 10;

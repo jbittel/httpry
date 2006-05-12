@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# sample_plugin.pm 4/3/2006
+# sample_plugin.pm | created: 4/3/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -19,15 +19,10 @@ package sample_plugin;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PROG_NAME = "sample_plugin.pm";
-my $PLUG_VER = "0.0.1";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-
-# Good place to store any global variables to keep them distinct from the
-# rest of the program.
 
 # -----------------------------------------------------------------------------
 # Plugin core

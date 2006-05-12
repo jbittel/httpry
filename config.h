@@ -4,7 +4,7 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  config.h 11/16/2005
+  config.h | created: 11/16/2005
 
   Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
   See included LICENSE file for specific licensing information

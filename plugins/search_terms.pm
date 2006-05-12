@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# search_terms.pm 4/4/2006
+# search_terms.pm | created: 4/4/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -14,8 +14,6 @@ use CGI qw(standard);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PROG_NAME = "search_terms.pm";
-my $PLUG_VER = "0.0.1";
 my $PATTERN = "\t";
 
 # -----------------------------------------------------------------------------

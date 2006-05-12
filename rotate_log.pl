@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# rotate_log.pl 6/27/2005
+# rotate_log.pl | created: 6/27/2005
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -14,8 +14,6 @@ use Time::Local;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PROG_NAME = "rotate_log.pl";
-my $PROG_VER = "0.0.3";
 my $TAR = "tar";
 my $GZIP = "gzip";
 
@@ -38,7 +36,7 @@ my @dir_list;
 
 # Read contents of directory into array
 $output_dir =~ s/\/$//; # Remove trailing slash
-opendir(DIR, $output_dir) || die "\nError: cannot open directory $output_dir\n";
+opendir(DIR, $output_dir) || die "Error: cannot open directory $output_dir\n";
         @dir_list = map "$output_dir/$_", grep !/^\./, readdir(DIR);
 closedir(DIR);
 
@@ -72,7 +70,7 @@ sub compress_files {
                 if ((system "$TAR cf - $filename.log | $GZIP -9 > $output_dir/$filename.tar.gz") == 0) {
                         unlink $log_file;
                 } else {
-                        print "\nError: cannot compress log file '$log_file'\n";
+                        print "Error: cannot compress log file '$log_file'\n";
                 }
         }
 
@@ -100,7 +98,7 @@ sub move_file {
 
                 rename "$input_file", "$output_dir/$mon-$mday-$year.log";
         } else {
-                print "\nError: input file '$input_file' does not exist\n";
+                print "Error: input file '$input_file' does not exist\n";
         }
 }
 
@@ -174,7 +172,7 @@ sub get_arguments {
         $output_dir = 0 unless ($output_dir = $opts{d});
 
         if (!$output_dir) {
-                print "\nError: no output directory provided\n";
+                print "Error: no output directory provided\n";
                 &print_usage();
         }
 }
@@ -184,7 +182,12 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-$PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-ct] [-d dir] [-i file] [-m size(MB)] [-p count]
+Usage: $0 [-ct] [-d dir] [-i file] [-m size(MB)] [-p count]
+  -c ... compress old log files
+  -d ... set directory to move log to
+  -i ... input log file to process
+  -m ... purge old log files that exceed this size threshold
+  -p ... purge old log files that exceed this count threshold
+  -t ... delete all text files in target directory
 USAGE
 }

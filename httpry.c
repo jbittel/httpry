@@ -4,7 +4,7 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  httpry.c 4/29/2005
+  httpry.c | created: 4/29/2005
 
   Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
   See included LICENSE file for specific licensing information

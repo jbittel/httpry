@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# parse_log.pl 6/25/2005
+# parse_log.pl | created: 6/25/2005
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -13,8 +13,6 @@ use Getopt::Std;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PROG_NAME = "parse_log.pl";
-my $PROG_VER = "0.0.1";
 my $VERBOSE = 0;
 my $PLUGIN_DIR = "./plugins";
 
@@ -158,8 +156,7 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-$PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-h] [-p dir] file1 [file2 ...]
+Usage: $0 [-h] [-p dir] file1 [file2 ...]
   -h ... print this help information and exit
   -p ... load plugins from specified directory
 USAGE

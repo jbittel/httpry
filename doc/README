@@ -36,7 +36,7 @@ I'd like to take a look at it.
 "How is this tool useful?" you may ask next. Well, here's a few ideas that have
 occurred to me:
 
- - See what users on your network are looking at
+ - See what users on your network are requesting online
  - Check for proper server configuration (or improper, as the case may be)
  - Research patterns in HTTP usage
  - Watch for dangerous downloaded files
@@ -168,7 +168,7 @@ significant changes and updates to the core httpry program.
 version 0.0.8
    - Fix: crash on exit when reading from an input file
    - Fix: handle whitespace properly in config file lines
-   + Add: allow user to specify set of HTTP fields to output
+   + Add: allow user to specify set of HTTP fields to parse
    + Add: configurable output data format (-s)
    = Chg: removed extended options switch (-x)
    = Chg: parsed HTTP header fields stored in dynamic list
@@ -214,7 +214,7 @@ program version number I'm targeting to focus on that particular option.
 * Parse server response side of the conversation
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
-* Option to fallback on rDNS when Host: string unavailable
+* Option to use rDNS when Host: string unavailable (not passive though)
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
 

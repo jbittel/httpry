@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# content_check.pl 2/16/2006
+# content_check.pl | created: 2/16/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -18,8 +18,6 @@ use Time::Local qw(timelocal);
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
 my $PATTERN = "\t";
-my $PROG_NAME = "content_check.pl";
-my $PROG_VER = "0.0.2";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
 my $TAGGED_LIMIT = 5;
@@ -397,8 +395,7 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-$PROG_NAME version $PROG_VER
-Usage: $PROG_NAME [-h] [-d dir] [-e email] [-l file] [-o file] file1 [file2 ...]
+Usage: $0 [-h] [-d dir] [-e email] [-l file] [-o file] file1 [file2 ...]
   -d ... directory for host detail records (implicit enable)
   -e ... email recipient for output file
   -h ... print this help information and exit

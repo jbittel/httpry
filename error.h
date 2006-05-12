@@ -4,7 +4,7 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  error.h 5/10/2006
+  error.h | created: 5/10/2006
 
   Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
   See included LICENSE file for specific licensing information

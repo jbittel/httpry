@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# process_logs.sh 6/29/2005
+# process_logs.sh | created: 6/29/2005
 #
 # Example shell script for orchestrating the included tools. This
 # is designed to stop the httpry service, move the log file to a

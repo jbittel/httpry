@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# find_proxies.pm 4/3/2006
+# find_proxies.pm | created: 4/3/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 # See included LICENSE file for specific licensing information
@@ -16,8 +16,6 @@ use Socket qw(inet_ntoa inet_aton);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PROG_NAME = "find_proxies.pm";
-my $PLUG_VER = "0.0.1";
 my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $PATTERN = "\t";
 my $PRUNE_LIMIT = 15;
@@ -112,9 +110,8 @@ sub process_data {
                 }
         }
 
-        # Perform uri embedded request search
-        # TODO: this works, but appears to generate too many
-        # false positives to be useful as written
+        # Perform uri embedded request search; this works, but appears
+        # to generate too many false positives to be useful as is
         if ($uri =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
                 $proxy_lines{$src_ip}->{$hostname}++;
         }
