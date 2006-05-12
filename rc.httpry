@@ -3,7 +3,7 @@
 #
 # This is a start script written and tested under Slackware Linux. If you
 # are running the program under a different system and write your own
-# init script, please send it to me so I can include it in the package.
+# init script, please send it to me and I'll include it in the package.
 #
 
 # --------------------

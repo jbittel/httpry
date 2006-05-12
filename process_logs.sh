@@ -33,27 +33,19 @@ parse_fn="`date +%-m-%-d-%Y`.log" # This is the date format used by rotate_log.p
 out_fn="`date +%-m-%-d-%Y`"       # Use current date as base filename for output files
 
 # Stop the httpry service if it is running
-if [ -r "/var/run/httpry.pid" ]; then
-        kill `cat /var/run/httpry.pid`
-else
-        killall httpry
-fi
+/etc/rc.d/rc.httpry stop
 
 # Compress/move/purge log files
 if [ -e "$tools_dir/$log_fn" ]; then
         perl $tools_dir/rotate_log.pl -ct -i $logs_dir/$log_fn -d $logs_dir
 fi
 
-
 # Restart the httpry service
-if [ -e "/var/run/httpry.pid" ]; then
-        rm -rf /var/run/httpry.pid
-fi
-httpry -c $config_file
+/etc/rc.d/rc.httpry start
 
-# Process new log file data
+# Process new log file data; make sure appropriate plugins are
+# enabled/disabled for parse_log.pl
 if [ -e "$logs_dir/$parse_fn" ]; then
-        perl $tools_dir/parse_log.pl -s -o $logs_dir/$out_fn-log.txt -c 20 -e $email_addr $logs_dir/$parse_fn
-        perl $tools_dir/trace_flows.pl -m -o $logs_dir/$parse_fn.flows $logs_dir/$parse_fn
-        perl $tools_dir/parse_flows.pl -sx -l $tools_dir/$content_fn -d $logs_dir -o $logs_dir/$out_fn-flow.txt -e $email_addr $logs_dir/$parse_fn.flows
+        perl $tools_dir/content_check.pl -e $email_addr -l $tools_dir/$content_fn -o $logs_dir/$out_fn-content.txt $logs_dir/$parse_fn
+        perl $tools_dir/parse_log.pl $logs_dir/$parse_fn
 fi

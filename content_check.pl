@@ -47,6 +47,7 @@ my $flow_min_len = 999999;
 my $flow_max_len = 0;
 my $tagged_flows_cnt = 0;
 my $total_tagged_lines_cnt = 0;
+my $max_concurrent = 0;
 
 # Data structures
 my %flow_info = ();       # Holds metadata about each flow
@@ -60,7 +61,7 @@ my @hitlist = ();
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-&delete_text_files();
+&delete_text_files() if $host_detail;
 &parse_flows();
 &write_summary_file() if $output_file;
 &send_email() if $email_addr;
@@ -93,6 +94,9 @@ sub parse_flows {
 
                         next if $curr_line eq "";
                         $total_line_cnt++;
+                        if ((keys %flow_info) > $max_concurrent) {
+                                $max_concurrent = keys %flow_info;
+                        }
 
                         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
 
@@ -278,6 +282,7 @@ sub write_summary_file {
         print OUTFILE "\n\nFLOW STATS\n\n";
         print OUTFILE "Flow count:\t$flow_cnt\n";
         print OUTFILE "Flow lines:\t$flow_line_cnt\n";
+        print OUTFILE "Max Concurrent:\t$max_concurrent\n";
         print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
 
         if ($hitlist_file) {
