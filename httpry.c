@@ -40,15 +40,15 @@
 void parse_config(char *filename);
 void parse_format_string(char *str);
 void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
-pcap_t* open_dev(char *dev, int promisc, char *fname);
+pcap_t *open_dev(char *dev, int promisc, char *fname);
 void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net);
 void change_user(char *new_user);
 void get_packets(pcap_t *pcap_hnd, int pkt_count);
 void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 void runas_daemon(char *run_dir);
 void handle_signal(int sig);
-char* safe_strdup(char *curr_str);
-char* strip_whitespace(char *str);
+char *safe_strdup(char *curr_str);
+char *strip_whitespace(char *str);
 void cleanup_exit(int exit_value);
 void display_version();
 void display_help();
@@ -71,7 +71,7 @@ static char *use_config  = NULL;
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
 static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
-NODE *format_str;
+NODE *format_str = NULL;
 
 /* Read options in from config file */
 void parse_config(char *filename) {
@@ -189,7 +189,7 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
 }
 
 /* Open selected device for capturing */
-pcap_t* open_dev(char *dev, int promisc, char *fname) {
+pcap_t *open_dev(char *dev, int promisc, char *fname) {
         char errbuf[PCAP_ERRBUF_SIZE]; /* Pcap error string */
         pcap_t *pcap_hnd;              /* Opened pcap device handle */
 
@@ -349,7 +349,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
                 if ((req_value = strchr(req_header, ':')) == NULL) continue;
                 *req_value++ = '\0';
                 while (isspace(*req_value)) req_value++;
-                
+
                 if ((element = find_node(format_str, req_header)) == NULL) continue;
                 element->value = req_value;
         }
@@ -450,7 +450,7 @@ void handle_signal(int sig) {
 }
 
 /* Centralize error checking for string duplication */
-char* safe_strdup(char *curr_str) {
+char *safe_strdup(char *curr_str) {
         char *new_str;
 
         if ((new_str = strdup(curr_str)) == NULL) {
@@ -461,7 +461,7 @@ char* safe_strdup(char *curr_str) {
 }
 
 /* Strip leading and trailing spaces from parameter string */
-char* strip_whitespace(char *str) {
+char *strip_whitespace(char *str) {
         int len;
 
         while (isspace(*str)) str++;
@@ -477,7 +477,9 @@ void cleanup_exit(int exit_value) {
         struct pcap_stat pkt_stats; /* Store stats from pcap */
 
         fflush(NULL);
-        remove(PID_FILE); /* If daemon, we need this gone */
+        if (daemon_mode) remove(PID_FILE);
+        if (use_infile) free(use_infile);
+        if (format_str) free_list(format_str);
 
         if (dump_file) {
                 pcap_dump_flush(dump_file);
@@ -493,8 +495,6 @@ void cleanup_exit(int exit_value) {
                         info("  %d packets parsed\n", pkt_parsed);
                 }
         }
-
-        if (use_infile) free(use_infile);
 
         exit(exit_value);
 }

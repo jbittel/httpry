@@ -45,7 +45,7 @@ NODE *find_node(NODE *list, char *str) {
         return NULL;
 }
 
-/* Insert a new unique node at the end of the list and append a new tail */
+/* Update node at the end of list and append a new tail */
 int insert_node(NODE *list, char *str) {
         NODE *tail;
 
@@ -87,6 +87,34 @@ void print_list(NODE *list) {
                 list = list->next;
         }
         printf("\n");
+
+        return;
+}
+
+/* Free all allocated memory for linked list */
+void free_list(NODE *list) {
+        NODE *prev;
+        NODE *curr;
+
+        prev = list;
+        if (prev->next == NULL) { /* Empty list */
+                free(prev);
+
+                return;
+        }
+
+        curr = prev->next;
+        while (curr->next != NULL) {
+                free(prev->name);
+                free(prev);
+
+                prev = curr;
+                curr = curr->next;
+        }
+
+        free(prev->name);
+        free(prev);
+        free(curr);
 
         return;
 }
