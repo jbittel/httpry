@@ -117,7 +117,7 @@ sub purge_dir_by_count {
                         $a->[1] <=> $b->[1] or # ...then by month...
                         $a->[2] <=> $b->[2]    # ...and finally day
                 }
-                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /\.tar.gz$/, @dir_list;
+                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /(\.tar\.gz$|\.log$)/, @dir_list;
 
         if (scalar @logs > $purge_limit) {
                 $del_count = scalar @logs - $purge_limit;
@@ -143,7 +143,7 @@ sub purge_dir_by_size {
                         $a->[1] <=> $b->[1] or # ...then by month...
                         $a->[2] <=> $b->[2]    # ...and finally day
                 }
-                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /\.tar.gz$/, @dir_list;
+                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /(\.tar\.gz$|\.log$)/, @dir_list;
 
         foreach $log_file (reverse @logs) {
                 $file_size += int((stat($log_file))[7] / 1000000);

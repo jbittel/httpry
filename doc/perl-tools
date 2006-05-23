@@ -1,0 +1,37 @@
+Along with the core httpry program there are included a number of Perl scripts.
+This provides a listing of those files and a brief description of what each
+script does. Run each tool with a -h parameter to get a listing of the
+available command line parameters.
+
+ ./content_check.pl
+        Checks for specified content in the input file according to a "hitlist"
+        of keywords. To properly analyze content, it breaks the input file into
+        distinct flows which are time delimited blocks of traffic for each
+        client IP. Also outputs some basic file/flow statistics.
+
+ ./parse_log.pl
+        Core script for plugins. Processes input log files and delivers the data
+        to each initialized plugin. Plugins are activated by simply having a .pm
+        extension and being placed in the specified plugin directory (default is
+        ./plugins).
+
+ ./plugins/find_proxies.pm
+        Performs some basic tests looking for proxy usage.
+
+ ./plugins/log_summary.pm
+        Provides extensive information regarding the input file(s), visited
+        hosts, top talkers and requested file extensions.
+
+ ./plugins/sample_plugin.pm
+        A simple plugin with no functionality designed as an easy way to see how
+        the plugins are structured and to provide a sample framework for writing
+        new plugins.
+
+ ./plugins/search_terms.pm
+        Outputs a raw dump of all entered search terms for a number of the major
+        search services. The output is grouped by domain name.
+
+ ./rotate_log.pl
+        Moves an active log file into a specified directory. Also offers options
+        for deleting text files, compressing the log files and purging old log
+        files according to number or total size.
