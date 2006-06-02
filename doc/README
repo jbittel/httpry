@@ -158,50 +158,7 @@ terminates.
 
 
 ----------------------
-IV. CHANGELOG
-----------------------
-
-Note that this changelog does not refer to the included Perl scripts, which
-are often updated significantly between releases as well. It only lists
-significant changes and updates to the core httpry program.
-
-version 0.0.8
-   - Fix: crash on exit when reading from an input file
-   - Fix: handle whitespace properly in config file lines
-   + Add: allow user to specify set of HTTP fields to parse
-   + Add: configurable output data format (-s)
-   = Chg: removed extended options switch (-x)
-   = Chg: parsed HTTP header fields stored in dynamic list
-   = Chg: error/log/warn macros encapsulated in header file
-
-version 0.0.7
-   + Add: option to read settings from a config file (-c)
-   = Chg: changed packet count switch from -c to -n
-   - Fix: fixed bug in packet count check
-   = Chg: cleaned up initialization routines in main()
-   + Add: added config.h for setting compile time program defaults
-   + Add: option to display extended packet information (-x)
-   + Add: option to dump binary capture output file (-b)
-   + Add: basic packet capture/parsing stats at program termination
-   = Chg: program now compiles cleanly as strict ANSI C
-
-version 0.0.6 (initial "official" release)
-   + Add: ability to change process owner (-u)
-   + Add: additional error checking when entering daemon mode
-   = Chg: completely reworked output data handling
-   = Chg: removed stdout suppression (-s) option
-   = Chg: daemon mode (-d) now requires output file (-o)
-   = Chg: error/log/warn message printing pushed into function macros
-   - Fix: standardized error and status message strings
-   + Add: ability to specify running directory (-r)
-   - Fix: fixed an incorrect array initialisation
-   = Chg: split version and help information into two commands (-v and -h)
-
-All previous releases were internal pre-release builds
-
-
-----------------------
-V. FUTURE IDEAS
+IV. FUTURE IDEAS
 ----------------------
 
 These are ideas that have occurred to me while working on this project as
@@ -220,7 +177,7 @@ program version number I'm targeting to focus on that particular option.
 
 
 ----------------------
-VI. CREDITS/THANKS
+V. CREDITS/THANKS
 ----------------------
 
 Thanks:
