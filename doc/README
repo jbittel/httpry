@@ -22,10 +22,10 @@ intended to perform analysis itself, but instead to capture, parse and/or log
 the traffic for later analysis. It can be run in real-time displaying the
 traffic as it is parsed, or as a daemon process that logs to an output file. It
 is written to be as lightweight and flexible as possible, so that it can be
-easily adaptable to different applications. Note that currently it only captures
+easily adaptable to different applications. Currently httpry only captures
 client-side requests as that is the particular data of interest to me.
 
-The first question I asked myself when starting this project was "has this
+The first question I asked myself when researching this project was "has this
 already been done?" From the perspective I was approaching the problem, I couldn't
 find a pre-existing solution. Certainly there are several existing tools that can
 be combined to provide similar output, but none of those combinations seemed
@@ -167,11 +167,11 @@ them are necessarily good ideas, but they are a source of inspiration and
 consideration as I continue improving the project. A number indicates the
 program version number I'm targeting to focus on that particular option.
 
-* Make all output fields dynamic, including packet information
+* Make all output fields dynamic, including packet information (.9)
 * Parse server response side of the conversation
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
-* Option to use rDNS when Host: string unavailable (not passive though)
+* Option to use rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
 
