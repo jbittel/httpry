@@ -14,7 +14,7 @@ use Time::Local;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $TAR = "tar";
+my $TAR  = "tar";
 my $GZIP = "gzip";
 
 # -----------------------------------------------------------------------------
@@ -36,7 +36,7 @@ my @dir_list;
 
 # Read contents of directory into array
 $output_dir =~ s/\/$//; # Remove trailing slash
-opendir(DIR, $output_dir) || die "Error: cannot open directory $output_dir\n";
+opendir(DIR, $output_dir) or die "Error: cannot open directory $output_dir\n";
         @dir_list = map "$output_dir/$_", grep !/^\./, readdir(DIR);
 closedir(DIR);
 
@@ -75,6 +75,8 @@ sub compress_files {
         }
 
         chdir($dir);
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -100,6 +102,8 @@ sub move_file {
         } else {
                 print "Error: input file '$input_file' does not exist\n";
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -125,6 +129,8 @@ sub purge_dir_by_count {
                         unlink $logs[$i];
                 }
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -152,6 +158,8 @@ sub purge_dir_by_size {
                         unlink $log_file;
                 }
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -164,17 +172,19 @@ sub get_arguments {
         &print_usage() if ($opts{h});
 
         # Copy command line arguments to internal variables
-        $compress = 1 if ($opts{c});
-        $del_text = 1 if ($opts{t});
-        $input_file = 0 unless ($input_file = $opts{i});
+        $compress    = 1 if ($opts{c});
+        $del_text    = 1 if ($opts{t});
+        $input_file  = 0 unless ($input_file  = $opts{i});
         $purge_limit = 0 unless ($purge_limit = $opts{p});
-        $purge_size = 0 unless ($purge_size = $opts{m});
-        $output_dir = 0 unless ($output_dir = $opts{d});
+        $purge_size  = 0 unless ($purge_size  = $opts{m});
+        $output_dir  = 0 unless ($output_dir  = $opts{d});
 
         if (!$output_dir) {
                 print "Error: no output directory provided\n";
                 &print_usage();
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------

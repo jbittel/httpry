@@ -16,8 +16,8 @@ use Socket qw(inet_ntoa inet_aton);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $SENDMAIL = "/usr/lib/sendmail -i -t";
-my $PATTERN = "\t";
+my $SENDMAIL    = "/usr/lib/sendmail -i -t";
+my $PATTERN     = "\t";
 my $PRUNE_LIMIT = 15;
 
 # -----------------------------------------------------------------------------
@@ -51,12 +51,15 @@ sub main {
         my $data = shift;
 
         &process_data($data);
+
+        return;
 }
 
 sub end {
         &prune_hits();
         &write_output_file();
-        &send_email() if $email_addr;
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -140,6 +143,7 @@ sub prune_hits {
                 }
         }
 
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -150,7 +154,7 @@ sub write_output_file {
         my $hostname;
         my $count = 0;
 
-        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUSPECTED PROXIES\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";
@@ -172,37 +176,6 @@ sub write_output_file {
         }
 
         close(OUTFILE);
-
-        return;
-}
-
-# -----------------------------------------------------------------------------
-# Send email to specified address and attach output file
-# -----------------------------------------------------------------------------
-sub send_email {
-        my $msg;
-        my $output_filename = basename($output_file);
-
-        $msg = MIME::Lite->new(
-                From    => 'admin@corban.edu',
-                To      => "$email_addr",
-                Subject => 'HTTPry Proxy Search - ' . localtime(),
-                Type    => 'multipart/mixed'
-        );
-
-        $msg->attach(
-                Type => 'TEXT',
-                Data => 'HTTPry proxy search for ' . localtime()
-        );
-
-        $msg->attach(
-                Type        => 'TEXT',
-                Path        => "$output_file",
-                Filename    => "$output_filename",
-                Disposition => 'attachment'
-        );
-
-        $msg->send('sendmail', $SENDMAIL) || die "Error: Cannot send mail: $!\n";
 
         return;
 }

@@ -17,15 +17,15 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PATTERN = "\t";
-my $SENDMAIL = "/usr/lib/sendmail -i -t";
+my $PATTERN      = "\t";
+my $SENDMAIL     = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
 my $TAGGED_LIMIT = 5;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %opts = ();
+my %opts        = ();
 my @input_files = ();
 my $host_detail;
 my $email_addr;
@@ -36,24 +36,24 @@ my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing code
 
 # Counter variables
-my $file_cnt = 0;
-my $size_cnt = 0;
-my $total_line_cnt = 0;
-my $flow_cnt = 0;
-my $flow_line_cnt = 0;
-my $flow_min_len = 999999;
-my $flow_max_len = 0;
-my $tagged_flows_cnt = 0;
+my $file_cnt               = 0;
+my $size_cnt               = 0;
+my $total_line_cnt         = 0;
+my $flow_cnt               = 0;
+my $flow_line_cnt          = 0;
+my $flow_min_len           = 999999;
+my $flow_max_len           = 0;
+my $tagged_flows_cnt       = 0;
 my $total_tagged_lines_cnt = 0;
-my $max_concurrent = 0;
+my $max_concurrent         = 0;
 
 # Data structures
-my %flow_info = ();       # Holds metadata about each flow
+my %flow_info       = (); # Holds metadata about each flow
 my %flow_data_lines = (); # Holds actual log file lines for each flow
-my %tagged_flows = ();    # Ip/flow/hostname information for tagged flows
-my %output_flows = ();    # Pruned and cleaned tagged flows for display
-my %history = ();         # Holds history of content checks to avoid matching
-my @hitlist = ();
+my %tagged_flows    = (); # Ip/flow/hostname information for tagged flows
+my %output_flows    = (); # Pruned and cleaned tagged flows for display
+my %history         = (); # Holds history of content checks to avoid matching
+my @hitlist         = ();
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -145,8 +145,8 @@ sub parse_flows {
 }
 
 # -----------------------------------------------------------------------------
-# Search fields for specified content; returns true if match occurs; store
-# results of search in hash so we don't have to check the same text twice
+# Search hisotry for specified content; returns true if match occurs; store
+# results of search in hash so we don't have to match the same text twice
 #
 # Potential hash values: -1 unmatched / 1 matched / 0 no match
 # -----------------------------------------------------------------------------
@@ -231,7 +231,7 @@ sub append_host_subfile {
         my $path = shift;
         my $ip = shift;
 
-        open(HOSTFILE, ">>$path") || die "Error: cannot open $path: $!\n";
+        open(HOSTFILE, ">>$path") or die "Error: cannot open $path: $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
         foreach (@{$flow_data_lines{$ip}}) {
@@ -251,7 +251,7 @@ sub delete_text_files {
         $host_detail =~ s/\/$//; # Remove trailing slash
 
         # Iterate through directory and delete tagged_ files
-        opendir(DIR, $host_detail) || die "Error: cannot open directory $host_detail: $!\n";
+        opendir(DIR, $host_detail) or die "Error: cannot open directory $host_detail: $!\n";
                 foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
                         unlink;
                 }
@@ -268,7 +268,7 @@ sub write_summary_file {
         my $flow;
         my $hostname;
 
-        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";
@@ -341,7 +341,7 @@ sub send_email {
                 Disposition => 'attachment'
         );
 
-        $msg->send('sendmail', $SENDMAIL) || die "Error: Cannot send mail: $!\n";
+        $msg->send('sendmail', $SENDMAIL) or die "Error: Cannot send mail: $!\n";
 
         return;
 }
@@ -360,11 +360,11 @@ sub get_arguments {
         }
 
         # Copy command line arguments to internal variables
-        @input_files = @ARGV;
-        $host_detail = 0 unless ($host_detail = $opts{d});
-        $email_addr = 0 unless ($email_addr = $opts{e});
+        @input_files  = @ARGV;
+        $host_detail  = 0 unless ($host_detail  = $opts{d});
+        $email_addr   = 0 unless ($email_addr   = $opts{e});
         $hitlist_file = 0 unless ($hitlist_file = $opts{l});
-        $output_file = 0 unless ($output_file = $opts{o});
+        $output_file  = 0 unless ($output_file  = $opts{o});
 
         # Check for required options and combinations
         if (!$output_file) {
@@ -378,7 +378,7 @@ sub get_arguments {
 
         # Read in option files
         if ($hitlist_file) {
-                open(HITLIST, "$hitlist_file") || die "Error: Cannot open $hitlist_file: $!\n";
+                open(HITLIST, "$hitlist_file") or die "Error: Cannot open $hitlist_file: $!\n";
                         foreach (<HITLIST>) {
                                 chomp;
                                 next if /^#/;

@@ -13,16 +13,15 @@ use Getopt::Std;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $VERBOSE = 0;
+my $VERBOSE    = 0;
 my $PLUGIN_DIR = "./plugins";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %nameof = ();
-my @callbacks = ();
-my @plugins = ();
-my $plugin;
+my %nameof    = (); # Stores human readable plugin names
+my @callbacks = (); # List of initialized plugins
+my @plugins   = (); # List of plugin files in directory
 
 # Command line arguments
 my %opts;
@@ -75,6 +74,8 @@ sub init_plugins {
                         }
                 }
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -91,6 +92,8 @@ sub register_plugin {
 
         # Save a plaintext copy of the plugin name so we can use it in output text
         $nameof{$callbacks[-1]} = $plugin;
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -99,6 +102,7 @@ sub register_plugin {
 sub process_logfiles {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
+        my $plugin;
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
@@ -117,15 +121,21 @@ sub process_logfiles {
 
                 close(INFILE);
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
 # Call termination function in each loaded plugin
 # -----------------------------------------------------------------------------
 sub end_plugins {
+        my $plugin;
+        
         foreach $plugin (@callbacks) {
                 $plugin->end() if ($plugin->can('end'));
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -143,12 +153,14 @@ sub get_arguments {
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
-        $plugin_dir = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
+        $plugin_dir  = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
 
         # Strip trailing slash from plugin directory path
         if ($plugin_dir =~ /(.*)\/$/) {
                 $plugin_dir = $1;
         }
+
+        return;
 }
 
 # -----------------------------------------------------------------------------

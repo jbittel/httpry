@@ -62,6 +62,8 @@ sub main {
 
         # Simple processing can be handled here; more complex processing
         # would probably be better handled in a different sub.
+
+        return;
 }
 
 # This sub is called once at program termination; all shutdown code (i.e.
@@ -69,6 +71,7 @@ sub main {
 # included here.
 sub end {
 
+        return;
 }
 
 # -----------------------------------------------------------------------------

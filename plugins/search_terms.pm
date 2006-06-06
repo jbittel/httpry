@@ -47,10 +47,14 @@ sub main {
         my $data = shift;
 
         &process_data($data);
+
+        return;
 }
 
 sub end {
         &write_output_file();
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -169,7 +173,7 @@ sub write_output_file {
         my $term;
         my $count = 0;
 
-        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";

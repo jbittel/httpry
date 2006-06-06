@@ -15,16 +15,16 @@ use MIME::Lite;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $SENDMAIL = "/usr/lib/sendmail -i -t";
-my $PATTERN = "\t";
+my $SENDMAIL    = "/usr/lib/sendmail -i -t";
+my $PATTERN     = "\t";
 my $SUMMARY_CAP = 10;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %top_hosts = ();
-my %top_talkers = ();
-my %filetypes = ();
+my %top_hosts      = ();
+my %top_talkers    = ();
+my %filetypes      = ();
 my $total_line_cnt = 0;
 
 # -----------------------------------------------------------------------------
@@ -53,11 +53,15 @@ sub main {
         my $data = shift;
 
         &process_data($data);
+
+        return;
 }
 
 sub end {
         &write_output_file();
         &send_email() if $email_addr;
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -110,7 +114,7 @@ sub write_output_file {
         my $key;
         my $count = 0;
 
-        open(OUTFILE, ">$output_file") || die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";
@@ -185,7 +189,7 @@ sub send_email {
                 Disposition => 'attachment'
         );
 
-        $msg->send('sendmail', $SENDMAIL) || die "Error: Cannot send mail: $!\n";
+        $msg->send('sendmail', $SENDMAIL) or die "Error: Cannot send mail: $!\n";
 
         return;
 }
