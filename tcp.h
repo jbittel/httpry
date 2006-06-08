@@ -12,10 +12,7 @@
 */
 
 #include <arpa/inet.h>
-/*#include <netinet/if_ether.h>*/
 #include <netinet/tcp.h>
-/*#include <net/if.h>*/
-/*#include <sys/socket.h>*/
 
 #define ETHER_ADDR_LEN 6
 
@@ -50,7 +47,7 @@
  *      @(#)tcp.h       8.1 (Berkeley) 6/10/93
  * $FreeBSD: src/sys/netinet/tcp.h,v 1.26 2004/08/16 18:32:07 rwatson Exp $
  */
- 
+
 /* Ethernet header */
 struct pkt_eth {
         u_char  ether_dhost[ETHER_ADDR_LEN];    /* Destination host address */

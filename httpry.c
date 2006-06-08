@@ -348,7 +348,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         while ((req_header = strtok(NULL, DELIM)) != NULL) {
                 if ((req_value = strchr(req_header, ':')) == NULL) continue;
                 *req_value++ = '\0';
-                while (isspace(*req_value)) req_value++;
+                while (isspace(*req_value)) req_value++; /* Strip leading whitespace */
 
                 if ((element = find_node(format_str, req_header)) == NULL) continue;
                 element->value = req_value;
