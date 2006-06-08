@@ -84,14 +84,13 @@ sub parse_flows {
 
                 foreach $curr_line (<INFILE>) {
                         chomp $curr_line;
-                        $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
+                        next if $curr_line eq "";
+                        $total_line_cnt++;
 
                         # Convert hex characters to ASCII
                         $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
                         $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
-                        next if $curr_line eq "";
-                        $total_line_cnt++;
                         if ((keys %flow_info) > $max_concurrent) {
                                 $max_concurrent = keys %flow_info;
                         }
@@ -229,13 +228,15 @@ sub timeout_flow {
 # -----------------------------------------------------------------------------
 sub append_host_subfile {
         my $path = shift;
-        my $ip = shift;
+        my $ip   = shift;
+        my $line;
 
         open(HOSTFILE, ">>$path") or die "Error: cannot open $path: $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
-        foreach (@{$flow_data_lines{$ip}}) {
-                print HOSTFILE $_, "\n";
+        foreach $line (@{$flow_data_lines{$ip}}) {
+                $line =~ tr/\x80-\xFF//d; # Strip non-printable chars
+                print HOSTFILE $line, "\n";
         }
         print HOSTFILE '<' x 80 . "\n";
 
