@@ -540,6 +540,8 @@ int main(int argc, char *argv[]) {
         extern char *optarg;
         extern int optopt;
 
+        signal(SIGINT, handle_signal);
+        
         /* Process command line arguments */
         while ((arg = getopt(argc, argv, "b:c:df:hi:l:n:o:pr:s:u:v")) != -1) {
                 switch (arg) {
@@ -588,7 +590,6 @@ int main(int argc, char *argv[]) {
         if (!capfilter) capfilter = safe_strdup(default_capfilter);
         if (!out_format) out_format = safe_strdup(default_format);
         if (!run_dir) run_dir = safe_strdup(default_rundir);
-        signal(SIGINT, handle_signal);
         parse_format_string(out_format);
 
         /* Set up packet capture */
