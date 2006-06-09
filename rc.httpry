@@ -19,8 +19,12 @@ config_file="" # Path to your config file
 
 case $1 in
 start)
-        echo "Starting httpry..."
-        httpry -c $config_file
+        if [ -r /var/run/httpry.pid ]; then
+                echo "httpry already running with PID `cat /var/run/httpry.pid`"
+        else
+                echo "Starting httpry..."
+                httpry -d -c $config_file
+        fi
         ;;
 stop)
         echo "Stopping httpry..."

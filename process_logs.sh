@@ -20,17 +20,16 @@
 # provide an option here, be sure to remove that parameter in the script
 # below.
 
-tools_dir=""     # Change this to the location of the perl tool scripts
-logs_dir=""      # Change this to where you want to store your logs
-email_addr=""    # Email address used by parse_log.pl reports
-content_fn=""    # File name of content checks file; put in tools dir
-config_file=""   # Path to httpry config file
+tools_dir  = ""   # Change this to the location of the perl tool scripts
+logs_dir   = ""   # Change this to where you want to store your logs
+email_addr = ""   # Email address used by parse_log.pl reports
+content_fn = ""   # File name of content checks file; put in tools dir
 
 # --------------------
 
-log_fn="out.log"                  # Default file name for active log file
-parse_fn="`date +%-m-%-d-%Y`.log" # This is the date format used by rotate_log.pl
-out_fn="`date +%-m-%-d-%Y`"       # Use current date as base filename for output files
+log_fn   = "out.log"                  # Default file name for active log file
+parse_fn = "`date +%-m-%-d-%Y`.log"   # This is the date format used by rotate_log.pl
+out_fn   = "`date +%-m-%-d-%Y`"       # Use current date as base filename for output files
 
 # Stop the httpry service if it is running
 /etc/rc.d/rc.httpry stop
