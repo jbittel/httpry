@@ -92,16 +92,16 @@ sub process_data {
         my $curr_line = shift;
 
         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        return if (!$hostname or !$src_ip or !$uri); # Malformed line
+        return if (!$hostname or !$src_ip or !$uri); # Missing data
 
         # Gather statistics
         $total_line_cnt++;
         $top_hosts{$hostname}++;
         $top_talkers{$src_ip}++;
 
-        if ($filetype && ($uri =~ /\.([\w\d]{2,5}?)$/)) {
+        if ($filetype && ($uri =~ /\.([\w\d]{2,5}?)$/i)) {
                 $ext_cnt++;
-                $filetypes{$1}++;
+                $filetypes{lc($1)}++;
         }
 
         return;
