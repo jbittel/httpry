@@ -44,7 +44,9 @@ pcap_t *open_dev(char *dev, int promisc, char *fname);
 void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net);
 void change_user(char *new_user);
 void get_packets(pcap_t *pcap_hnd, int pkt_count);
-void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
+void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
+int parse_client_request(char *header_line);
+int parse_server_response(char *header_line);
 void runas_daemon(char *run_dir);
 void handle_signal(int sig);
 char *safe_strdup(char *curr_str);
@@ -265,7 +267,7 @@ void change_user(char *new_user) {
 
 /* Begin packet capture/processing session */
 void get_packets(pcap_t *pcap_hnd, int pkt_count) {
-        if (pcap_loop(pcap_hnd, pkt_count, process_pkt, NULL) < 0) {
+        if (pcap_loop(pcap_hnd, pkt_count, parse_packet, NULL) < 0) {
                 log_die("Cannot read packets from interface\n");
         }
 
@@ -275,13 +277,13 @@ void get_packets(pcap_t *pcap_hnd, int pkt_count) {
 }
 
 /* Process each packet that passes the capture filter */
-void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
+void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
         char *data;            /* Editable copy of packet data */
         char *req_header;      /* Buffer for each request header line */
         char *req_value;
         NODE *element;
-        HTTP_CLIENT http;
+        char *header_line;
         char saddr[INET_ADDRSTRLEN];
         char daddr[INET_ADDRSTRLEN];
         char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
@@ -311,37 +313,26 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         strncpy(data, payload, size_data);
         data[size_data] = '\0';
 
-        /* Parse valid request line, bail if malformed */
-        if ((http.method = strtok(data, DELIM)) == NULL) {
+        /* Parse valid request/response line, bail if malformed */
+        if ((header_line = strtok(data, DELIM)) == NULL) {
                 free(data);
                 return;
         }
-        /* Not all HTTP/1.1 methods parsed as we're currently
-           only interested in data requested from the server */
-        if (strncmp(http.method, GET_REQUEST, 4) != 0 &&
-            strncmp(http.method, HEAD_REQUEST, 5) != 0) {
-                free(data);
-                return;
-        }
-        if ((http.request_uri = strchr(http.method, SPACE_CHAR)) == NULL) {
-                free(data);
-                return;
-        }
-        *http.request_uri++ = '\0';
-        if ((http.http_version = strchr(http.request_uri, SPACE_CHAR)) == NULL) {
-                free(data);
-                return;
-        }
-        *http.http_version++ = '\0';
 
-        if ((element = find_node(format_str, "Method")) != NULL) {
-                element->value = http.method;
-        }
-        if ((element = find_node(format_str, "URI")) != NULL) {
-                element->value = http.request_uri;
-        }
-        if ((element = find_node(format_str, "Version")) != NULL) {
-                element->value = http.http_version;
+        if (strncmp(header_line, GET_REQUEST, 4) == 0 ||
+            strncmp(header_line, HEAD_REQUEST, 5) == 0) {
+                if (parse_client_request(header_line) == 0) {
+                        free(data);
+                        return;
+                }
+        } else if (strncmp(header_line, "HTTP/", 5) == 0) {
+                if (parse_server_response(header_line) == 0) {
+                        free(data);
+                        return;
+                }
+        } else {
+                free(data);
+                return;
         }
 
         /* Parse each HTTP request header line */
@@ -372,6 +363,64 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         pkt_parsed++;
 
         return;
+}
+
+/* Parse a HTTP client request, bail at first sign of malformed data */
+int parse_client_request(char *header_line) {
+        HTTP_CLIENT client;
+        NODE *element;
+
+        client.method = header_line;
+
+        if ((client.request_uri = strchr(client.method, SPACE_CHAR)) == NULL) {
+                return 0;
+        }
+        *client.request_uri++ = '\0';
+        if ((client.http_version = strchr(client.request_uri, SPACE_CHAR)) == NULL) {
+                return 0;
+        }
+        *client.http_version++ = '\0';
+
+        if ((element = find_node(format_str, "Method")) != NULL) {
+                element->value = client.method;
+        }
+        if ((element = find_node(format_str, "Request-URI")) != NULL) {
+                element->value = client.request_uri;
+        }
+        if ((element = find_node(format_str, "HTTP-Version")) != NULL) {
+                element->value = client.http_version;
+        }
+
+        return 1;
+}
+
+/* Parse a HTTP server response, bail at first sign of malformed data */
+int parse_server_response(char *header_line) {
+        HTTP_SERVER server;
+        NODE *element;
+
+        server.http_version = header_line;
+
+        if ((server.status_code = strchr(server.http_version, SPACE_CHAR)) == NULL) {
+                return 0;
+        }
+        *server.status_code++ = '\0';
+        if ((server.reason_phrase = strchr(server.status_code, SPACE_CHAR)) == NULL) {
+                return 0;
+        }
+        *server.reason_phrase++ = '\0';
+
+        if ((element = find_node(format_str, "HTTP-Version")) != NULL) {
+                element->value = server.http_version;
+        }
+        if ((element = find_node(format_str, "Status-Code")) != NULL) {
+                element->value = server.status_code;
+        }
+        if ((element = find_node(format_str, "Reason-Phrase")) != NULL) {
+                element->value = server.reason_phrase;
+        }
+
+        return 1;
 }
 
 /* Run program as a daemon process */
@@ -541,7 +590,7 @@ int main(int argc, char *argv[]) {
         extern int optopt;
 
         signal(SIGINT, handle_signal);
-        
+
         /* Process command line arguments */
         while ((arg = getopt(argc, argv, "b:c:df:hi:l:n:o:pr:s:u:v")) != -1) {
                 switch (arg) {
