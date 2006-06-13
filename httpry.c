@@ -280,10 +280,10 @@ void get_packets(pcap_t *pcap_hnd, int pkt_count) {
 void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
         char *data;            /* Editable copy of packet data */
-        char *req_header;      /* Buffer for each request header line */
+        char *header_line;
         char *req_value;
         NODE *element;
-        char *header_line;
+        int is_request;
         char saddr[INET_ADDRSTRLEN];
         char daddr[INET_ADDRSTRLEN];
         char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
@@ -318,30 +318,34 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
                 free(data);
                 return;
         }
-
+        
         if (strncmp(header_line, GET_REQUEST, 4) == 0 ||
             strncmp(header_line, HEAD_REQUEST, 5) == 0) {
                 if (parse_client_request(header_line) == 0) {
                         free(data);
                         return;
                 }
+
+                is_request = 1;
         } else if (strncmp(header_line, "HTTP/", 5) == 0) {
                 if (parse_server_response(header_line) == 0) {
                         free(data);
                         return;
                 }
+
+                is_request = 0;
         } else {
                 free(data);
                 return;
         }
 
         /* Parse each HTTP request header line */
-        while ((req_header = strtok(NULL, DELIM)) != NULL) {
-                if ((req_value = strchr(req_header, ':')) == NULL) continue;
+        while ((header_line = strtok(NULL, DELIM)) != NULL) {
+                if ((req_value = strchr(header_line, ':')) == NULL) continue;
                 *req_value++ = '\0';
                 while (isspace(*req_value)) req_value++; /* Strip leading whitespace */
 
-                if ((element = find_node(format_str, req_header)) == NULL) continue;
+                if ((element = find_node(format_str, header_line)) == NULL) continue;
                 element->value = req_value;
         }
 
@@ -354,7 +358,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
         /* Print data to stdout/output file according to format list*/
-        printf("%s\t%s\t%s\t", ts, saddr, daddr);
+        printf("%s\t%s\t%s\t%c\t", ts, saddr, daddr, is_request ? '>' : '<');
         print_list(format_str);
 
         free(data);

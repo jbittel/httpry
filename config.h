@@ -14,7 +14,7 @@
 */
 
 #define PROG_NAME "httpry"
-#define PROG_VER "0.0.8"
+#define PROG_VER "0.0.9"
 
 /* Directory to switch to when running in daemon mode
    *** Can be overridden with -r */
@@ -28,11 +28,11 @@
 
 /* Default packet capture filter; must be standard Pcap format
    *** Can be overridden with -l */
-#define DEFAULT_CAPFILTER "tcp dst port 80"
+#define DEFAULT_CAPFILTER "tcp port 80"
 
 /* Default output format string
    *** Can be overridden with -s */
-#define DEFAULT_FORMAT "Host,URI"
+#define DEFAULT_FORMAT "Method,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* Line terminator for HTTP header; should never change! */
 #define DELIM "\r\n"
