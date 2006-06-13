@@ -281,7 +281,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         char *req_header;      /* Buffer for each request header line */
         char *req_value;
         NODE *element;
-        HTTP http;
+        HTTP_CLIENT http;
         char saddr[INET_ADDRSTRLEN];
         char daddr[INET_ADDRSTRLEN];
         char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
@@ -323,25 +323,25 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
                 free(data);
                 return;
         }
-        if ((http.uri = strchr(http.method, SPACE_CHAR)) == NULL) {
+        if ((http.request_uri = strchr(http.method, SPACE_CHAR)) == NULL) {
                 free(data);
                 return;
         }
-        *http.uri++ = '\0';
-        if ((http.version = strchr(http.uri, SPACE_CHAR)) == NULL) {
+        *http.request_uri++ = '\0';
+        if ((http.http_version = strchr(http.request_uri, SPACE_CHAR)) == NULL) {
                 free(data);
                 return;
         }
-        *http.version++ = '\0';
+        *http.http_version++ = '\0';
 
         if ((element = find_node(format_str, "Method")) != NULL) {
                 element->value = http.method;
         }
         if ((element = find_node(format_str, "URI")) != NULL) {
-                element->value = http.uri;
+                element->value = http.request_uri;
         }
         if ((element = find_node(format_str, "Version")) != NULL) {
-                element->value = http.version;
+                element->value = http.http_version;
         }
 
         /* Parse each HTTP request header line */
@@ -362,7 +362,7 @@ void process_pkt(u_char *args, const struct pcap_pkthdr *header, const u_char *p
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
-        /* Print data to stdout/output file according to format array */
+        /* Print data to stdout/output file according to format list*/
         printf("%s\t%s\t%s\t", ts, saddr, daddr);
         print_list(format_str);
 
