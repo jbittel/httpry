@@ -38,7 +38,10 @@
 #define DELIM "\r\n"
 
 /* Get request string in HTTP header; should never change! */
-#define GET_REQUEST "GET "
+#define GET_STRING "GET "
 
 /* Head request string in HTTP header; should never change! */
-#define HEAD_REQUEST "HEAD "
+#define HEAD_STRING "HEAD "
+
+/* Start of HTTP version string in response header; should never change! */
+#define HTTP_STRING "HTTP/"

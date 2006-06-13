@@ -319,15 +319,15 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
                 return;
         }
         
-        if (strncmp(header_line, GET_REQUEST, 4) == 0 ||
-            strncmp(header_line, HEAD_REQUEST, 5) == 0) {
+        if (strncmp(header_line, GET_STRING, 4) == 0 ||
+            strncmp(header_line, HEAD_STRING, 5) == 0) {
                 if (parse_client_request(header_line) == 0) {
                         free(data);
                         return;
                 }
 
                 is_request = 1;
-        } else if (strncmp(header_line, "HTTP/", 5) == 0) {
+        } else if (strncmp(header_line, HTTP_STRING, 5) == 0) {
                 if (parse_server_response(header_line) == 0) {
                         free(data);
                         return;
