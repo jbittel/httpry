@@ -283,7 +283,9 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         char *header_line;
         char *req_value;
         NODE *element;
-        int is_request;
+        /*int is_request;*/
+        char client_request[] = ">";
+        char server_response[] = "<";
         char saddr[INET_ADDRSTRLEN];
         char daddr[INET_ADDRSTRLEN];
         char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
@@ -313,12 +315,13 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         strncpy(data, payload, size_data);
         data[size_data] = '\0';
 
-        /* Parse valid request/response line, bail if malformed */
+        /* Parse valid header line, bail if malformed */
         if ((header_line = strtok(data, DELIM)) == NULL) {
                 free(data);
                 return;
         }
-        
+
+        /* Ensure we have a valid client request or server response */
         if (strncmp(header_line, GET_STRING, 4) == 0 ||
             strncmp(header_line, HEAD_STRING, 5) == 0) {
                 if (parse_client_request(header_line) == 0) {
@@ -326,20 +329,24 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
                         return;
                 }
 
-                is_request = 1;
+                if ((element = find_node(format_str, "Direction")) != NULL) {
+                        element->value = client_request;
+                }
         } else if (strncmp(header_line, HTTP_STRING, 5) == 0) {
                 if (parse_server_response(header_line) == 0) {
                         free(data);
                         return;
                 }
 
-                is_request = 0;
+                if ((element = find_node(format_str, "Direction")) != NULL) {
+                        element->value = server_response;
+                }
         } else {
                 free(data);
                 return;
         }
 
-        /* Parse each HTTP request header line */
+        /* Iterate through each HTTP request/response header line */
         while ((header_line = strtok(NULL, DELIM)) != NULL) {
                 if ((req_value = strchr(header_line, ':')) == NULL) continue;
                 *req_value++ = '\0';
@@ -358,7 +365,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
         /* Print data to stdout/output file according to format list*/
-        printf("%s\t%s\t%s\t%c\t", ts, saddr, daddr, is_request ? '>' : '<');
+        printf("%s\t%s\t%s\t", ts, saddr, daddr);
         print_list(format_str);
 
         free(data);

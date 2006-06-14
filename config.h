@@ -32,7 +32,7 @@
 
 /* Default output format string
    *** Can be overridden with -s */
-#define DEFAULT_FORMAT "Method,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+#define DEFAULT_FORMAT "Direction,Method,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* Line terminator for HTTP header; should never change! */
 #define DELIM "\r\n"

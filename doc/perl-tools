@@ -3,6 +3,16 @@ This provides a listing of those files and a brief description of what each
 script does. Run each tool with the -h parameter to get a listing of the
 available command line parameters for each.
 
+Each tool is expecting httpry to be run with the following format string:
+
+        Host,Request-URI
+
+This will provide five input fields including the timestamp, local IP and
+remote IP. If you want the scripts to utilize different fields, then they will
+have to be modified accordingly.
+
+A summary of the scripts:
+
  ./content_check.pl
         Checks for specified content in the input file according to a "hitlist"
         of keywords. To properly analyze content, it breaks the input file into
