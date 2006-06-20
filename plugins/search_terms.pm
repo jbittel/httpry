@@ -100,6 +100,9 @@ sub process_data {
         # parse through what they find interesting. It's hard to strike a
         # balance that cleans up the results and applies to all users.
 
+        # I'd like to find a cleaner solution, but for now we have custom
+        # cleanup code for some of these hostnames.
+
         # Parse Google services
         if ($hostname =~ /google\.com$/) {
                 $query = new CGI($uri);
@@ -153,6 +156,20 @@ sub process_data {
 
                 if ($term = $query->param('q')) {
                         # Clean up search term
+                        $term =~ s/"//g;
+                        $term =~ s/\+/ /g;
+
+                        $search_terms{$hostname}->{$term}++;
+                }
+
+                return;
+        }
+
+        # Parse Ask.com searches
+        if ($hostname =~ /ask\.com$/) {
+                $query = new CGI($uri);
+
+                if ($term = $query->param('q')) {
                         $term =~ s/"//g;
                         $term =~ s/\+/ /g;
 
