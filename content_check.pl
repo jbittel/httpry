@@ -28,10 +28,12 @@ my $TAGGED_LIMIT = 5;
 my %opts        = ();
 my @input_files = ();
 my $host_detail;
+my $all_detail;
 my $email_addr;
 my $hitlist_file;
 my $output_file;
 my $flows_summary;
+
 my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing code
 
@@ -197,6 +199,8 @@ sub timeout_flow {
                 $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
                 $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
 
+                &append_host_subfile("$all_detail/detail_$ip.txt", $ip) if $all_detail;
+
                 # Check if we have enough hits to be interested in the flow
                 if ($flow_info{$ip}->{"tagged_lines"} > $TAGGED_LIMIT) {
                         $tagged_flows_cnt++;
@@ -250,6 +254,7 @@ sub append_host_subfile {
 # -----------------------------------------------------------------------------
 sub delete_text_files {
         $host_detail =~ s/\/$//; # Remove trailing slash
+        $all_detail  =~ s/\/$//; 
 
         # Iterate through directory and delete tagged_ files
         opendir(DIR, $host_detail) or die "Error: cannot open directory $host_detail: $!\n";
@@ -257,6 +262,13 @@ sub delete_text_files {
                         unlink;
                 }
         closedir(DIR);
+
+        opendir(DIR, $all_detail) or die "Error: cannot open directory $all_detail: $!\n";
+                foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
+                        unlink;
+                }
+        closedir(DIR);
+
 
         return;
 }
@@ -351,7 +363,7 @@ sub send_email {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('d:e:hl:o:', \%opts) or &print_usage();
+        getopts('a:d:e:hl:o:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -363,6 +375,7 @@ sub get_arguments {
         # Copy command line arguments to internal variables
         @input_files  = @ARGV;
         $host_detail  = 0 unless ($host_detail  = $opts{d});
+        $all_detail   = 0 unless ($all_detail   = $opts{a});
         $email_addr   = 0 unless ($email_addr   = $opts{e});
         $hitlist_file = 0 unless ($hitlist_file = $opts{l});
         $output_file  = 0 unless ($output_file  = $opts{o});
@@ -396,7 +409,8 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [-h] [-d dir] [-e email] [-l file] [-o file] file1 [file2 ...]
+Usage: $0 [-h] [-a dir] [-d dir] [-e email] [-l file] [-o file] file1 [file2 ...]
+  -a ... directory for all detail records (implicit enable)
   -d ... directory for host detail records (implicit enable)
   -e ... email recipient for output file
   -h ... print this help information and exit

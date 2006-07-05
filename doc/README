@@ -144,7 +144,7 @@ Disables promiscuous mode on the NIC. Under most circumstances this should
 not be required.
 
 -r <dir> :
-Allows a running directory to be specified when running in daemon mode. By
+Allows a running directory to be specified when operating in daemon mode. By
 default this is set to '/', which should be adequate for most uses.
 
 -s <string> :

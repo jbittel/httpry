@@ -9,7 +9,8 @@ Each tool is expecting httpry to be run with the following format string:
 
 This will provide five input fields including the timestamp, local IP and
 remote IP. If you want the scripts to utilize different fields, then they will
-have to be modified accordingly.
+have to be modified accordingly. These fields are the ones that are most
+useful for parsing client HTTP accesses.
 
 A summary of the scripts:
 
@@ -24,6 +25,10 @@ A summary of the scripts:
         to each initialized plugin. Plugins are activated by simply having a .pm
         extension and being placed in the specified plugin directory (default is
         ./plugins, can be overridden with -p).
+
+ ./plugins/db_dump.pm
+        Dumps log file data into a previously configured database. Useful for
+        more extensive data mining or a user-friendly web interface.
 
  ./plugins/find_proxies.pm
         Performs some basic tests looking for proxy usage.

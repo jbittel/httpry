@@ -6,7 +6,7 @@ changes and updates to the core httpry program.
 
 version 0.0.9
    + Add: parse both client requests and server responses
-   = Chg: default capture filter now less restrictive
+   = Chg: default capture filter less restrictive
 
 version 0.0.8
    - Fix: crash on exit when reading from an input file
