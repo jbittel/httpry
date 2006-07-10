@@ -157,12 +157,12 @@ sub write_output_file {
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nSUSPECTED PROXIES\n\n";
+        print OUTFILE "\n\nPOTENTIAL PROXIES\n\n";
         print OUTFILE "Generated:\t" . localtime() . "\n";
         print OUTFILE "\n\n";
 
         if ((keys %proxy_lines) == 0) {
-                print OUTFILE "No suspected proxies found\n";
+                print OUTFILE "No potential proxies found\n";
         } else {
                 foreach $ip (map { inet_ntoa $_ }
                              sort

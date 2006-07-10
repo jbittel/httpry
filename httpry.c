@@ -37,6 +37,7 @@
 #include "tcp.h"
 
 /* Function declarations */
+void parse_args(int argc, char** argv);
 void parse_config(char *filename);
 void parse_format_string(char *str);
 void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
@@ -54,7 +55,6 @@ char *strip_whitespace(char *str);
 void cleanup_exit(int exit_value);
 void display_version();
 void display_help();
-extern int getopt(int argc, char *const argv[], const char *optstring);
 
 /* Program flags/options, set by arguments or config file */
 static char *use_binfile = NULL;
@@ -68,12 +68,82 @@ static int   set_promisc = 1;
 static char *new_user    = NULL;
 static char *out_format  = NULL;
 static char *run_dir     = NULL;
-static char *use_config  = NULL;
 
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
 static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
 NODE *format_str = NULL;
+
+/* Parse command line arguments */
+void parse_args(int argc, char** argv) {
+        int argn = 1;
+
+        /* Look for config file argument first, so we can process it before
+           any command line arguments */
+        while ((argn < argc) && (argv[argn][0] == '-')) {
+                if ((strncmp(argv[argn], "-c", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        parse_config(argv[argn]);
+                        break;
+                }
+
+                argn++;
+        }
+
+        /* Parse the rest of the command line arguments */
+        argn = 1;
+        while ((argn < argc) && (argv[argn][0] == '-')) {
+                if ((strncmp(argv[argn], "-b", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        use_binfile = safe_strdup(argv[argn]);
+                } else if ((strncmp(argv[argn], "-c", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        /* Already parsed above */
+                } else if (strncmp(argv[argn], "-d", 2) == 0) {
+                        daemon_mode = 1;
+                } else if ((strncmp(argv[argn], "-f", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        use_infile = safe_strdup(argv[argn]);
+                } else if (strncmp(argv[argn], "-h", 2) == 0) {
+                        display_help();
+                } else if ((strncmp(argv[argn], "-i", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        interface = safe_strdup(argv[argn]);
+                } else if ((strncmp(argv[argn], "-l", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        capfilter = safe_strdup(argv[argn]);
+                } else if ((strncmp(argv[argn], "-n", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        pkt_count = atoi(argv[argn]);
+                } else if ((strncmp(argv[argn], "-o", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        use_outfile = safe_strdup(argv[argn]);
+                } else if (strncmp(argv[argn], "-p", 2) == 0) {
+                        set_promisc = 0;
+                } else if ((strncmp(argv[argn], "-r", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        run_dir = safe_strdup(argv[argn]);
+                } else if ((strncmp(argv[argn], "-s", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        out_format = safe_strdup(argv[argn]);
+                } else if ((strncmp(argv[argn], "-u", 2) == 0) && (argn + 1 < argc)) {
+                        argn++;
+                        new_user = safe_strdup(argv[argn]);
+                } else if (strncmp(argv[argn], "-v", 2) == 0) {
+                        display_version();
+                } else {
+                        warn("Unknown parameter '%s' or perhaps missing value\n", argv[argn]);
+                        display_help();
+                }
+                
+                argn++;
+        }
+
+        if (argn != argc)
+                display_help();
+       
+        return;
+}
 
 /* Read options in from config file */
 void parse_config(char *filename) {
@@ -596,40 +666,12 @@ int main(int argc, char *argv[]) {
         char default_capfilter[] = DEFAULT_CAPFILTER;
         char default_format[] = DEFAULT_FORMAT;
         char default_rundir[] = RUN_DIR;
-        int arg;
-        extern char *optarg;
-        extern int optopt;
 
         signal(SIGINT, handle_signal);
 
         /* Process command line arguments */
-        while ((arg = getopt(argc, argv, "b:c:df:hi:l:n:o:pr:s:u:v")) != -1) {
-                switch (arg) {
-                        case 'b': use_binfile = safe_strdup(optarg); break;
-                        case 'c': use_config = safe_strdup(optarg); break;
-                        case 'd': daemon_mode = 1; break;
-                        case 'f': use_infile = safe_strdup(optarg); break;
-                        case 'h': display_help(); break;
-                        case 'i': interface = safe_strdup(optarg); break;
-                        case 'l': capfilter = safe_strdup(optarg); break;
-                        case 'n': pkt_count = atoi(optarg); break;
-                        case 'o': use_outfile = safe_strdup(optarg); break;
-                        case 'p': set_promisc = 0; break;
-                        case 'r': run_dir = safe_strdup(optarg); break;
-                        case 's': out_format = safe_strdup(optarg); break;
-                        case 'u': new_user = safe_strdup(optarg); break;
-                        case 'v': display_version(); break;
-                        case '?': if (isprint(optopt)) {
-                                          warn("Unknown parameter '-%c'\n", optopt);
-                                  } else {
-                                          warn("Unknown parameter\n");
-                                  }
-                        default:  display_help(); /* Only reached if bad parameter provided */
-                }
-        }
-
-        if (use_config) parse_config(use_config);
-
+        parse_args(argc, argv);
+        
         /* Test for error and warning conditions */
         if ((getuid() != 0) && !use_infile) {
                 log_die("Root priviledges required to access the NIC\n");
@@ -669,7 +711,6 @@ int main(int argc, char *argv[]) {
 
         /* Clean up allocated memory before main loop */
         if (use_binfile) free(use_binfile);
-        if (use_config)  free(use_config);
         if (interface)   free(interface);
         if (capfilter)   free(capfilter);
         if (use_outfile) free(use_outfile);
