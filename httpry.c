@@ -69,17 +69,17 @@ static char *new_user    = NULL;
 static char *out_format  = NULL;
 static char *run_dir     = NULL;
 
-static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
+static pcap_t *pcap_hnd         = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
-static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
-NODE *format_str = NULL;
+static unsigned pkt_parsed      = 0; /* Count of fully parsed HTTP packets */
+NODE *format_str                = NULL;
 
 /* Parse command line arguments */
 void parse_args(int argc, char** argv) {
         int argn = 1;
 
         /* Look for config file argument first, so we can process it before
-           any command line arguments */
+           any command line arguments to ensure prescedence */
         while ((argn < argc) && (argv[argn][0] == '-')) {
                 if ((strncmp(argv[argn], "-c", 2) == 0) && (argn + 1 < argc)) {
                         argn++;
@@ -93,55 +93,55 @@ void parse_args(int argc, char** argv) {
         /* Parse the rest of the command line arguments */
         argn = 1;
         while ((argn < argc) && (argv[argn][0] == '-')) {
-                if ((strncmp(argv[argn], "-b", 2) == 0) && (argn + 1 < argc)) {
+                if (!strncmp(argv[argn], "-b", 2) && (argn + 1 < argc)) {
                         argn++;
                         use_binfile = safe_strdup(argv[argn]);
-                } else if ((strncmp(argv[argn], "-c", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-c", 2) && (argn + 1 < argc)) {
                         argn++;
-                        /* Already parsed above */
-                } else if (strncmp(argv[argn], "-d", 2) == 0) {
+                        /* Config file; already parsed above */
+                } else if (!strncmp(argv[argn], "-d", 2)) {
                         daemon_mode = 1;
-                } else if ((strncmp(argv[argn], "-f", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-f", 2) && (argn + 1 < argc)) {
                         argn++;
                         use_infile = safe_strdup(argv[argn]);
-                } else if (strncmp(argv[argn], "-h", 2) == 0) {
+                } else if (!strncmp(argv[argn], "-h", 2)) {
                         display_help();
-                } else if ((strncmp(argv[argn], "-i", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-i", 2) && (argn + 1 < argc)) {
                         argn++;
                         interface = safe_strdup(argv[argn]);
-                } else if ((strncmp(argv[argn], "-l", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-l", 2) && (argn + 1 < argc)) {
                         argn++;
                         capfilter = safe_strdup(argv[argn]);
-                } else if ((strncmp(argv[argn], "-n", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-n", 2) && (argn + 1 < argc)) {
                         argn++;
                         pkt_count = atoi(argv[argn]);
-                } else if ((strncmp(argv[argn], "-o", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-o", 2) && (argn + 1 < argc)) {
                         argn++;
                         use_outfile = safe_strdup(argv[argn]);
-                } else if (strncmp(argv[argn], "-p", 2) == 0) {
+                } else if (!strncmp(argv[argn], "-p", 2)) {
                         set_promisc = 0;
-                } else if ((strncmp(argv[argn], "-r", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-r", 2) && (argn + 1 < argc)) {
                         argn++;
                         run_dir = safe_strdup(argv[argn]);
-                } else if ((strncmp(argv[argn], "-s", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-s", 2) && (argn + 1 < argc)) {
                         argn++;
                         out_format = safe_strdup(argv[argn]);
-                } else if ((strncmp(argv[argn], "-u", 2) == 0) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-u", 2) && (argn + 1 < argc)) {
                         argn++;
                         new_user = safe_strdup(argv[argn]);
-                } else if (strncmp(argv[argn], "-v", 2) == 0) {
+                } else if (!strncmp(argv[argn], "-v", 2)) {
                         display_version();
                 } else {
-                        warn("Unknown parameter '%s' or perhaps missing value\n", argv[argn]);
+                        warn("Parameter '%s' unknown or missing required value\n", argv[argn]);
                         display_help();
                 }
-                
+
                 argn++;
         }
 
         if (argn != argc)
                 display_help();
-       
+
         return;
 }
 
@@ -182,29 +182,27 @@ void parse_config(char *filename) {
                         *(name + (len--) - 1) = '\0';
                 while (isspace(*value)) value++;
 
-                /* Test parsed name/value pairs and set values accordingly; only
-                   set if default value is unchanged to prevent overwriting arguments */
-                if (!strcmp(name, "DaemonMode") && !daemon_mode) {
+                if (!strcmp(name, "DaemonMode")) {
                         daemon_mode = atoi(value);
-                } else if (!strcmp(name, "InputFile") && !use_infile) {
+                } else if (!strcmp(name, "InputFile")) {
                         use_infile = safe_strdup(value);
-                } else if (!strcmp(name, "Interface") && !interface) {
+                } else if (!strcmp(name, "Interface")) {
                         interface = safe_strdup(value);
-                } else if (!strcmp(name, "CaptureFilter") && !capfilter) {
+                } else if (!strcmp(name, "CaptureFilter")) {
                         capfilter = safe_strdup(value);
-                } else if (!strcmp(name, "PacketCount") && (pkt_count == -1)) {
+                } else if (!strcmp(name, "PacketCount")) {
                         pkt_count = atoi(value);
-                } else if (!strcmp(name, "OutputFile") && !use_outfile) {
+                } else if (!strcmp(name, "OutputFile")) {
                         use_outfile = safe_strdup(value);
-                } else if (!strcmp(name, "PromiscuousMode") && set_promisc) {
+                } else if (!strcmp(name, "PromiscuousMode")) {
                         set_promisc = atoi(value);
-                } else if (!strcmp(name, "RunDir") && !run_dir) {
+                } else if (!strcmp(name, "RunDir")) {
                         run_dir = safe_strdup(value);
-                } else if (!strcmp(name, "User") && !new_user) {
+                } else if (!strcmp(name, "User")) {
                         new_user = safe_strdup(value);
-                } else if (!strcmp(name, "OutputFormat") && !out_format) {
+                } else if (!strcmp(name, "OutputFormat")) {
                         out_format = safe_strdup(value);
-                } else if (!strcmp(name, "BinaryFile") && !use_binfile) {
+                } else if (!strcmp(name, "BinaryFile")) {
                         use_binfile = safe_strdup(value);
                 } else {
                         warn("Config file option '%s' at line %d not recognized...skipping\n", name, line_count);
@@ -640,7 +638,7 @@ void display_version() {
 void display_help() {
         info("%s version %s\n", PROG_NAME, PROG_VER);
         info("Usage: %s [-dhpv] [-b file] [-c file] [-f file] [-i interface]\n"
-             "        [-l filter] [-n count] [-o file] [-r dir ] [-s string] [-u user]\n", PROG_NAME);
+             "        [-l filter] [-n count] [-o file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
         info("  -b ... binary packet output file\n"
              "  -c ... specify config file\n"
              "  -d ... run as daemon\n"
@@ -671,7 +669,7 @@ int main(int argc, char *argv[]) {
 
         /* Process command line arguments */
         parse_args(argc, argv);
-        
+
         /* Test for error and warning conditions */
         if ((getuid() != 0) && !use_infile) {
                 log_die("Root priviledges required to access the NIC\n");
