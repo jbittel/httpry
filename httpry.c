@@ -351,7 +351,6 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         char *header_line;
         char *req_value;
         NODE *element;
-        /*int is_request;*/
         char client_request[] = ">";
         char server_response[] = "<";
         char saddr[INET_ADDRSTRLEN];
@@ -396,10 +395,16 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
                         free(data);
                         return;
                 }
+                if ((element = find_node(format_str, "Direction")) != NULL) {
+                        element->value = client_request;
+                }
         } else if (strncmp(header_line, HTTP_STRING, 5) == 0) {
                 if (parse_server_response(header_line) == 0) {
                         free(data);
                         return;
+                }
+                if ((element = find_node(format_str, "Direction")) != NULL) {
+                        element->value = server_response;
                 }
         } else {
                 free(data);
@@ -461,9 +466,6 @@ int parse_client_request(char *header_line) {
         if ((element = find_node(format_str, "HTTP-Version")) != NULL) {
                 element->value = client.http_version;
         }
-        if ((element = find_node(format_str, "Direction")) != NULL) {
-                element->value = client_request;
-        }
 
         return 1;
 }
@@ -493,10 +495,7 @@ int parse_server_response(char *header_line) {
         if ((element = find_node(format_str, "Reason-Phrase")) != NULL) {
                 element->value = server.reason_phrase;
         }
-        if ((element = find_node(format_str, "Direction")) != NULL) {
-                element->value = server_response;
-        }
-
+        
         return 1;
 }
 
