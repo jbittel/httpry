@@ -71,15 +71,15 @@ static char *run_dir     = NULL;
 
 static pcap_t *pcap_hnd         = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
-static unsigned pkt_parsed      = 0; /* Count of fully parsed HTTP packets */
+static unsigned pkt_parsed      = 0;    /* Count of fully parsed HTTP packets */
 NODE *format_str                = NULL;
 
 /* Parse command line arguments */
 void parse_args(int argc, char** argv) {
         int argn = 1;
 
-        /* Look for config file argument first, so we can process it before
-           any command line arguments to ensure prescedence */
+        /* Look for config file argument and process it first to ensure that the
+           command line arguments always take prescedence over the config file */
         while ((argn < argc) && (argv[argn][0] == '-')) {
                 if ((strncmp(argv[argn], "-c", 2) == 0) && (argn + 1 < argc)) {
                         argn++;
@@ -396,18 +396,10 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
                         free(data);
                         return;
                 }
-
-                if ((element = find_node(format_str, "Direction")) != NULL) {
-                        element->value = client_request;
-                }
         } else if (strncmp(header_line, HTTP_STRING, 5) == 0) {
                 if (parse_server_response(header_line) == 0) {
                         free(data);
                         return;
-                }
-
-                if ((element = find_node(format_str, "Direction")) != NULL) {
-                        element->value = server_response;
                 }
         } else {
                 free(data);
@@ -432,7 +424,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
 
-        /* Print data to stdout/output file according to format list*/
+        /* Print data to stdout/output file according to format list */
         printf("%s\t%s\t%s\t", ts, saddr, daddr);
         print_list(format_str);
 
@@ -469,6 +461,9 @@ int parse_client_request(char *header_line) {
         if ((element = find_node(format_str, "HTTP-Version")) != NULL) {
                 element->value = client.http_version;
         }
+        if ((element = find_node(format_str, "Direction")) != NULL) {
+                element->value = client_request;
+        }
 
         return 1;
 }
@@ -497,6 +492,9 @@ int parse_server_response(char *header_line) {
         }
         if ((element = find_node(format_str, "Reason-Phrase")) != NULL) {
                 element->value = server.reason_phrase;
+        }
+        if ((element = find_node(format_str, "Direction")) != NULL) {
+                element->value = server_response;
         }
 
         return 1;
@@ -605,9 +603,6 @@ void cleanup_exit(int exit_value) {
         struct pcap_stat pkt_stats; /* Store stats from pcap */
 
         fflush(NULL);
-        if (daemon_mode) remove(PID_FILE);
-        if (use_infile) free(use_infile);
-        if (format_str) free_list(format_str);
 
         if (dump_file) {
                 pcap_dump_flush(dump_file);
@@ -623,6 +618,10 @@ void cleanup_exit(int exit_value) {
                         info("  %d packets parsed\n", pkt_parsed);
                 }
         }
+
+        if (daemon_mode) remove(PID_FILE);
+        if (use_infile) free(use_infile);
+        if (format_str) free_list(format_str);
 
         exit(exit_value);
 }
