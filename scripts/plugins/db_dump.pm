@@ -44,7 +44,7 @@ sub init {
         $dbh = &connect_db($type, $db, $host, $port, $user, $pass);
 
         # Remove old data as necessary
-        #$sql = qq{ DELETE FROM $table WHERE 
+        #$sql = qq{ DELETE FROM $table WHERE
         #&execute_query($dbh, $sql);
 
         return 1;
@@ -64,11 +64,21 @@ sub main {
 
         ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $data);
 
+        # Reformat date/time string
+        $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
+        $timestamp = "$3-$1-$2 $4:$5:$6";
+
+        # Escape apostrophe/quote characters
+        $hostname =~ s/'/\\'/g;
+        $uri =~ s/'/\\'/g;
+        $hostname =~ s/"/\\"/g;
+        $uri =~ s/"/\\"/g;
+
         # Insert data into database
-        $sql = qq{ INSERT INTO $table (timestamp, src_ip, dst_ip, hostname, uri) 
-                   VALUES ($timestamp, $src_ip, $dst_ip, $hostname, $uri) };
+        $sql = qq{ INSERT INTO $table (timestamp, src_ip, dst_ip, hostname, uri)
+                   VALUES ('$timestamp', '$src_ip', '$dst_ip', '$hostname', '$uri') };
         &execute_query($dbh, $sql);
-        
+
         return;
 }
 
@@ -89,7 +99,7 @@ sub load_config {
                 require "$plugin_dir/" . __PACKAGE__ . ".cfg";
         }
 
-        # Check for required options and combinations 
+        # Check for required options and combinations
         if (!$type) {
                 print "Error: no database type provided\n";
                 return 0;
@@ -128,7 +138,7 @@ sub connect_db {
         $dsn .= ":$host" if $host;
         $dsn .= ":$port" if $port;
 
-        $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1, AutoCommit => 0 })
+        $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1, AutoCommit => 1 })
                 or die "Error: cannot connect to database: " . DBI->errstr;
 
         &execute_query($dbh, qq{ USE $db });

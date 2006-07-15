@@ -1,0 +1,20 @@
+-- MySQL dump 9.11
+--
+-- Host: localhost    Database: httpry
+-- ------------------------------------------------------
+-- Server version	4.0.22
+
+--
+-- Table structure for table `client_data`
+--
+
+CREATE TABLE client_data (
+  id int(10) unsigned NOT NULL auto_increment,
+  timestamp datetime NOT NULL default '0000-00-00 00:00:00',
+  src_ip varchar(45) NOT NULL default '',
+  dst_ip varchar(45) NOT NULL default '',
+  hostname varchar(255) NOT NULL default '',
+  uri varchar(255) NOT NULL default '',
+  PRIMARY KEY  (id)
+) TYPE=InnoDB;
+

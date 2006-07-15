@@ -9,44 +9,45 @@ Each tool is expecting httpry to be run with the following format string:
 
 This will provide five input fields including the timestamp, local IP and
 remote IP. If you want the scripts to utilize different fields, then they will
-have to be modified accordingly. These fields are the ones that are most
-useful for parsing client HTTP accesses.
+have to be modified accordingly. These fields are the ones that are most useful
+for parsing client HTTP accesses. To handle the server response side of the
+conversation these scripts will need some tweaking.
 
 A summary of the scripts:
 
- ./content_check.pl
+ ./scripts/content_check.pl
         Checks for specified content in the input file according to a "hitlist"
         of keywords. To properly analyze content, it breaks the input file into
         distinct flows which are time delimited blocks of traffic for each
         client IP. Also outputs some basic file/flow statistics.
 
- ./parse_log.pl
+ ./scripts/parse_log.pl
         Core script for plugins. Processes input log files and delivers the data
         to each initialized plugin. Plugins are activated by simply having a .pm
         extension and being placed in the specified plugin directory (default is
         ./plugins, can be overridden with -p).
 
- ./plugins/db_dump.pm
+ ./scripts/plugins/db_dump.pm
         Dumps log file data into a previously configured database. Useful for
         more extensive data mining or a user-friendly web interface.
 
- ./plugins/find_proxies.pm
+ ./scripts/plugins/find_proxies.pm
         Performs some basic tests looking for proxy usage.
 
- ./plugins/log_summary.pm
+ ./scripts/plugins/log_summary.pm
         Provides extensive information regarding the input file(s), visited
         hosts, top talkers and requested file extensions.
 
- ./plugins/sample_plugin.pm
+ ./scripts/plugins/sample_plugin.pm
         A simple plugin with no functionality designed as an easy way to see how
         the plugins are structured and to provide a framework for writing new
         plugins.
 
- ./plugins/search_terms.pm
+ ./scripts/plugins/search_terms.pm
         Outputs a raw dump of all entered search terms for a number of the major
         search services. The output is grouped by domain name.
 
- ./rotate_log.pl
+ ./scripts/rotate_log.pl
         Moves an active log file into a specified directory. Also offers options
         for deleting text files, compressing the log files and purging old log
         files according to number or total size.
