@@ -172,7 +172,6 @@ them are necessarily good ideas, but they are a source of inspiration and
 consideration as I continue improving the project. A number indicates the
 program version number I'm targeting to focus on that particular option.
 
-* Make all output fields dynamic, including packet information
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
 * Option to use rDNS when Host: string unavailable

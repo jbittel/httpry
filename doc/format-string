@@ -7,25 +7,25 @@ server response headers and entity headers are all simply referred to as
 headers. Internally, httpry does not distinguish among them and they can all
 be used in the format string.
 
-At the start of each line, there are three static non-HTTP fields that are
-automatically printed. They are the time stamp, client IP address and server
-IP address. All custom fields appear after those three. The default format
-that is used if none is specified consists of:
+The default format that is used if none is specified consists of:
 
-        Direction,Method,Request-URI,HTTP-Version,Status-Code,Reason-Phrase
+        Timestamp,Source-IP,Dest-IP,Direction,Method,Request-URI,HTTP-Version,
+        Status-Code,Reason-Phrase
 
 This prints the data contained in either the client request header or the
 server response header depending on the data. The full log file string will
-look something like this:
+look something like this (a '-' character represents no data for that field):
 
         06/05/2006 15:32:31 192.168.0.15 66.102.7.104 > GET / HTTP/1.1 - -
 
-There are six "special" fields that can be specified in the
-request line:
+There are nine special (i.e. outside the body of the HTTP request) fields that
+can be specified in the request line:
 
-        Direction               HTTP-Version
-        Method                  Status-Code
-        Request-URI             Reason-Phrase
+        Timestamp               Request-URI
+        Source-IP               HTTP-Version
+        Dest-IP                 Status-Code
+        Direction               Reason-Phrase
+        Method
 
 Most of these are fields from the header line of each request or response.
 The Direction field will print a chevron with '>' indicating a client request

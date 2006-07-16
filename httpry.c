@@ -139,8 +139,7 @@ void parse_args(int argc, char** argv) {
                 argn++;
         }
 
-        if (argn != argc)
-                display_help();
+        if (argn != argc) display_help();
 
         return;
 }
@@ -424,13 +423,21 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         /* Grab source/destination IP addresses */
         strncpy(saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
         strncpy(daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
+        if ((element = find_node(format_str, "Source-IP")) != NULL) {
+                element->value = saddr;
+        }
+        if ((element = find_node(format_str, "Dest-IP")) != NULL) {
+                element->value = daddr;
+        }
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
+        if ((element = find_node(format_str, "Timestamp")) != NULL) {
+                element->value = ts;
+        }
 
         /* Print data to stdout/output file according to format list */
-        printf("%s\t%s\t%s\t", ts, saddr, daddr);
         print_list(format_str);
 
         free(data);
@@ -495,7 +502,7 @@ int parse_server_response(char *header_line) {
         if ((element = find_node(format_str, "Reason-Phrase")) != NULL) {
                 element->value = server.reason_phrase;
         }
-        
+
         return 1;
 }
 

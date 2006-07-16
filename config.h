@@ -9,7 +9,10 @@
   Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
   See included LICENSE file for specific licensing information
 
-  Most of these shouldn't be changed from the defaults...I'm warning you!
+  Compile time default values for httpry. Many of these can be changed using
+  arguments or a config file, so you shouldn't need to change them here. In
+  fact, most of these should *not* be changed from the defaults...I'm warning
+  you!
 
 */
 
@@ -32,7 +35,7 @@
 
 /* Default output format string
    *** Can be overridden with -s */
-#define DEFAULT_FORMAT "Direction,Method,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Direction,Method,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* Line terminator for HTTP header; should never change! */
 #define DELIM "\r\n"
