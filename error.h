@@ -20,4 +20,5 @@
 #define warn(x...) fprintf(stderr, "Warning: " x)
 #define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
 #define die(x...) { fprintf(stderr, "Error: " x); raise(SIGINT); }
+#define log_warn(x...) { log(x); warn(x); }
 #define log_die(x...) { log(x); die(x); }

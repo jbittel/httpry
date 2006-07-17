@@ -181,27 +181,27 @@ void parse_config(char *filename) {
                         *(name + (len--) - 1) = '\0';
                 while (isspace(*value)) value++;
 
-                if (!strcmp(name, "DaemonMode")) {
+                if (!strcmp(name, "daemon_mode")) {
                         daemon_mode = atoi(value);
-                } else if (!strcmp(name, "InputFile")) {
+                } else if (!strcmp(name, "input_file")) {
                         use_infile = safe_strdup(value);
-                } else if (!strcmp(name, "Interface")) {
+                } else if (!strcmp(name, "interface")) {
                         interface = safe_strdup(value);
-                } else if (!strcmp(name, "CaptureFilter")) {
+                } else if (!strcmp(name, "capture_filter")) {
                         capfilter = safe_strdup(value);
-                } else if (!strcmp(name, "PacketCount")) {
+                } else if (!strcmp(name, "packet_count")) {
                         pkt_count = atoi(value);
-                } else if (!strcmp(name, "OutputFile")) {
+                } else if (!strcmp(name, "output_file")) {
                         use_outfile = safe_strdup(value);
-                } else if (!strcmp(name, "PromiscuousMode")) {
+                } else if (!strcmp(name, "promiscuous")) {
                         set_promisc = atoi(value);
-                } else if (!strcmp(name, "RunDir")) {
+                } else if (!strcmp(name, "run_dir")) {
                         run_dir = safe_strdup(value);
-                } else if (!strcmp(name, "User")) {
+                } else if (!strcmp(name, "user")) {
                         new_user = safe_strdup(value);
-                } else if (!strcmp(name, "OutputFormat")) {
+                } else if (!strcmp(name, "output_format")) {
                         out_format = safe_strdup(value);
-                } else if (!strcmp(name, "BinaryFile")) {
+                } else if (!strcmp(name, "binary_file")) {
                         use_binfile = safe_strdup(value);
                 } else {
                         warn("Config file option '%s' at line %d not recognized...skipping\n", name, line_count);
@@ -530,14 +530,12 @@ void runas_daemon(char *run_dir) {
 
         /* Assign new process group for child */
         if (setsid() == -1) {
-                log("Cannot assign new session for child process\n");
-                warn("Cannot assign new session for child process\n");
+                log_warn("Cannot assign new session for child process\n");
         }
 
         umask(0); /* Reset file creation mask */
         if (chdir(run_dir) == -1) {
-                log("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
-                warn("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
+                log_warn("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
                 if (chdir(RUN_DIR) == -1) {
                         log_die("Cannot change run directory to '%s'\n", RUN_DIR);
                 }
@@ -545,8 +543,7 @@ void runas_daemon(char *run_dir) {
 
         /* Write PID into file */
         if ((pid_file = fopen(PID_FILE, "w")) == NULL) {
-                log("Cannot open PID file '%s'\n", PID_FILE);
-                warn("Cannot open PID file '%s'\n", PID_FILE);
+                log_warn("Cannot open PID file '%s'\n", PID_FILE);
         } else {
                 fprintf(pid_file, "%d\n", getpid());
                 fclose(pid_file);
