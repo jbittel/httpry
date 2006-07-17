@@ -566,11 +566,11 @@ void runas_daemon(char *run_dir) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        info("Caught SIGINT, shutting down...\n");
+                        log_info("Caught SIGINT, shutting down...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
                 case SIGTERM:
-                        info("Caught SIGTERM, shutting down...\n");
+                        log_info("Caught SIGTERM, shutting down...\n");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
         }
