@@ -35,7 +35,7 @@
 
 /* Default output format string
    *** Can be overridden with -s */
-#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Direction,Method,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* Line terminator for HTTP header; should never change! */
 #define DELIM "\r\n"

@@ -9,14 +9,15 @@ be used in the format string.
 
 The default format that is used if none is specified consists of:
 
-        Timestamp,Source-IP,Dest-IP,Direction,Method,Request-URI,HTTP-Version,
-        Status-Code,Reason-Phrase
+        Timestamp,Source-IP,Dest-IP,Direction,Method,Hostname,Request-URI,
+                HTTP-Version,Status-Code,Reason-Phrase
 
 This prints the data contained in either the client request header or the
 server response header depending on the data. The full log file string will
 look something like this (a '-' character represents no data for that field):
 
-        06/05/2006 15:32:31 192.168.0.15 66.102.7.104 > GET / HTTP/1.1 - -
+        06/05/2006 15:32:31 192.168.0.15 66.102.7.104 > GET www.google.com
+                / HTTP/1.1 - -
 
 There are nine special (i.e. outside the body of the HTTP request) fields that
 can be specified in the request line:

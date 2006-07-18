@@ -25,7 +25,10 @@ my $SUMMARY_CAP = 10;
 my %top_hosts      = ();
 my %top_talkers    = ();
 my %filetypes      = ();
+my %response_codes = ();
 my $total_line_cnt = 0;
+my $ext_cnt        = 0;
+my $srv_responses  = 0;
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -90,18 +93,25 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub process_data {
         my $curr_line = shift;
+        my @fields = ();
 
-        ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        return if (!$hostname or !$src_ip or !$uri); # Missing data
+        @fields = split(/$PATTERN/, $curr_line);
+        return if scalar @fields < 10; # Missing data
 
         # Gather statistics
         $total_line_cnt++;
-        $top_hosts{$hostname}++;
-        $top_talkers{$src_ip}++;
 
-        if ($filetype && ($uri =~ /\.([\w\d]{2,5}?)$/i)) {
-                $ext_cnt++;
-                $filetypes{lc($1)}++;
+        if ($fields[3] eq '>') {
+                $top_hosts{$fields[5]}++;
+                $top_talkers{$fields[1]}++;
+
+                if ($filetype && ($fields[6] =~ /\.([\w\d]{2,5}?)$/i)) {
+                        $ext_cnt++;
+                        $filetypes{lc($1)}++;
+                }
+        } elsif ($fields[3] eq '<') {
+                $response_codes{$fields[8]}++;
+                $srv_responses++;
         }
 
         return;
@@ -134,6 +144,14 @@ sub write_output_file {
         print OUTFILE "\n\nTOP $summary_cap TOP TALKERS\n\n";
         foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
                 print OUTFILE "$key\t$top_talkers{$key}\t" . percent_of($top_talkers{$key}, $total_line_cnt) . "%\n";
+                $count++;
+                last if ($count == $summary_cap);
+        }
+
+        $count = 0;
+        print OUTFILE "\n\nTOP $summary_cap RESPONSE CODES\n\n";
+        foreach $key (sort { $response_codes{$b} <=> $response_codes{$a} } keys %response_codes) {
+                print OUTFILE "$key\t$response_codes{$key}\t" . percent_of($response_codes{$key}, $srv_responses) . "%\n";
                 $count++;
                 last if ($count == $summary_cap);
         }

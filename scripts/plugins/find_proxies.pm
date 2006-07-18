@@ -89,6 +89,7 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub process_data {
         my $curr_line = shift;
+        my ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
         my $word;
 
         # Strip non-printable chars
@@ -98,8 +99,9 @@ sub process_data {
         $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
         $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
-        ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        return if (!$hostname or !$uri); # Malformed line
+        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+        return if $direction ne '>';
+        return if (!$src_ip or !$hostname or !$uri); # Malformed line
 
         # Perform hostname and uri keyword search
         foreach $word (@proxy_keywords) {

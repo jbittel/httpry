@@ -72,7 +72,7 @@ my @hitlist         = ();
 sub parse_flows {
         my $curr_line;
         my $curr_file;
-        my ($timestamp, $epochstamp, $src_ip, $dst_ip, $hostname, $uri);
+        my ($timestamp, $epochstamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
 
         $start_time = (times)[0];
         foreach $curr_file (@input_files) {
@@ -97,7 +97,9 @@ sub parse_flows {
                                 $max_concurrent = keys %flow_info;
                         }
 
-                        ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+                        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+                        next if (!$timestamp or !$src_ip);
+                        next if $direction ne '>';
 
                         # Convert timestamp of current record to epoch seconds
                         $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;

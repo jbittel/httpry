@@ -82,6 +82,7 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub process_data {
         my $curr_line = shift;
+        my ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
         my $term;
         my $query;
         
@@ -92,7 +93,8 @@ sub process_data {
         $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
         $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
-        ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+        return if $direction ne '>';
         return if (!$hostname or !$uri); # Malformed line
 
         # These results can end up being a little messy, but it seems
@@ -100,7 +102,7 @@ sub process_data {
         # parse through what they find interesting. It's hard to strike a
         # balance that cleans up the results and applies to all users.
 
-        # I'd like to find a cleaner solution, but for now we have custom
+        # I'd like to find a more generic solution, but for now we need custom
         # cleanup code for some of these hostnames.
 
         # Parse Google services
