@@ -43,7 +43,7 @@ void parse_format_string(char *str);
 void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
 pcap_t *open_dev(char *dev, int promisc, char *fname);
 void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net);
-void change_user(char *new_user);
+void change_user(char *name, uid_t uid, gid_t gid);
 void get_packets(pcap_t *pcap_hnd, int pkt_count);
 void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
@@ -299,34 +299,22 @@ void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net) {
         return;
 }
 
-/* Change process owner to requested username */
-void change_user(char *new_user) {
-        struct passwd* user;
-
-        /* Make sure we have correct priviledges */
-        if (geteuid() > 0) {
-                log_die("You must be root to switch users\n");
-        }
-
-        /* Test for user existence in the system */
-        if (!(user = getpwnam(new_user))) {
-                log_die("User '%s' not found in system\n", new_user);
-        }
-
-        /* Set group information, GID and UID */
-        if (initgroups(user->pw_name, user->pw_gid)) {
+/* Change process owner to specified username */
+void change_user(char *name, uid_t uid, gid_t gid) {
+        /* Set group information, UID and GID */
+        if (initgroups(name, gid)) {
                 log_die("Cannot initialize the group access list\n");
         }
-        if (setgid(user->pw_gid)) {
+        if (setgid(gid)) {
                 log_die("Cannot set GID\n");
         }
-        if (setuid(user->pw_uid)) {
+        if (setuid(uid)) {
                 log_die("Cannot set UID\n");
         }
 
         /* Test to see if we actually made it to the new user */
-        if ((getegid() != user->pw_gid) || (geteuid() != user->pw_uid)) {
-                log_die("Cannot change process owner to '%s'\n", new_user);
+        if ((getegid() != gid) || (geteuid() != uid)) {
+                log_die("Cannot change process owner to '%s'\n", name);
         }
 
         return;
@@ -666,29 +654,57 @@ int main(int argc, char *argv[]) {
         char default_capfilter[] = DEFAULT_CAPFILTER;
         char default_format[] = DEFAULT_FORMAT;
         char default_rundir[] = RUN_DIR;
+        struct passwd *user = NULL;
 
         signal(SIGINT, handle_signal);
 
         /* Process command line arguments */
         parse_args(argc, argv);
 
-        /* Test for error and warning conditions */
+        /* Test for argument error and warning conditions */
         if ((getuid() != 0) && !use_infile) {
                 log_die("Root priviledges required to access the NIC\n");
         }
         if (daemon_mode && !use_outfile) {
                 log_die("Daemon mode requires an output file\n");
         }
+        if (!daemon_mode && run_dir) {
+                log_warn("Run directory only utilized when running in daemon mode\n");
+        }
         if (pkt_count < -1) {
                 log_die("Invalid -n value of '%d': must be -1 or greater\n", pkt_count);
         }
 
-        /* General program setup */
+        /* Get user information if we need to switch from root */
+        if (new_user) {
+                if (getuid() != 0) {
+                        log_die("You must be root to switch users\n");
+                }
+
+                /* Get user info; die if user doesn't exist */
+                if (!(user = getpwnam(new_user))) {
+                        log_die("User '%s' not found in system\n", new_user);
+                }
+        }
+
+        /* Prepare output file if requested */
         if (use_outfile) {
+                if (use_outfile[0] != '/') {
+                        log_warn("Output file path is not absolute and may become inaccessible\n");
+                }
+
                 if (freopen(use_outfile, "a", stdout) == NULL) {
-                        log_die("Cannot reopen output stream to '%s'\n", use_outfile);
+                        log_die("Cannot re-open output stream to '%s'\n", use_outfile);
+        	}
+
+        	if (new_user) {
+                        if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0) {
+                                log_warn("Cannot change ownership of output file\n");
+                        }
         	}
         }
+
+        /* General program setup */
         if (!capfilter) capfilter = safe_strdup(default_capfilter);
         if (!out_format) out_format = safe_strdup(default_format);
         if (!run_dir) run_dir = safe_strdup(default_rundir);
@@ -701,13 +717,23 @@ int main(int argc, char *argv[]) {
 
         /* Open binary pcap output file for writing */
         if (use_binfile) {
-                if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL) {
-                        log_die("Cannot open dump file '%s'", use_binfile);
+                if (use_outfile[0] != '/') {
+                        log_warn("Binary dump file path is not absolute and may become inaccessible\n");
                 }
+
+                if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL) {
+                        log_die("Cannot open binary dump file '%s'\n", use_binfile);
+                }
+
+                if (new_user) {
+                        if (chown(use_binfile, user->pw_uid, user->pw_gid) < 0) {
+                                log_warn("Cannot change ownership of binary dump file\n");
+                        }
+        	}
         }
 
         if (daemon_mode) runas_daemon(run_dir);
-        if (new_user) change_user(new_user);
+        if (new_user) change_user(new_user, user->pw_uid, user->pw_gid);
 
         /* Clean up allocated memory before main loop */
         if (use_binfile) free(use_binfile);

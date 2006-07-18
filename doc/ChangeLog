@@ -12,6 +12,7 @@ version 0.0.9
    - Fix: on exit, chance to test against invalid data
    = Chg: all output fields are now configurable
    = Chg: config file options are now all lowercase
+   + Add: output files are now chown'd to process owner
 
 version 0.0.8
    - Fix: crash on exit when reading from an input file
