@@ -31,7 +31,7 @@
 
 /* Default packet capture filter; must be standard Pcap format
    *** Can be overridden with -l */
-#define DEFAULT_CAPFILTER "tcp port 80"
+#define DEFAULT_CAPFILTER "tcp port 80 or port 8080"
 
 /* Default output format string
    *** Can be overridden with -s */

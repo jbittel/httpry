@@ -44,7 +44,7 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
 pcap_t *open_dev(char *dev, int promisc, char *fname);
 void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net);
 void change_user(char *name, uid_t uid, gid_t gid);
-void get_packets(pcap_t *pcap_hnd, int pkt_count);
+void get_packets(pcap_t *pcap_hnd);
 void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
@@ -58,7 +58,7 @@ void display_help();
 
 /* Program flags/options, set by arguments or config file */
 static char *use_binfile = NULL;
-static int   pkt_count   = -1;
+static int   parse_count = -1;
 static int   daemon_mode = 0;
 static char *use_infile  = NULL;
 static char *interface   = NULL;
@@ -114,7 +114,7 @@ void parse_args(int argc, char** argv) {
                         capfilter = safe_strdup(argv[argn]);
                 } else if (!strncmp(argv[argn], "-n", 2) && (argn + 1 < argc)) {
                         argn++;
-                        pkt_count = atoi(argv[argn]);
+                        parse_count = atoi(argv[argn]);
                 } else if (!strncmp(argv[argn], "-o", 2) && (argn + 1 < argc)) {
                         argn++;
                         use_outfile = safe_strdup(argv[argn]);
@@ -189,8 +189,8 @@ void parse_config(char *filename) {
                         interface = safe_strdup(value);
                 } else if (!strcmp(name, "capture_filter")) {
                         capfilter = safe_strdup(value);
-                } else if (!strcmp(name, "packet_count")) {
-                        pkt_count = atoi(value);
+                } else if (!strcmp(name, "parse_count")) {
+                        parse_count = atoi(value);
                 } else if (!strcmp(name, "output_file")) {
                         use_outfile = safe_strdup(value);
                 } else if (!strcmp(name, "promiscuous")) {
@@ -321,8 +321,8 @@ void change_user(char *name, uid_t uid, gid_t gid) {
 }
 
 /* Begin packet capture/processing session */
-void get_packets(pcap_t *pcap_hnd, int pkt_count) {
-        if (pcap_loop(pcap_hnd, pkt_count, parse_packet, NULL) < 0) {
+void get_packets(pcap_t *pcap_hnd) {
+        if (pcap_loop(pcap_hnd, -1, parse_packet, NULL) < 0) {
                 log_die("Cannot read packets from interface\n");
         }
 
@@ -432,6 +432,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
 
         if (use_binfile) pcap_dump((u_char *) dump_file, header, pkt);
         pkt_parsed++;
+        if ((parse_count != -1) && (pkt_parsed >= parse_count)) cleanup_exit(EXIT_SUCCESS);
 
         return;
 }
@@ -636,7 +637,7 @@ void display_help() {
              "  -h ... print help information\n"
              "  -i ... set interface to listen on\n"
              "  -l ... pcap style capture filter\n"
-             "  -n ... number of packets to capture\n"
+             "  -n ... number of HTTP packets to parse\n"
              "  -o ... output file to write into\n"
              "  -p ... disable promiscuous mode\n"
              "  -r ... set running directory\n"
@@ -671,8 +672,8 @@ int main(int argc, char *argv[]) {
         if (!daemon_mode && run_dir) {
                 log_warn("Run directory only utilized when running in daemon mode\n");
         }
-        if (pkt_count < -1) {
-                log_die("Invalid -n value of '%d': must be -1 or greater\n", pkt_count);
+        if ((parse_count != -1) && (parse_count < 1)) {
+                log_die("Invalid -n value of '%d': must be -1 or greater than 0\n", parse_count);
         }
 
         /* Get user information if we need to switch from root */
@@ -744,7 +745,7 @@ int main(int argc, char *argv[]) {
         if (new_user)    free(new_user);
         if (out_format)  free(out_format);
 
-        get_packets(pcap_hnd, pkt_count);
+        get_packets(pcap_hnd);
 
         cleanup_exit(EXIT_SUCCESS);
 

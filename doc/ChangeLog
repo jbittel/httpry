@@ -9,10 +9,12 @@ version 0.0.9
    = Chg: default capture filter less restrictive
    - Fix: command line arguments now *always* take precedence
    = Chg: wrote custom command line argument parser
-   - Fix: on exit, chance to test against invalid data
+   - Fix: removed chance to test against invalid data on exit
    = Chg: all output fields are now configurable
    = Chg: config file options are now all lowercase
    + Add: output files are now chown'd to process owner
+   = Chg: -n switch now uses parsed packets, not total packets
+   + Add: additional sanity checking out output file paths
 
 version 0.0.8
    - Fix: crash on exit when reading from an input file

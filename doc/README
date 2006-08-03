@@ -130,9 +130,8 @@ that follows the tcpdump format. Useful for capturing traffic on non-standard
 ports or to/from specific hosts.
 
 -n <count> :
-Specifies a number of packets to capture, following which the
-program will terminate. Note that this is a count of total captured packets, not
-of parsed HTTP packets.
+Specifies a number of HTTP packets to parse, following which the
+program will terminate.
 
 -o <file> :
 Provides an output file for writing parsed packet data. Note that if the
@@ -177,6 +176,7 @@ program version number I'm targeting to focus on that particular option.
 * Option to use rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
+* API to utilize data for real-time visualization applications
 
 
 ----------------------
