@@ -3,23 +3,21 @@ This provides a listing of those files and a brief description of what each
 script does. Run each tool with the -h parameter to get a listing of the
 available command line parameters for each.
 
-Each tool is expecting httpry to be run with the following format string:
-
-        Host,Request-URI
-
-This will provide five input fields including the timestamp, local IP and
-remote IP. If you want the scripts to utilize different fields, then they will
-have to be modified accordingly. These fields are the ones that are most useful
-for parsing client HTTP accesses. To handle the server response side of the
-conversation these scripts will need some tweaking.
+Each tool is expecting httpry to be run with the default format string. If you
+want the scripts to utilize different fields, they will have to be modified
+accordingly. In general, it is a relatively simple matter to add additional
+field support to each script. Additionally, if you add the new data to the end
+of each line, many of these scripts will simply ignore it by default and work
+just fine.
 
 A summary of the scripts:
 
- ./scripts/content_check.pl
-        Checks for specified content in the input file according to a "hitlist"
-        of keywords. To properly analyze content, it breaks the input file into
+ ./scripts/client_flows.pl
+        Checks for specified content in the input file according to a list of
+        keywords. To properly analyze content, it breaks the input file into
         distinct flows which are time delimited blocks of traffic for each
-        client IP. Also outputs some basic file/flow statistics.
+        client IP. Also outputs some basic file/flow statistics. Because of the
+        nature of its task, all server responses are discarded.
 
  ./scripts/parse_log.pl
         Core script for plugins. Processes input log files and delivers the data
@@ -56,8 +54,8 @@ These tools are not necessarily designed to be drop-in replacements for your
 own solutions. If one of these tools does what you need it to, great! However,
 they are more designed as starting points for your own processing code. Of
 course, parse_log.pl is designed to allow you to insert your own plugins and
-for many simple tasks that will probably work just fine. For more complex stuff
-you'll want to write more robust code. The content_check.pl is a good example
+for many simple tasks that will probably work just fine. For more complex tasks
+you'll want to write more robust code. The client_flows.pl is a good example
 of a stand alone script and should also provide some useful ideas for parsing
 the logs based on "flows" and not simply a line by line analysis.
 

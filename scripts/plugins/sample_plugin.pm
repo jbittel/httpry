@@ -57,8 +57,8 @@ sub init {
 # that the data is sent here as a single line and so must be parsed (if
 # necessary) to act on individual components of the line.
 sub main {
-        my $self = shift;
-        my $data = shift;
+        my $self      = shift;
+        my $curr_line = shift;
 
         # Simple processing can be handled here; more complex processing
         # would probably be better handled in a different sub.

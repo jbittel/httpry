@@ -104,7 +104,7 @@ void parse_args(int argc, char** argv) {
                 } else if (!strncmp(argv[argn], "-f", 2) && (argn + 1 < argc)) {
                         argn++;
                         use_infile = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-h", 2)) {
+                } else if (!strncmp(argv[argn], "-h", 2) || !strncmp(argv[argn], "--help", 6)) {
                         display_help();
                 } else if (!strncmp(argv[argn], "-i", 2) && (argn + 1 < argc)) {
                         argn++;
@@ -129,7 +129,7 @@ void parse_args(int argc, char** argv) {
                 } else if (!strncmp(argv[argn], "-u", 2) && (argn + 1 < argc)) {
                         argn++;
                         new_user = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-v", 2)) {
+                } else if (!strncmp(argv[argn], "-v", 2) || !strncmp(argv[argn], "--version", 9)) {
                         display_version();
                 } else {
                         warn("Parameter '%s' unknown or missing required value\n", argv[argn]);

@@ -45,6 +45,6 @@ fi
 # Process new log file data; make sure appropriate plugins are
 # enabled/disabled for parse_log.pl
 if [ -e "$logs_dir/$parse_fn" ]; then
-        perl $tools_dir/content_check.pl -e $email_addr -l $tools_dir/$content_fn -o $logs_dir/$out_fn-content.txt $logs_dir/$parse_fn
+        perl $tools_dir/client_flows.pl -e $email_addr -l $tools_dir/$content_fn -o $logs_dir/$out_fn-content.txt $logs_dir/$parse_fn
         perl $tools_dir/parse_log.pl -p $tools_dir/plugins $logs_dir/$parse_fn
 fi

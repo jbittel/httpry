@@ -115,7 +115,7 @@ live capture. The program expects a valid capture file as input. Note that this
 does not require the program to be run as root, as no access to the NIC is
 required.
 
--h :
+-h or --help:
 Displays a brief description of these options, after which the program
 terminates.
 
@@ -135,8 +135,8 @@ program will terminate.
 
 -o <file> :
 Provides an output file for writing parsed packet data. Note that if the
-program is running as a daemon, its base directory is set to the filesystem
-root (by default) so an absolute path to the output file should be specified.
+program is running as a daemon, its base directory may change so an absolute
+path to the output file should be specified.
 
 -p :
 Disables promiscuous mode on the NIC. Under most circumstances this should
@@ -156,7 +156,7 @@ particularly useful when running in daemon mode. Note that you still need root
 privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
 
--v :
+-v or --version:
 Displays the program name and version number, after which the program
 terminates.
 
@@ -168,8 +168,7 @@ IV. FUTURE IDEAS
 These are ideas that have occurred to me while working on this project as
 potential ways to improve or extend the code. I'm still not convinced all of
 them are necessarily good ideas, but they are a source of inspiration and
-consideration as I continue improving the project. A number indicates the
-program version number I'm targeting to focus on that particular option.
+consideration as I continue improving the project.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design

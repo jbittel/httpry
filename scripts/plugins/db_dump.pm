@@ -51,18 +51,20 @@ sub init {
 }
 
 sub main {
-        my $self = shift;
-        my $data = shift;
+        my $self      = shift;
+        my $curr_line = shift;
+        my ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
         my $sql;
 
         # Strip non-printable chars
-        $data =~ tr/\x80-\xFF//d;
+        $curr_line =~ tr/\x80-\xFF//d;
 
         # Convert hex characters to ASCII
-        $data =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $data =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
-        ($timestamp, $src_ip, $dst_ip, $hostname, $uri) = split(/$PATTERN/, $data);
+        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+        return if $direction ne '>';
 
         # Reformat date/time string
         $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;

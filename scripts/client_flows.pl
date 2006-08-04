@@ -27,7 +27,7 @@ my $TAGGED_LIMIT = 5;
 # -----------------------------------------------------------------------------
 my %opts        = ();
 my @input_files = ();
-my $host_detail;
+my $tagged_detail;
 my $all_detail;
 my $email_addr;
 my $hitlist_file;
@@ -61,7 +61,7 @@ my @hitlist         = ();
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-&delete_text_files() if $host_detail;
+&delete_text_files();
 &parse_flows();
 &write_summary_file() if $output_file;
 &send_email() if $email_addr;
@@ -215,7 +215,7 @@ sub timeout_flow {
                         }
                         delete $tagged_flows{$ip};
 
-                        &append_host_subfile("$host_detail/tagged_$ip.txt", $ip) if $host_detail;
+                        &append_host_subfile("$tagged_detail/tagged_$ip.txt", $ip) if $tagged_detail;
                 } else {
                         # Not an interesting flow, so delete any tagged lines/IPs that exist
                         delete $tagged_flows{$ip}->{$flow_info{$ip}->{"id"}} if exists $tagged_flows{$ip};
@@ -255,21 +255,24 @@ sub append_host_subfile {
 # Remove text detail files to ensure they don't append between runs
 # -----------------------------------------------------------------------------
 sub delete_text_files {
-        $host_detail =~ s/\/$//; # Remove trailing slash
-        $all_detail  =~ s/\/$//; 
+        $tagged_detail =~ s/\/$//; # Remove trailing slash
+        $all_detail    =~ s/\/$//; 
 
-        # Iterate through directory and delete tagged_ files
-        opendir(DIR, $host_detail) or die "Error: cannot open directory $host_detail: $!\n";
-                foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
-                        unlink;
-                }
-        closedir(DIR);
+        if ($tagged_detail) {
+                opendir(DIR, $tagged_detail) or die "Error: cannot open directory $tagged_detail: $!\n";
+                        foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
+                                unlink;
+                        }
+                closedir(DIR);
+        }
 
-        opendir(DIR, $all_detail) or die "Error: cannot open directory $all_detail: $!\n";
-                foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
-                        unlink;
-                }
-        closedir(DIR);
+        if ($all_detail) {
+                opendir(DIR, $all_detail) or die "Error: cannot open directory $all_detail: $!\n";
+                        foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
+                                unlink;
+                        }
+                closedir(DIR);
+        }
 
 
         return;
@@ -286,22 +289,22 @@ sub write_summary_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
-        print OUTFILE "Generated:\t" . localtime() . "\n";
-        print OUTFILE "Total files:\t$file_cnt\n";
-        print OUTFILE "Total size:\t$size_cnt MB\n";
-        print OUTFILE "Total lines:\t$total_line_cnt\n";
-        print OUTFILE "Total time:\t" . sprintf("%.2f", $end_time - $start_time) . " secs\n";
+        print OUTFILE "Generated:    " . localtime() . "\n";
+        print OUTFILE "Total files:  $file_cnt\n";
+        print OUTFILE "Total size:   $size_cnt MB\n";
+        print OUTFILE "Total lines:  $total_line_cnt\n";
+        print OUTFILE "Total time:   " . sprintf("%.2f", $end_time - $start_time) . " secs\n";
 
         print OUTFILE "\n\nFLOW STATS\n\n";
-        print OUTFILE "Flow count:\t$flow_cnt\n";
-        print OUTFILE "Flow lines:\t$flow_line_cnt\n";
-        print OUTFILE "Max Concurrent:\t$max_concurrent\n";
-        print OUTFILE "Min/Max/Avg:\t$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+        print OUTFILE "Flow count:      $flow_cnt\n";
+        print OUTFILE "Flow lines:      $flow_line_cnt\n";
+        print OUTFILE "Max Concurrent:  $max_concurrent\n";
+        print OUTFILE "Min/Max/Avg:     $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
 
         if ($hitlist_file) {
-                print OUTFILE "Tagged IPs:\t" . (keys %output_flows) . "\n";
-                print OUTFILE "Tagged flows:\t$tagged_flows_cnt\n";
-                print OUTFILE "Tagged lines:\t$total_tagged_lines_cnt\n";
+                print OUTFILE "Tagged IPs:    " . (keys %output_flows) . "\n";
+                print OUTFILE "Tagged flows:  $tagged_flows_cnt\n";
+                print OUTFILE "Tagged lines:  $total_tagged_lines_cnt\n";
                 print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
@@ -365,7 +368,7 @@ sub send_email {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('a:d:e:hl:o:', \%opts) or &print_usage();
+        getopts('a:e:hl:o:t:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -375,21 +378,21 @@ sub get_arguments {
         }
 
         # Copy command line arguments to internal variables
-        @input_files  = @ARGV;
-        $host_detail  = 0 unless ($host_detail  = $opts{d});
-        $all_detail   = 0 unless ($all_detail   = $opts{a});
-        $email_addr   = 0 unless ($email_addr   = $opts{e});
-        $hitlist_file = 0 unless ($hitlist_file = $opts{l});
-        $output_file  = 0 unless ($output_file  = $opts{o});
+        @input_files   = @ARGV;
+        $all_detail    = 0 unless ($all_detail    = $opts{a});
+        $email_addr    = 0 unless ($email_addr    = $opts{e});
+        $hitlist_file  = 0 unless ($hitlist_file  = $opts{l});
+        $output_file   = 0 unless ($output_file   = $opts{o});
+        $tagged_detail = 0 unless ($tagged_detail = $opts{t});
 
         # Check for required options and combinations
         if (!$output_file) {
                 print "Error: no output file provided\n";
                 &print_usage();
         }
-        if ($host_detail && !$hitlist_file) {
-                print "Warning: -d requires -l, ignoring\n";
-                $host_detail = 0;
+        if ($tagged_detail && !$hitlist_file) {
+                print "Warning: -t requires -l, ignoring\n";
+                $tagged_detail = 0;
         }
 
         # Read in option files
@@ -397,7 +400,7 @@ sub get_arguments {
                 open(HITLIST, "$hitlist_file") or die "Error: Cannot open $hitlist_file: $!\n";
                         foreach (<HITLIST>) {
                                 chomp;
-                                next if /^#/;
+                                next if /^#/; # Skip comments
                                 push @hitlist, $_;
                         }
                 close(HITLIST);
@@ -411,12 +414,12 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [-h] [-a dir] [-d dir] [-e email] [-l file] [-o file] file1 [file2 ...]
+Usage: $0 [-h] [-a dir] [-e email] [-l file] [-o file] [-t dir] file1 [file2 ...]
   -a ... directory for all detail records (implicit enable)
-  -d ... directory for host detail records (implicit enable)
   -e ... email recipient for output file
   -h ... print this help information and exit
   -l ... hitlist file for content checks (implicit enable)
   -o ... output file for summary and content check data
+  -t ... directory for tagged detail records (implicit enable)
 USAGE
 }

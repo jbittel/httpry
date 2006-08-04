@@ -194,9 +194,8 @@ sub write_output_file {
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nSUMMARY STATS\n\n";
-        print OUTFILE "Generated:\t" . localtime() . "\n";
-        print OUTFILE "\n\n";
+        print OUTFILE "\n\nSEARCH TERMS\n\n";
+        print OUTFILE "Generated: " . localtime() . "\n\n\n";
 
         foreach $hostname (sort keys %search_terms) {
                 print OUTFILE "$hostname\n";

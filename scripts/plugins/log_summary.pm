@@ -127,11 +127,11 @@ sub write_output_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSUMMARY STATS\n\n";
-        print OUTFILE "Generated:\t" . localtime() . "\n";
-        print OUTFILE "Total lines:\t$total_line_cnt\n";
-        print OUTFILE "Client count:\t" . keys(%top_talkers) . "\n";
-        print OUTFILE "Server count:\t" . keys(%top_hosts) . "\n";
-        print OUTFILE "Extension count:\t" . keys(%filetypes) . "\n" if ($filetype);
+        print OUTFILE "Generated:        " . localtime() . "\n";
+        print OUTFILE "Total lines:      " . $total_line_cnt . "\n";
+        print OUTFILE "Client count:     " . keys(%top_talkers) . "\n";
+        print OUTFILE "Server count:     " . keys(%top_hosts) . "\n";
+        print OUTFILE "Extension count:  " . keys(%filetypes) . "\n" if ($filetype);
 
         print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
         foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
