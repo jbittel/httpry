@@ -170,7 +170,7 @@ void parse_config(char *filename) {
                 /* Parse each line into name/value pairs */
                 name = line;
                 if ((value = strchr(line, '=')) == NULL) {
-                        warn("Bad data in config file at line %d\n", line_count);
+                        warn("No separator found in config file at line %d\n", line_count);
                         continue;
                 }
                 *value++ = '\0';
@@ -180,6 +180,15 @@ void parse_config(char *filename) {
                 while (len && isspace(*(name + len - 1)))
                         *(name + (len--) - 1) = '\0';
                 while (isspace(*value)) value++;
+
+                if (!strlen(name)) {
+                        warn("No name found in config file at line %d\n", line_count);
+                        continue;
+                }
+                if (!strlen(value)) {
+                        warn("No value found in config file at line %d\n", line_count);
+                        continue;
+                }
 
                 if (!strcmp(name, "daemon_mode")) {
                         daemon_mode = atoi(value);
