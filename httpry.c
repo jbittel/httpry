@@ -662,6 +662,17 @@ int main(int argc, char *argv[]) {
         /* Process command line arguments */
         parse_args(argc, argv);
 
+        /* Check for valid data from arguments */
+        if ((parse_count != -1) && (parse_count < 1)) {
+                log_die("Invalid -n value of '%d': must be -1 or greater than 0\n", parse_count);
+        }
+        if ((daemon_mode != 0) && (daemon_mode != 1)) {
+                log_die("Invalid -d value of '%d': must be 0 or 1\n", daemon_mode);
+        }
+        if ((set_promisc != 0) && (set_promisc != 1)) {
+                log_die("Invalid -p value of '%d': must be 0 or 1\n", set_promisc);
+        }
+
         /* Test for argument error and warning conditions */
         if ((getuid() != 0) && !use_infile) {
                 log_die("Root priviledges required to access the NIC\n");
@@ -671,9 +682,6 @@ int main(int argc, char *argv[]) {
         }
         if (!daemon_mode && run_dir) {
                 log_warn("Run directory only utilized when running in daemon mode\n");
-        }
-        if ((parse_count != -1) && (parse_count < 1)) {
-                log_die("Invalid -n value of '%d': must be -1 or greater than 0\n", parse_count);
         }
 
         /* Get user information if we need to switch from root */
