@@ -27,10 +27,12 @@ A summary of the scripts:
 
  ./scripts/plugins/db_dump.pm
         Dumps log file data into a previously configured database. Useful for
-        more extensive data mining or a user-friendly web interface.
+        more extensive data mining or a user-friendly web interface. Use the
+        included db_dump.mysql to initialize the required database table.
 
  ./scripts/plugins/find_proxies.pm
-        Performs some basic tests looking for proxy usage.
+        Performs some basic tests looking for proxy usage. Most tests are
+        rudimentary and quite a lot of noise is generated.
 
  ./scripts/plugins/log_summary.pm
         Provides extensive information regarding the input file(s), visited

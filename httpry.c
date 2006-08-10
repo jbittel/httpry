@@ -163,7 +163,7 @@ void parse_config(char *filename) {
 
                 line = strip_whitespace(line);
 
-                /* Skip blank lines and comments */
+                /* Skip empty lines and comments */
                 if (!strlen(line)) continue;
                 if (*line == '#') continue;
 
@@ -175,7 +175,7 @@ void parse_config(char *filename) {
                 }
                 *value++ = '\0';
 
-                /* Strip inner spaces from name and value */
+                /* Strip inner whitespace from name and value */
                 len = strlen(name);
                 while (len && isspace(*(name + len - 1)))
                         *(name + (len--) - 1) = '\0';
@@ -213,7 +213,7 @@ void parse_config(char *filename) {
                 } else if (!strcmp(name, "binary_file")) {
                         use_binfile = safe_strdup(value);
                 } else {
-                        warn("Config file option '%s' at line %d not recognized...skipping\n", name, line_count);
+                        warn("Config file option '%s' at line %d not recognized\n", name, line_count);
                         continue;
                 }
         }
@@ -233,7 +233,7 @@ void parse_format_string(char *str) {
         element = strtok(str, ",");
         while (element != NULL) {
                 if (insert_node(format_str, element) == 0) {
-                        warn("Format element '%s' already provided...skipping\n", element);
+                        warn("Format element '%s' already provided\n", element);
                 }
 
                 element = strtok(NULL, ",");

@@ -62,4 +62,4 @@ point. Here are some example format strings:
 There is no limit on the length of the format string. This provides a
 relatively flexible method for specifying the output string, while still
 supporting custom fields. Additionally, the input ordering is maintained so
-you can configure the position of the fields in the output stream.
+you can configure the position of the fields in the output string.

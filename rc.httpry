@@ -7,11 +7,12 @@
 #
 
 # --------------------
-# --- MODIFY THESE ---
+# --- MODIFY THIS ----
 # --------------------
 # This script assumes you are storing all your configuration in a httpry
-# config file. If that is not the case, then you will need to change the
-# start line below to reflect your particular setup.
+# config file and running the program in daemon mode. If that is not the
+# case, then you will need to change the start line below to reflect your
+# particular setup.
 
 config_file="" # Path to your config file
 

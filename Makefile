@@ -26,7 +26,7 @@ install: $(PROG)
 	@echo "--------------------------------------------------"
 	@echo "Installing httpry into /usr/sbin/"
 	@echo ""
-	@echo "You'll need to manually move the perl scripts"
+	@echo "You'll need to manually move the Perl scripts"
 	@echo "and other tools to a spot that makes sense to you."
 	@echo "--------------------------------------------------"
 	cp -f $(PROG) /usr/sbin/

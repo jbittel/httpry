@@ -72,9 +72,9 @@ These commands will compile the latest version of the code and then install it
 appropriately in /usr/sbin. Along with httpry itself, there are several Perl
 scripts included. These tools may either be useful as-is, or as a starting point
 for your own log parsing tools. Additionally, there is an included rc.httpry
-file for automatically starting the program under Linux. This file has only been
-tested under Slackware Linux; your distro may handle things differently.
-Finally, if you ever tire of httpry, simply run:
+file for automatically starting the program under Linux. This file was written 
+for Slackware Linux; your distro may handle things differently. Finally, if you
+ever tire of httpry, simply run:
 
  # make uninstall
 
@@ -176,6 +176,7 @@ consideration as I continue improving the project.
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
 * API to utilize data for real-time visualization applications
+* Regexp filtering for packet contents
 
 
 ----------------------
