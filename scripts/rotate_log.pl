@@ -62,7 +62,7 @@ my @dir_list;
 
 # Read contents of directory into array
 $output_dir =~ s/\/$//; # Remove trailing slash
-opendir(DIR, $output_dir) or die "Error: cannot open directory $output_dir\n";
+opendir(DIR, $output_dir) or die "Error: Cannot open directory $output_dir\n";
         @dir_list = map "$output_dir/$_", grep !/^\./, readdir(DIR);
 closedir(DIR);
 
@@ -96,7 +96,7 @@ sub compress_files {
                 if ((system "$TAR cf - $filename.log | $GZIP -9 > $output_dir/$filename.tar.gz") == 0) {
                         unlink $log_file;
                 } else {
-                        print "Error: cannot compress log file '$log_file'\n";
+                        print "Error: Cannot compress log file '$log_file'\n";
                 }
         }
 
@@ -126,7 +126,7 @@ sub move_file {
 
                 rename "$input_file", "$output_dir/$mon-$mday-$year.log";
         } else {
-                print "Error: input file '$input_file' does not exist\n";
+                print "Error: Input file '$input_file' does not exist\n";
         }
 
         return;
@@ -206,7 +206,7 @@ sub get_arguments {
         $output_dir  = 0 unless ($output_dir  = $opts{d});
 
         if (!$output_dir) {
-                print "Error: no output directory provided\n";
+                print "Error: No output directory provided\n";
                 &print_usage();
         }
 

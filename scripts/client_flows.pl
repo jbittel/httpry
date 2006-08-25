@@ -103,7 +103,7 @@ sub parse_flows {
         $start_time = (times)[0];
         foreach $curr_file (@input_files) {
                 unless(open(INFILE, "$curr_file")) {
-                        print "Warning: skipping $curr_file: $!\n";
+                        print "Warning: Skipping $curr_file: $!\n";
                         next;
                 }
 
@@ -263,7 +263,7 @@ sub append_host_subfile {
         my $ip   = shift;
         my $line;
 
-        open(HOSTFILE, ">>$path") or die "Error: cannot open $path: $!\n";
+        open(HOSTFILE, ">>$path") or die "Error: Cannot open $path: $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
         foreach $line (@{$flow_data_lines{$ip}}) {
@@ -285,7 +285,7 @@ sub delete_text_files {
         $all_detail    =~ s/\/$//;
 
         if ($tagged_detail) {
-                opendir(DIR, $tagged_detail) or die "Error: cannot open directory $tagged_detail: $!\n";
+                opendir(DIR, $tagged_detail) or die "Error: Cannot open directory $tagged_detail: $!\n";
                         foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
                                 unlink;
                         }
@@ -293,7 +293,7 @@ sub delete_text_files {
         }
 
         if ($all_detail) {
-                opendir(DIR, $all_detail) or die "Error: cannot open directory $all_detail: $!\n";
+                opendir(DIR, $all_detail) or die "Error: Cannot open directory $all_detail: $!\n";
                         foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
                                 unlink;
                         }
@@ -399,7 +399,7 @@ sub get_arguments {
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
         unless ($ARGV[0]) {
-                print "Error: no input file(s) provided\n";
+                print "Error: No input file(s) provided\n";
                 &print_usage();
         }
 
@@ -413,7 +413,7 @@ sub get_arguments {
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "Error: no output file provided\n";
+                print "Error: No output file provided\n";
                 &print_usage();
         }
         if ($tagged_detail && !$hitlist_file) {

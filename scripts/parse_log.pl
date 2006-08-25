@@ -74,7 +74,7 @@ sub init_plugins {
                 die "Error: '$plugin_dir' is not a valid directory\n";
         }
 
-        opendir PLUGINS, $plugin_dir or die "Error: cannot access directory $plugin_dir: $!\n";
+        opendir PLUGINS, $plugin_dir or die "Error: Cannot access directory $plugin_dir: $!\n";
                 @plugins = grep { /\.pm$/ } readdir(PLUGINS);
         closedir PLUGINS;
 
@@ -85,14 +85,14 @@ sub init_plugins {
 
         foreach $plugin (@callbacks) {
                 unless ($plugin->can('main')) {
-                        print "Warning: plugin '$nameof{$plugin}' does not contain a required main() function...disabling\n";
+                        print "Warning: Plugin '$nameof{$plugin}' does not contain a required main() function...disabling\n";
                         splice @callbacks, $i, 1;
                         next;
                 }
 
                 if ($plugin->can('init')) {
                         if ($plugin->init($plugin_dir) == 0) {
-                                print "Warning: plugin '$nameof{$plugin}' did not initialize properly...disabling\n";
+                                print "Warning: Plugin '$nameof{$plugin}' did not initialize properly...disabling\n";
                                 splice @callbacks, $i, 1;
                         } else {
                                 print "Initialized plugin: $nameof{$plugin}\n" if $VERBOSE;
@@ -113,7 +113,7 @@ sub register_plugin {
         if ($plugin->can('new')) {
                 push @callbacks, $plugin->new();
         } else {
-                print "Warning: plugin '$plugin' does not contain a required new() function...disabling\n";
+                print "Warning: Plugin '$plugin' does not contain a required new() function...disabling\n";
         }
 
         # Save a plaintext copy of the plugin name so we can use it in output text
@@ -173,7 +173,7 @@ sub get_arguments {
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
         unless ($ARGV[0]) {
-                print "Error: no input file(s) provided\n";
+                print "Error: No input file(s) provided\n";
                 &print_usage();
         }
 

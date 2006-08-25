@@ -44,7 +44,7 @@ use Socket qw(inet_ntoa inet_aton);
 # -----------------------------------------------------------------------------
 my $SENDMAIL    = "/usr/lib/sendmail -i -t";
 my $PATTERN     = "\t";
-my $PRUNE_LIMIT = 15;
+my $PRUNE_LIMIT = 20;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -102,7 +102,7 @@ sub load_config {
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "Error: no output file provided\n";
+                print "Error: No output file provided\n";
                 return 0;
         }
         $prune_limit = $PRUNE_LIMIT unless ($prune_limit > 0);

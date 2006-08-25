@@ -106,7 +106,7 @@ sub load_config {
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "Error: no output file provided\n";
+                print "Error: No output file provided\n";
                 return 0;
         }
         $summary_cap = $SUMMARY_CAP unless ($summary_cap > 0);

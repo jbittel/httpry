@@ -96,7 +96,7 @@ sub load_config {
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "Error: no output file provided\n";
+                print "Error: No output file provided\n";
                 return 0;
         }
 
@@ -131,7 +131,7 @@ sub process_data {
         # I'd like to find a more generic solution, but for now we need custom
         # cleanup code for some of these hostnames.
 
-        # Parse Google services
+        # TODO: Parse Google services
         if ($hostname =~ /google\.com$/) {
                 $query = new CGI($uri);
 

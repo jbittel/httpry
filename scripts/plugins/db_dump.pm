@@ -69,7 +69,7 @@ sub init {
 
         $dbh = &connect_db($type, $db, $host, $port, $user, $pass);
 
-        # Remove old data as necessary
+        # TODO: Remove old data from DB as necessary
         #$sql = qq{ DELETE FROM $table WHERE
         #&execute_query($dbh, $sql);
 
@@ -129,19 +129,19 @@ sub load_config {
 
         # Check for required options and combinations
         if (!$type) {
-                print "Error: no database type provided\n";
+                print "Error: No database type provided\n";
                 return 0;
         }
         if (!$db) {
-                print "Error: no database name provided\n";
+                print "Error: No database name provided\n";
                 return 0;
         }
         if (!$host) {
-                print "Error: no database hostname provided\n";
+                print "Error: No database hostname provided\n";
                 return 0;
         }
         if (!$table) {
-                print "Error: no database table provided\n";
+                print "Error: No database table provided\n";
                 return 0;
         }
         $port = '3306' unless ($port);
@@ -167,7 +167,7 @@ sub connect_db {
         $dsn .= ":$port" if $port;
 
         $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1, AutoCommit => 1 })
-                or die "Error: cannot connect to database: " . DBI->errstr;
+                or die "Error: Cannot connect to database: " . DBI->errstr;
 
         &execute_query($dbh, qq{ USE $db });
 
@@ -182,8 +182,8 @@ sub execute_query {
         my $sql = shift;
         my $sth;
 
-        $sth = $dbh->prepare($sql) or die "Error: cannot prepare query: " . DBI->errstr;
-        $sth->execute() or die "Error: cannot execute query: " . DBI->errstr;
+        $sth = $dbh->prepare($sql) or die "Error: Cannot prepare query: " . DBI->errstr;
+        $sth->execute() or die "Error: Cannot execute query: " . DBI->errstr;
 
         return $sth;
 }
