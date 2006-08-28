@@ -350,7 +350,7 @@ sub write_summary_file {
                                 print OUTFILE "\n";
                         }
                 } else {
-                        print OUTFILE "No tagged flows found\n";
+                        print OUTFILE "*** No tagged flows found\n";
                 }
         }
 

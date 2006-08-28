@@ -35,8 +35,6 @@
 
 package search_terms;
 
-use CGI qw(standard);
-
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
@@ -111,6 +109,7 @@ sub process_data {
         my ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
         my $term;
         my $query;
+        my $request;
 
         # Strip non-printable chars
         $curr_line =~ tr/\x80-\xFF//d;
@@ -126,86 +125,38 @@ sub process_data {
         # These results can end up being a little messy, but it seems
         # most useful to simply dump out all search terms and let the user
         # parse through what they find interesting. It's hard to strike a
-        # balance that cleans up the results and applies to all users.
+        # balance that cleans up the results and applies to all users. If
+        # you can do it better, knock yourself out (oh, and send me the code).
 
-        # I'd like to find a more generic solution, but for now we need custom
-        # cleanup code for some of these hostnames.
-
-        # TODO: Parse Google services
-        if ($hostname =~ /google\.com$/) {
-                $query = new CGI($uri);
-
-                if ($term = $query->param('q')) {
-                        # Clean up search term
-                        $term =~ s/"//g;
-                        $term =~ s/\+/ /g;
-
-                        # Discard hits we know aren't useful
-                        return unless $term;
-                        return if ($term =~ /^tbn:/);
-                        return if ($term =~ /^info:/);
-                        return if ($term =~ /^http:/);
-
-                        $search_terms{$hostname}->{$term}++;
-                }
-
-                return;
+        if ($hostname =~ /google\.com/) {
+                return unless $uri =~ /q=(.+?)&/;
+                $term = $1;
+        } elsif ($hostname =~ /youtube\.com/) {
+                return unless $uri =~ /search_query=(.+?)&/;
+                $term = $1;
+        } elsif ($hostname =~ /yahoo\.com/) {
+                return unless $uri =~ /p=(.+?)&/;
+                $term = $1;
+        } elsif ($hostname =~ /msn\.com/) {
+                return unless $uri =~ /q=(.+?)&/;
+                $term = $1;
+        } elsif ($hostname =~ /ask\.com/) {
+                return unless $uri =~ /q=(.+?)&/;
+                $term = $1;
+        } elsif ($hostname =~ /wikipedia\.org/) {
+                return unless $uri =~ /search=(.+?)&/;
+                $term = $1;
         }
 
-        # Parse YouTube searches
-        if ($hostname =~ /youtube\.com$/) {
-                $query = new CGI($uri);
+        # Clean up search term, ignore as necessary
+        return unless $term;
+        $term =~ s/"//g;
+        $term =~ s/\+/ /g;
+        return if ($term =~ /^tbn:/);
+        return if ($term =~ /^info:/);
+        return if ($term =~ /^http:/);
 
-                if ($term = $query->param('search')) {
-                        $search_terms{$hostname}->{$term}++;
-                } elsif ($term = $query->param('tag')) {
-                        $search_terms{$hostname}->{$term}++;
-                } elsif ($term = $query->param('related')) {
-                        $search_terms{$hostname}->{$term}++;
-                }
-
-                return;
-        }
-
-        # Parse Yahoo services
-        if ($hostname =~ /yahoo\.com$/) {
-                $query = new CGI($uri);
-
-                if ($term = $query->param('p')) {
-                        $search_terms{$hostname}->{$term}++;
-                }
-
-                return;
-        }
-
-        # Parse MSN services
-        if ($hostname =~ /msn\.com$/) {
-                $query = new CGI($uri);
-
-                if ($term = $query->param('q')) {
-                        # Clean up search term
-                        $term =~ s/"//g;
-                        $term =~ s/\+/ /g;
-
-                        $search_terms{$hostname}->{$term}++;
-                }
-
-                return;
-        }
-
-        # Parse Ask.com searches
-        if ($hostname =~ /ask\.com$/) {
-                $query = new CGI($uri);
-
-                if ($term = $query->param('q')) {
-                        $term =~ s/"//g;
-                        $term =~ s/\+/ /g;
-
-                        $search_terms{$hostname}->{$term}++;
-                }
-
-                return;
-        }
+        $search_terms{$hostname}->{$term}++;
 
         return;
 }

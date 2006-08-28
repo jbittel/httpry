@@ -188,9 +188,7 @@ sub write_output_file {
         print OUTFILE "\n\nPOTENTIAL PROXIES\n\n";
         print OUTFILE "Generated: " . localtime() . "\n\n\n";
 
-        if ((keys %proxy_lines) == 0) {
-                print OUTFILE "No potential proxies found\n";
-        } else {
+        if ((keys %proxy_lines) > 0) {
                 foreach $ip (map { inet_ntoa $_ }
                              sort
                              map { inet_aton $_ } keys %proxy_lines) {
@@ -201,6 +199,8 @@ sub write_output_file {
                         }
                         print OUTFILE "\n";
                 }
+        } else {
+                print OUTFILE "*** No potential proxies found\n";
         }
 
         close(OUTFILE);

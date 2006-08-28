@@ -277,7 +277,7 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
                 /* Search for network device */
                 *dev = pcap_lookupdev(errbuf);
                 if (dev == NULL) {
-                        log_die("Cannot find capture device '%s'\n", errbuf);
+                        log_die("Cannot find a valid capture device: %s\n", errbuf);
                 }
         } else {
                 /* Use network interface from user parameter */
