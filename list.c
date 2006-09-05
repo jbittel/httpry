@@ -37,11 +37,14 @@
 
 */
 
+#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "error.h"
 #include "list.h"
+
+void to_lowercase(char *str);
 
 /* Create a new node for insertion into an existing list */
 NODE *create_node() {
@@ -52,6 +55,7 @@ NODE *create_node() {
         }
 
         list->name = NULL;
+        list->name_lc = NULL;
         list->value = NULL;
         list->next = NULL;
 
@@ -93,6 +97,12 @@ int insert_node(NODE *list, char *str) {
         }
         strncpy(list->name, str, strlen(str));
         list->name[strlen(str)] = '\0';
+        if ((list->name_lc = malloc(strlen(str) + 1)) == NULL) {
+                log_die("Cannot allocate memory for lowercase node name\n");
+        }
+        strncpy(list->name_lc, str, strlen(str));
+        list->name_lc[strlen(str)] = '\0';
+        to_lowercase(list->name_lc);
         list->value = NULL;
         list->next = tail;
 
@@ -132,6 +142,7 @@ void free_list(NODE *list) {
         curr = prev->next;
         while (curr->next != NULL) {
                 free(prev->name);
+                free(prev->name_lc);
                 free(prev);
 
                 prev = curr;
@@ -139,8 +150,19 @@ void free_list(NODE *list) {
         }
 
         free(prev->name);
+        free(prev->name_lc);
         free(prev);
         free(curr);
+
+        return;
+}
+
+/* Lowercase the parameter string in place */
+void to_lowercase(char *str) {
+        while (*str) {
+                *str = tolower(*str);
+                str++;
+        }
 
         return;
 }

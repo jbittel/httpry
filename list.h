@@ -40,6 +40,7 @@
 typedef struct node NODE;
 struct node {
         char *name;
+        char *name_lc;
         char *value;
         NODE *next;
 };
