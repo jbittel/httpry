@@ -46,7 +46,7 @@ use Time::Local qw(timelocal);
 my $PATTERN      = "\t";
 my $SENDMAIL     = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
-my $TAGGED_LIMIT = 5;
+my $TAGGED_LIMIT = 15;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES

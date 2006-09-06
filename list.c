@@ -111,7 +111,7 @@ int insert_node(NODE *list, char *str) {
 
 /* Destructively print each node value in the list; once printed, each
    existing value is assigned to NULL to clear it for the next packet */
-void print_list(NODE *list) {
+void print_list_text(NODE *list) {
         while (list->next != NULL) {
                 if (list->value != NULL) {
                         printf("%s\t", list->value);
@@ -123,6 +123,53 @@ void print_list(NODE *list) {
                 list = list->next;
         }
         printf("\n");
+
+        return;
+}
+
+/* Destructively print each node value, wrapping them in the proper XML tags
+   for output; also escape all XML entities found in the strings */
+void print_list_xml(NODE *list) {
+        char *str;
+        char *entity;
+        
+        printf("<step>");
+        while (list->next != NULL) {
+                if (list->value == NULL) {
+                        list = list->next;
+                        continue;
+                }
+
+                printf("<%s>", list->name_lc);
+                str = list->value;
+                while ((entity = strpbrk(str, "&<>\'\"")) != NULL) {
+                        switch (*entity) {
+                                case '&':  *entity = '\0';
+                                           printf("%s&amp;", str);
+                                           break;
+                                case '<':  *entity = '\0';
+                                           printf("%s&lt;", str);
+                                           break;
+                                case '>':  *entity = '\0';
+                                           printf("%s&gt;", str);
+                                           break;
+                                case '\'': *entity = '\0';
+                                           printf("%s&apos;", str);
+                                           break;
+                                case '\"': *entity = '\0';
+                                           printf("%s&quot;", str);
+                                           break;
+                        }
+
+                        str = ++entity;
+                }
+                printf("%s", str);
+                printf("</%s>", list->name_lc);
+                list->value = NULL;
+
+                list = list->next;
+        }
+        printf("</step>\n");
 
         return;
 }

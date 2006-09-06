@@ -141,9 +141,12 @@ void parse_args(int argc, char** argv) {
                 } else if (!strncmp(argv[argn], "-n", 2) && (argn + 1 < argc)) {
                         argn++;
                         parse_count = atoi(argv[argn]);
-                } else if (!strncmp(argv[argn], "-o", 2) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-oT", 3) && (argn + 1 < argc)) {
                         argn++;
-                        use_outfile = safe_strdup(argv[argn]);
+                        /* use_outfile = safe_strdup(argv[argn]); */
+                } else if (!strncmp(argv[argn], "-oX", 3) && (argn + 1 < argc)) {
+                        argn++;
+                        /* use_outfile = safe_strdup(argv[argn]); */
                 } else if (!strncmp(argv[argn], "-p", 2)) {
                         set_promisc = 0;
                 } else if (!strncmp(argv[argn], "-r", 2) && (argn + 1 < argc)) {
@@ -226,8 +229,10 @@ void parse_config(char *filename) {
                         capfilter = safe_strdup(value);
                 } else if (!strcmp(name, "parse_count")) {
                         parse_count = atoi(value);
-                } else if (!strcmp(name, "output_file")) {
-                        use_outfile = safe_strdup(value);
+                } else if (!strcmp(name, "output_file_text")) {
+                        /*use_outfile = safe_strdup(value);*/
+                } else if (!strcmp(name, "output_file_xml")) {
+                        /*use_outfile = safe_strdup(value);*/
                 } else if (!strcmp(name, "promiscuous")) {
                         set_promisc = atoi(value);
                 } else if (!strcmp(name, "run_dir")) {
@@ -461,7 +466,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         }
 
         /* Print data to stdout/output file according to format list */
-        print_list(format_str);
+        print_list_xml(format_str);
 
         free(data);
 
@@ -631,6 +636,11 @@ void cleanup_exit(int exit_value) {
 
         fflush(NULL);
 
+        /* TODO: close up XML file as necessary 
+        
+                </flow>
+        */
+
         if (dump_file) {
                 pcap_dump_flush(dump_file);
                 pcap_dump_close(dump_file);
@@ -753,6 +763,13 @@ int main(int argc, char *argv[]) {
         if (!out_format) out_format = safe_strdup(default_format);
         if (!run_dir) run_dir = safe_strdup(default_rundir);
         parse_format_string(out_format);
+
+        /* TODO: print XML header as necessary
+                
+                <?xml version="1.0"?>
+                <?xml-stylesheet href="common.css" type="text/css"?>
+                <flow version="0.0.9" xmlversion="0.1">
+        */
 
         /* Set up packet capture */
         get_dev_info(&dev, &net, interface);
