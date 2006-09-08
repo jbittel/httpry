@@ -90,6 +90,7 @@ static char *use_infile  = NULL;
 static char *interface   = NULL;
 static char *capfilter   = NULL;
 static char *use_outfile = NULL;
+static int   format_xml  = 0;
 static int   set_promisc = 1;
 static char *new_user    = NULL;
 static char *out_format  = NULL;
@@ -141,12 +142,9 @@ void parse_args(int argc, char** argv) {
                 } else if (!strncmp(argv[argn], "-n", 2) && (argn + 1 < argc)) {
                         argn++;
                         parse_count = atoi(argv[argn]);
-                } else if (!strncmp(argv[argn], "-oT", 3) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-o", 3) && (argn + 1 < argc)) {
                         argn++;
-                        /* use_outfile = safe_strdup(argv[argn]); */
-                } else if (!strncmp(argv[argn], "-oX", 3) && (argn + 1 < argc)) {
-                        argn++;
-                        /* use_outfile = safe_strdup(argv[argn]); */
+                        use_outfile = safe_strdup(argv[argn]);
                 } else if (!strncmp(argv[argn], "-p", 2)) {
                         set_promisc = 0;
                 } else if (!strncmp(argv[argn], "-r", 2) && (argn + 1 < argc)) {
@@ -160,6 +158,8 @@ void parse_args(int argc, char** argv) {
                         new_user = safe_strdup(argv[argn]);
                 } else if (!strncmp(argv[argn], "-v", 2) || !strncmp(argv[argn], "--version", 9)) {
                         display_version();
+                } else if (!strncmp(argv[argn], "-x", 2)) {
+                        format_xml = 1;
                 } else {
                         warn("Parameter '%s' unknown or missing required value\n", argv[argn]);
                         display_help();
@@ -168,7 +168,10 @@ void parse_args(int argc, char** argv) {
                 argn++;
         }
 
-        if (argn != argc) display_help();
+        if (argn != argc) {
+                warn("Malformed parameter list...perhaps you want to rethink it?\n");
+                display_help();
+        }
 
         return;
 }
@@ -229,10 +232,8 @@ void parse_config(char *filename) {
                         capfilter = safe_strdup(value);
                 } else if (!strcmp(name, "parse_count")) {
                         parse_count = atoi(value);
-                } else if (!strcmp(name, "output_file_text")) {
-                        /*use_outfile = safe_strdup(value);*/
-                } else if (!strcmp(name, "output_file_xml")) {
-                        /*use_outfile = safe_strdup(value);*/
+                } else if (!strcmp(name, "output_file")) {
+                        use_outfile = safe_strdup(value);
                 } else if (!strcmp(name, "promiscuous")) {
                         set_promisc = atoi(value);
                 } else if (!strcmp(name, "run_dir")) {
@@ -243,6 +244,8 @@ void parse_config(char *filename) {
                         out_format = safe_strdup(value);
                 } else if (!strcmp(name, "binary_file")) {
                         use_binfile = safe_strdup(value);
+                } else if (!strcmp(name, "xml_format")) {
+                        format_xml = 1;
                 } else {
                         warn("Config file option '%s' at line %d not recognized\n", name, line_count);
                         continue;
@@ -466,7 +469,11 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         }
 
         /* Print data to stdout/output file according to format list */
-        print_list_xml(format_str);
+        if (format_xml) {
+                print_list_xml(format_str);
+        } else {
+                print_list_text(format_str);
+        }
 
         free(data);
 
@@ -636,10 +643,7 @@ void cleanup_exit(int exit_value) {
 
         fflush(NULL);
 
-        /* TODO: close up XML file as necessary 
-        
-                </flow>
-        */
+        if (format_xml) printf("</flow>\n"); 
 
         if (dump_file) {
                 pcap_dump_flush(dump_file);
@@ -673,7 +677,7 @@ void display_version() {
 /* Display program help/usage information */
 void display_help() {
         info("%s version %s\n", PROG_NAME, PROG_VER);
-        info("Usage: %s [-dhpv] [-b file] [-c file] [-f file] [-i interface]\n"
+        info("Usage: %s [-dhpvx] [-b file] [-c file] [-f file] [-i interface]\n"
              "        [-l filter] [-n count] [-o file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
         info("  -b ... binary packet output file\n"
              "  -c ... specify config file\n"
@@ -688,7 +692,8 @@ void display_help() {
              "  -r ... set running directory\n"
              "  -s ... specify output format string\n"
              "  -u ... set process owner\n"
-             "  -v ... display version information\n");
+             "  -v ... display version information\n"
+             "  -x ... enable XML output\n");
 
         exit(EXIT_SUCCESS);
 }
@@ -759,17 +764,15 @@ int main(int argc, char *argv[]) {
         }
 
         /* General program setup */
+        if (format_xml) {
+                printf("<?xml version=\"1.0\"?>\n");
+                printf("<?xml-stylesheet href=\"httpry.css\" type=\"text/css\"?>\n");
+                printf("<flow version=\"%s\" xmlversion=\"%s\">\n", PROG_VER, XML_VER);
+        }
         if (!capfilter) capfilter = safe_strdup(default_capfilter);
         if (!out_format) out_format = safe_strdup(default_format);
         if (!run_dir) run_dir = safe_strdup(default_rundir);
         parse_format_string(out_format);
-
-        /* TODO: print XML header as necessary
-                
-                <?xml version="1.0"?>
-                <?xml-stylesheet href="common.css" type="text/css"?>
-                <flow version="0.0.9" xmlversion="0.1">
-        */
 
         /* Set up packet capture */
         get_dev_info(&dev, &net, interface);
@@ -778,7 +781,7 @@ int main(int argc, char *argv[]) {
 
         /* Open binary pcap output file for writing */
         if (use_binfile) {
-                if (use_outfile[0] != '/') {
+                if (use_binfile[0] != '/') {
                         log_warn("Binary dump file path is not absolute and may become inaccessible\n");
                 }
 

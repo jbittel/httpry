@@ -163,8 +163,7 @@ void print_list_xml(NODE *list) {
 
                         str = ++entity;
                 }
-                printf("%s", str);
-                printf("</%s>", list->name_lc);
+                printf("%s</%s>", str, list->name_lc);
                 list->value = NULL;
 
                 list = list->next;
