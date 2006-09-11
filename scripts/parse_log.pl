@@ -48,6 +48,8 @@ my $PLUGIN_DIR = "./plugins";
 my %nameof    = (); # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins   = (); # List of plugin files in directory
+my @ignore    = ();
+                    # List of plugins to be ignored on initialization
 
 # Command line arguments
 my %opts;
@@ -78,7 +80,10 @@ sub init_plugins {
                 @plugins = grep { /\.pm$/ } readdir(PLUGINS);
         closedir PLUGINS;
 
-        foreach $plugin (@plugins) {
+        PLUGIN: foreach $plugin (@plugins) {
+                foreach (@ignore) {
+                        next PLUGIN if $_ eq $plugin;
+                }
                 print "Loading $plugin_dir/$plugin...\n" if $VERBOSE;
                 require "$plugin_dir/$plugin";
         }

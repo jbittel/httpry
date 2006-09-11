@@ -132,7 +132,7 @@ void print_list_text(NODE *list) {
 void print_list_xml(NODE *list) {
         char *str;
         char *entity;
-        
+
         printf("<step>");
         while (list->next != NULL) {
                 if (list->value == NULL) {
@@ -203,7 +203,8 @@ void free_list(NODE *list) {
         return;
 }
 
-/* Lowercase the parameter string in place */
+/* Lowercase the parameter string in place
+   Warning! Modifies parameter string! */
 void to_lowercase(char *str) {
         while (*str) {
                 *str = tolower(*str);
