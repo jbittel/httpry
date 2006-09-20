@@ -172,7 +172,6 @@ consideration as I continue improving the project.
 
 * Internal packet queue to help with burst traffic
 * Parent/worker threaded design
-* Option to use rDNS when Host: string unavailable
 * HTTP client/server session tracking
 * Find alternative to using pcap_loop() for processing packets
 * API to utilize data for real-time visualization applications

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# content_check.pl | created: 2/16/2006
+# client_flows.pm | created: 9/20/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 #
@@ -33,8 +33,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-use strict;
-use Getopt::Std;
+#
+# This is an example plugin for the perl parse script parse_log.pl.  It shows
+# the basic structure of a simple plugin and provides a good starting point for
+# writing a custom plugin. Some of the other included plugins will also provide
+# a good idea of how the different pieces work.
+#
+
+package sample_plugin;
+
 use File::Basename;
 use MIME::Lite;
 use Socket qw(inet_ntoa inet_aton);
@@ -51,22 +58,7 @@ my $TAGGED_LIMIT = 15;
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %opts        = ();
-my @input_files = ();
-my $tagged_detail;
-my $all_detail;
-my $email_addr;
-my $hitlist_file;
-my $output_file;
-my $flows_summary;
-
-my $start_time; # Start tick for timing code
-my $end_time;   # End tick for timing code
-
 # Counter variables
-my $file_cnt               = 0;
-my $size_cnt               = 0;
-my $total_line_cnt         = 0;
 my $flow_cnt               = 0;
 my $flow_line_cnt          = 0;
 my $flow_min_len           = 999999;
@@ -84,91 +76,149 @@ my %history         = (); # Holds history of content checks to avoid matching
 my @hitlist         = ();
 
 # -----------------------------------------------------------------------------
-# Main Program
+# Plugin core
 # -----------------------------------------------------------------------------
-&get_arguments();
-&delete_text_files();
-&parse_flows();
-&write_summary_file() if $output_file;
-&send_email() if $email_addr;
 
-# -----------------------------------------------------------------------------
-# Break input log files into flows and perform content checks
-# -----------------------------------------------------------------------------
-sub parse_flows {
-        my $curr_line;
-        my $curr_file;
-        my ($timestamp, $epochstamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
+&main::register_plugin(__PACKAGE__);
 
-        $start_time = (times)[0];
-        foreach $curr_file (@input_files) {
-                unless(open(INFILE, "$curr_file")) {
-                        print "Warning: Skipping $curr_file: $!\n";
-                        next;
+sub new {
+        return bless {};
+}
+
+sub init {
+        my $self = shift;
+        my $plugin_dir = shift;
+
+        if (&load_config($plugin_dir) == 0) {
+                return 0;
+        }
+
+        &delete_text_files();
+
+        return 1;
+}
+
+sub main {
+        my $self      = shift;
+        my $curr_line = shift;
+
+        if ((keys %flow_info) > $max_concurrent) {
+                $max_concurrent = keys %flow_info;
+        }
+
+        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
+        next if (!$timestamp or !$src_ip);
+        next if $direction ne '>';
+
+        # Convert timestamp of current record to epoch seconds
+        $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
+        $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
+
+        if (!exists $flow_info{$src_ip}) { # No existing flow so begin a new one
+                $flow_cnt++;
+                $flow_line_cnt++;
+
+                $flow_info{$src_ip}->{"id"} = $flow_cnt;
+                $flow_info{$src_ip}->{"src_ip"} = $src_ip;
+                $flow_info{$src_ip}->{"start_time"} = $timestamp;
+                $flow_info{$src_ip}->{"end_time"} = $timestamp;
+                $flow_info{$src_ip}->{"start_epoch"} = $epochstamp;
+                $flow_info{$src_ip}->{"end_epoch"} = $epochstamp;
+                $flow_info{$src_ip}->{"length"} = 1;
+                $flow_info{$src_ip}->{"tagged_lines"} = 0;
+
+                push(@{$flow_data_lines{$src_ip}}, $curr_line);
+
+                if ($hitlist_file && &content_check($hostname, $uri)) {
+                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
+                        $flow_info{$src_ip}->{"tagged_lines"}++;
                 }
+        } else { # Existing flow found so update data as necessary
+                $flow_line_cnt++;
 
-                $file_cnt++;
-                $size_cnt += int((stat(INFILE))[7] / 1000000);
+                $flow_info{$src_ip}->{"end_time"} = $timestamp;
+                $flow_info{$src_ip}->{"end_epoch"} = $epochstamp;
+                $flow_info{$src_ip}->{"length"}++;
 
-                foreach $curr_line (<INFILE>) {
-                        chomp $curr_line;
-                        next if $curr_line eq "";
-                        $total_line_cnt++;
+                push(@{$flow_data_lines{$src_ip}}, $curr_line);
 
-                        # Convert hex characters to ASCII
-                        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-                        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-
-                        if ((keys %flow_info) > $max_concurrent) {
-                                $max_concurrent = keys %flow_info;
-                        }
-
-                        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-                        next if (!$timestamp or !$src_ip);
-                        next if $direction ne '>';
-
-                        # Convert timestamp of current record to epoch seconds
-                        $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
-                        $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
-
-                        if (!exists $flow_info{$src_ip}) { # No existing flow so begin a new one
-                                $flow_cnt++;
-                                $flow_line_cnt++;
-
-                                $flow_info{$src_ip}->{"id"} = $flow_cnt;
-                                $flow_info{$src_ip}->{"src_ip"} = $src_ip;
-                                $flow_info{$src_ip}->{"start_time"} = $timestamp;
-                                $flow_info{$src_ip}->{"end_time"} = $timestamp;
-                                $flow_info{$src_ip}->{"start_epoch"} = $epochstamp;
-                                $flow_info{$src_ip}->{"end_epoch"} = $epochstamp;
-                                $flow_info{$src_ip}->{"length"} = 1;
-                                $flow_info{$src_ip}->{"tagged_lines"} = 0;
-
-                                push(@{$flow_data_lines{$src_ip}}, $curr_line);
-
-                                if ($hitlist_file && &content_check($hostname, $uri)) {
-                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
-                                        $flow_info{$src_ip}->{"tagged_lines"}++;
-                                }
-                        } else { # Existing flow found so update data as necessary
-                                $flow_line_cnt++;
-
-                                $flow_info{$src_ip}->{"end_time"} = $timestamp;
-                                $flow_info{$src_ip}->{"end_epoch"} = $epochstamp;
-                                $flow_info{$src_ip}->{"length"}++;
-
-                                push(@{$flow_data_lines{$src_ip}}, $curr_line);
-
-                                if ($hitlist_file && &content_check($hostname, $uri)) {
-                                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
-                                        $flow_info{$src_ip}->{"tagged_lines"}++;
-                                }
-                        }
-
-                        &timeout_flow($epochstamp);
+                if ($hitlist_file && &content_check($hostname, $uri)) {
+                        $tagged_flows{$src_ip}->{$flow_info{$src_ip}->{"id"}}->{$hostname}++;
+                        $flow_info{$src_ip}->{"tagged_lines"}++;
                 }
         }
-        $end_time = (times)[0];
+
+        &timeout_flow($epochstamp);
+
+        return;
+}
+
+sub end {
+
+        &write_summary_file();
+        &send_email() if $email_addr;
+
+        return;
+}
+
+# -----------------------------------------------------------------------------
+# Load config file and check for required options
+# -----------------------------------------------------------------------------
+sub load_config {
+        my $plugin_dir = shift;
+
+        # Load config file; by default in same directory as plugin
+        if (-e "$plugin_dir/" . __PACKAGE__ . ".cfg") {
+                require "$plugin_dir/" . __PACKAGE__ . ".cfg";
+        }
+
+        # Check for required options and combinations
+        if (!$output_file) {
+                print "Error: No output file provided\n";
+                return 0;
+        }
+        if ($tagged_detail && !$hitlist_file) {
+                print "Warning: -t requires -l, ignoring\n";
+                $tagged_detail = 0;
+        }
+
+        # Read in option files
+        if ($hitlist_file) {
+                open(HITLIST, "$hitlist_file") or die "Error: Cannot open $hitlist_file: $!\n";
+                        foreach (<HITLIST>) {
+                                chomp;
+                                next if /^#/; # Skip comments
+                                push @hitlist, $_;
+                        }
+                close(HITLIST);
+        }
+
+        return 1;
+}
+
+# -----------------------------------------------------------------------------
+# Remove text detail files to ensure they don't append between runs
+# -----------------------------------------------------------------------------
+sub delete_text_files {
+        $tagged_detail =~ s/\/$//; # Remove trailing slash
+        $all_detail    =~ s/\/$//; # ...
+
+        if ($tagged_detail) {
+                opendir(DIR, $tagged_detail) or die "Error: Cannot open directory $tagged_detail: $!\n";
+                        foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
+                                unlink;
+                        }
+                closedir(DIR);
+        }
+
+        if ($all_detail) {
+                opendir(DIR, $all_detail) or die "Error: Cannot open directory $all_detail: $!\n";
+                        foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
+                                unlink;
+                        }
+                closedir(DIR);
+        }
+
 
         return;
 }
@@ -278,33 +328,6 @@ sub append_host_subfile {
 }
 
 # -----------------------------------------------------------------------------
-# Remove text detail files to ensure they don't append between runs
-# -----------------------------------------------------------------------------
-sub delete_text_files {
-        $tagged_detail =~ s/\/$//; # Remove trailing slash
-        $all_detail    =~ s/\/$//;
-
-        if ($tagged_detail) {
-                opendir(DIR, $tagged_detail) or die "Error: Cannot open directory $tagged_detail: $!\n";
-                        foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
-                                unlink;
-                        }
-                closedir(DIR);
-        }
-
-        if ($all_detail) {
-                opendir(DIR, $all_detail) or die "Error: Cannot open directory $all_detail: $!\n";
-                        foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
-                                unlink;
-                        }
-                closedir(DIR);
-        }
-
-
-        return;
-}
-
-# -----------------------------------------------------------------------------
 # Write summary information to specified output file
 # -----------------------------------------------------------------------------
 sub write_summary_file {
@@ -314,14 +337,8 @@ sub write_summary_file {
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nSUMMARY STATS\n\n";
+        print OUTFILE "\n\nFLOW SUMMARY STATS\n\n";
         print OUTFILE "Generated:    " . localtime() . "\n";
-        print OUTFILE "Total files:  $file_cnt\n";
-        print OUTFILE "Total size:   $size_cnt MB\n";
-        print OUTFILE "Total lines:  $total_line_cnt\n";
-        print OUTFILE "Total time:   " . sprintf("%.2f", $end_time - $start_time) . " secs\n";
-
-        print OUTFILE "\n\nFLOW STATS\n\n";
         print OUTFILE "Flow count:      $flow_cnt\n";
         print OUTFILE "Flow lines:      $flow_line_cnt\n";
         print OUTFILE "Max Concurrent:  $max_concurrent\n";
@@ -390,62 +407,4 @@ sub send_email {
         return;
 }
 
-# -----------------------------------------------------------------------------
-# Retrieve and process command line arguments
-# -----------------------------------------------------------------------------
-sub get_arguments {
-        getopts('a:e:hl:o:t:', \%opts) or &print_usage();
-
-        # Print help/usage information to the screen if necessary
-        &print_usage() if ($opts{h});
-        unless ($ARGV[0]) {
-                print "Error: No input file(s) provided\n";
-                &print_usage();
-        }
-
-        # Copy command line arguments to internal variables
-        @input_files   = @ARGV;
-        $all_detail    = 0 unless ($all_detail    = $opts{a});
-        $email_addr    = 0 unless ($email_addr    = $opts{e});
-        $hitlist_file  = 0 unless ($hitlist_file  = $opts{l});
-        $output_file   = 0 unless ($output_file   = $opts{o});
-        $tagged_detail = 0 unless ($tagged_detail = $opts{t});
-
-        # Check for required options and combinations
-        if (!$output_file) {
-                print "Error: No output file provided\n";
-                &print_usage();
-        }
-        if ($tagged_detail && !$hitlist_file) {
-                print "Warning: -t requires -l, ignoring\n";
-                $tagged_detail = 0;
-        }
-
-        # Read in option files
-        if ($hitlist_file) {
-                open(HITLIST, "$hitlist_file") or die "Error: Cannot open $hitlist_file: $!\n";
-                        foreach (<HITLIST>) {
-                                chomp;
-                                next if /^#/; # Skip comments
-                                push @hitlist, $_;
-                        }
-                close(HITLIST);
-        }
-
-        return;
-}
-
-# -----------------------------------------------------------------------------
-# Print usage/help information to the screen and exit
-# -----------------------------------------------------------------------------
-sub print_usage {
-        die <<USAGE;
-Usage: $0 [-h] [-a dir] [-e email] [-l file] [-o file] [-t dir] file1 [file2 ...]
-  -a ... directory for all detail records (implicit enable)
-  -e ... email recipient for output file
-  -h ... print this help information and exit
-  -l ... hitlist file for content checks (implicit enable)
-  -o ... output file for summary and content check data
-  -t ... directory for tagged detail records (implicit enable)
-USAGE
-}
+1;
