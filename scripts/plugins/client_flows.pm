@@ -40,7 +40,7 @@
 # a good idea of how the different pieces work.
 #
 
-package sample_plugin;
+package client_flows;
 
 use File::Basename;
 use MIME::Lite;
@@ -107,8 +107,8 @@ sub main {
         }
 
         ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        next if (!$timestamp or !$src_ip);
-        next if $direction ne '>';
+        return if (!$timestamp or !$src_ip);
+        return if $direction ne '>';
 
         # Convert timestamp of current record to epoch seconds
         $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
@@ -338,7 +338,7 @@ sub write_summary_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nFLOW SUMMARY STATS\n\n";
-        print OUTFILE "Generated:    " . localtime() . "\n";
+        print OUTFILE "Generated:       " . localtime() . "\n";
         print OUTFILE "Flow count:      $flow_cnt\n";
         print OUTFILE "Flow lines:      $flow_line_cnt\n";
         print OUTFILE "Max Concurrent:  $max_concurrent\n";

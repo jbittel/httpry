@@ -128,33 +128,37 @@ sub process_data {
         # balance that cleans up the results and applies to all users. If
         # you can do it better, knock yourself out (oh, and send me the code).
 
-        if ($hostname =~ /google\.com/) {
-                return unless $uri =~ /q=(.+?)&/;
+        if ($hostname =~ /\.google\.com/) {
+                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
                 $term = $1;
-        } elsif ($hostname =~ /youtube\.com/) {
-                return unless $uri =~ /search_query=(.+?)&/;
+        } elsif ($hostname =~ /\.youtube\.com/) {
+                return unless $uri =~ /[\?\&]search_query=(.+?)(?:\&|\Z)/;
                 $term = $1;
-        } elsif ($hostname =~ /yahoo\.com/) {
-                return unless $uri =~ /p=(.+?)&/;
+        } elsif ($hostname =~ /\.yahoo\.com/) {
+                return unless $uri =~ /[\?\&]p=(.+?)(?:\&|\Z)/;
                 $term = $1;
-        } elsif ($hostname =~ /msn\.com/) {
-                return unless $uri =~ /q=(.+?)&/;
+        } elsif ($hostname =~ /\.msn\.com/) {
+                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
                 $term = $1;
-        } elsif ($hostname =~ /ask\.com/) {
-                return unless $uri =~ /q=(.+?)&/;
+        } elsif ($hostname =~ /\.ask\.com/) {
+                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
                 $term = $1;
-        } elsif ($hostname =~ /wikipedia\.org/) {
-                return unless $uri =~ /search=(.+?)&/;
+        } elsif ($hostname =~ /\.wikipedia\.org/) {
+                return unless $uri =~ /[\?\&]search=(.+?)(?:\&|\Z)/;
+                $term = $1;
+        } elsif ($hostname =~ /\.live\.com/) {
+                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
                 $term = $1;
         }
 
-        # Clean up search term, ignore as necessary
+        # Clean up search term, bail early as necessary; order is important here!
         return unless $term;
         $term =~ s/"//g;
         $term =~ s/\+/ /g;
         return if ($term =~ /^tbn:/);
         return if ($term =~ /^info:/);
         return if ($term =~ /^http:/);
+        return if ($term =~ /^music\/image/); # Unnecessary Froogle hits
 
         $search_terms{$hostname}->{$term}++;
 
