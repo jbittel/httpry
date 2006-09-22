@@ -48,8 +48,8 @@ my $PLUGIN_DIR = "./plugins";
 my %nameof    = (); # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins   = (); # List of plugin files in directory
-my @ignore    = ("");
-                    # List of plugins to be ignored on initialization
+my @ignore    = ("sample_plugin.pm");
+                    # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments
 my %opts;
