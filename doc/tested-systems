@@ -1,0 +1,21 @@
+This is a list of the various systems that httpry has been tested against for
+release. If a system is not listed here then it may or may not work. If you
+have any additional information to add to this list, please let me know.
+
+Note that this list is only applicable to the current release of the program
+and is not authoritative for prior releases.
+
+
+Compiled And Tested
+-------------------
+
+* Slackware 10.0
+* Slackware 10.1
+* Slackware 10.2
+* FreeBSD 6.1
+
+
+Known Issues
+------------
+
+* OpenBSD 3.8
