@@ -646,7 +646,11 @@ void cleanup_exit(int exit_value) {
         if (format_xml) printf("</flow>\n"); 
 
         if (dump_file) {
+
+#ifndef OpenBSD
                 pcap_dump_flush(dump_file);
+#endif
+
                 pcap_dump_close(dump_file);
         }
 
