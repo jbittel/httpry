@@ -39,8 +39,9 @@
 
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+
 #ifdef OpenBSD
-	#include <netinet/in.h>
+#include <netinet/in.h>
 #endif
 
 #define ETHER_ADDR_LEN 6
