@@ -16,6 +16,7 @@ version 0.0.9
    = Chg: -n switch now counts parsed packets, not total packets
    + Add: additional sanity checking for output file paths
    + Add: XML output format (-x)
+   = Chg: added compile directives for OpenBSD
 
 version 0.0.8
    - Fix: crash on exit when reading from an input file

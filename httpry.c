@@ -643,7 +643,7 @@ void cleanup_exit(int exit_value) {
 
         fflush(NULL);
 
-        if (format_xml) printf("</flow>\n"); 
+        if (format_xml && (pkt_parsed > 0)) printf("</flow>\n"); 
 
         if (dump_file) {
 
