@@ -149,6 +149,9 @@ sub process_data {
         } elsif ($hostname =~ /\.live\.com/) {
                 return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
                 $term = $1;
+        } elsif ($hostname =~ /search.ebay.com/) {
+                return unless $uri =~ /[\?\&]satitle=(.+?)(?:\&|\Z)/;
+                $term = $1;
         }
 
         # Clean up search term, bail early as necessary; order is important here!
