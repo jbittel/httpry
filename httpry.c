@@ -71,7 +71,7 @@ pcap_t *open_dev(char *dev, int promisc, char *fname);
 void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net);
 void change_user(char *name, uid_t uid, gid_t gid);
 void get_packets(pcap_t *pcap_hnd);
-void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
+void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
 void runas_daemon(char *run_dir);
@@ -83,23 +83,26 @@ void display_version();
 void display_help();
 
 /* Program flags/options, set by arguments or config file */
-static char *use_binfile = NULL;
-static int   parse_count = -1;
-static int   daemon_mode = 0;
-static char *use_infile  = NULL;
-static char *interface   = NULL;
-static char *capfilter   = NULL;
-static char *use_outfile = NULL;
-static int   format_xml  = 0;
-static int   set_promisc = 1;
-static char *new_user    = NULL;
-static char *out_format  = NULL;
-static char *run_dir     = NULL;
+static char *use_binfile  = NULL;
+static int   parse_count  = -1;
+static int   daemon_mode  = 0;
+static char *use_infile   = NULL;
+static char *interface    = NULL;
+static char *capfilter    = NULL;
+static char *text_outfile = NULL;
+static char *xml_outfile  = NULL;
+static char *use_outfile  = NULL;
+static int   format_xml   = 0;
+static int   set_promisc  = 1;
+static char *new_user     = NULL;
+static char *out_format   = NULL;
+static char *run_dir      = NULL;
 
 static pcap_t *pcap_hnd         = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
 static unsigned pkt_parsed      = 0;    /* Count of fully parsed HTTP packets */
 NODE *format_str                = NULL;
+static int print_xml_footer     = 1;
 
 /* Parse command line arguments */
 void parse_args(int argc, char** argv) {
@@ -142,9 +145,14 @@ void parse_args(int argc, char** argv) {
                 } else if (!strncmp(argv[argn], "-n", 2) && (argn + 1 < argc)) {
                         argn++;
                         parse_count = atoi(argv[argn]);
-                } else if (!strncmp(argv[argn], "-o", 3) && (argn + 1 < argc)) {
+                } else if (!strncmp(argv[argn], "-oT", 3) && (argn + 1 < argc)) {
                         argn++;
-                        use_outfile = safe_strdup(argv[argn]);
+                        text_outfile = safe_strdup(argv[argn]);
+                        format_xml = 0;
+                } else if (!strncmp(argv[argn], "-oX", 3) && (argn + 1 < argc)) {
+                        argn++;
+                        xml_outfile = safe_strdup(argv[argn]);
+                        format_xml = 1;
                 } else if (!strncmp(argv[argn], "-p", 2)) {
                         set_promisc = 0;
                 } else if (!strncmp(argv[argn], "-r", 2) && (argn + 1 < argc)) {
@@ -158,8 +166,6 @@ void parse_args(int argc, char** argv) {
                         new_user = safe_strdup(argv[argn]);
                 } else if (!strncmp(argv[argn], "-v", 2) || !strncmp(argv[argn], "--version", 9)) {
                         display_version();
-                } else if (!strncmp(argv[argn], "-x", 2)) {
-                        format_xml = 1;
                 } else {
                         warn("Parameter '%s' unknown or missing required value\n", argv[argn]);
                         display_help();
@@ -232,8 +238,12 @@ void parse_config(char *filename) {
                         capfilter = safe_strdup(value);
                 } else if (!strcmp(name, "parse_count")) {
                         parse_count = atoi(value);
-                } else if (!strcmp(name, "output_file")) {
-                        use_outfile = safe_strdup(value);
+                } else if (!strcmp(name, "output_text")) {
+                        text_outfile = safe_strdup(value);
+                        format_xml = 0;
+                } else if (!strcmp(name, "output_xml")) {
+                        xml_outfile = safe_strdup(value);
+                        format_xml = 1;
                 } else if (!strcmp(name, "promiscuous")) {
                         set_promisc = atoi(value);
                 } else if (!strcmp(name, "run_dir")) {
@@ -244,8 +254,6 @@ void parse_config(char *filename) {
                         out_format = safe_strdup(value);
                 } else if (!strcmp(name, "binary_file")) {
                         use_binfile = safe_strdup(value);
-                } else if (!strcmp(name, "xml_format")) {
-                        format_xml = 1;
                 } else {
                         warn("Config file option '%s' at line %d not recognized\n", name, line_count);
                         continue;
@@ -365,7 +373,7 @@ void change_user(char *name, uid_t uid, gid_t gid) {
 
 /* Begin packet capture/processing session */
 void get_packets(pcap_t *pcap_hnd) {
-        if (pcap_loop(pcap_hnd, -1, parse_packet, NULL) < 0) {
+        if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0) {
                 log_die("Cannot read packets from interface\n");
         }
 
@@ -375,7 +383,7 @@ void get_packets(pcap_t *pcap_hnd) {
 }
 
 /* Process each packet that passes the capture filter */
-void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
+void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
         char *data;            /* Editable copy of packet data */
         char *header_line;
@@ -403,7 +411,8 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         payload = (u_char *)(pkt + size_eth + size_ip + (tcp->th_off * 4));
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
-        if (size_data <= 0) return; /* Bail early if no data to parse */
+        if (ip->ip_p != 0x6) return; /* Not TCP */
+        if (size_data <= 0) return; /* No data to parse */
 
         /* Copy packet payload to editable buffer */
         if ((data = malloc(size_data + 1)) == NULL) {
@@ -484,7 +493,7 @@ void parse_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *
         return;
 }
 
-/* Parse a HTTP client request, bail at first sign of malformed data */
+/* Parse a HTTP client request, bail at first sign of invalid request */
 int parse_client_request(char *header_line) {
         HTTP_CLIENT client;
         NODE *element;
@@ -513,7 +522,7 @@ int parse_client_request(char *header_line) {
         return 1;
 }
 
-/* Parse a HTTP server response, bail at first sign of malformed data */
+/* Parse a HTTP server response, bail at first sign of invalid response */
 int parse_server_response(char *header_line) {
         HTTP_SERVER server;
         NODE *element;
@@ -643,7 +652,7 @@ void cleanup_exit(int exit_value) {
 
         fflush(NULL);
 
-        if (format_xml && (pkt_parsed > 0)) printf("</flow>\n"); 
+        if (format_xml && print_xml_footer) printf(XML_FOOTER);
 
         if (dump_file) {
 
@@ -681,23 +690,23 @@ void display_version() {
 /* Display program help/usage information */
 void display_help() {
         info("%s version %s\n", PROG_NAME, PROG_VER);
-        info("Usage: %s [-dhpvx] [-b file] [-c file] [-f file] [-i interface]\n"
-             "        [-l filter] [-n count] [-o file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
-        info("  -b ... binary packet output file\n"
-             "  -c ... specify config file\n"
-             "  -d ... run as daemon\n"
-             "  -f ... input file to read from\n"
-             "  -h ... print help information\n"
-             "  -i ... set interface to listen on\n"
-             "  -l ... pcap style capture filter\n"
-             "  -n ... number of HTTP packets to parse\n"
-             "  -o ... output file to write into\n"
-             "  -p ... disable promiscuous mode\n"
-             "  -r ... set running directory\n"
-             "  -s ... specify output format string\n"
-             "  -u ... set process owner\n"
-             "  -v ... display version information\n"
-             "  -x ... enable XML output\n");
+        info("Usage: %s [-dhpv] [-b file] [-c file] [-f file] [-i interface]\n"
+             "        [-l filter] [-n count] [-oT|oX file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
+        info("  -b  ... binary packet output file\n"
+             "  -c  ... specify config file\n"
+             "  -d  ... run as daemon\n"
+             "  -f  ... input file to read from\n"
+             "  -h  ... print help information\n"
+             "  -i  ... set interface to listen on\n"
+             "  -l  ... pcap style capture filter\n"
+             "  -n  ... number of HTTP packets to parse\n"
+             "  -oT ... output file for text output\n"
+             "  -oX ... output file for XML output\n"
+             "  -p  ... disable promiscuous mode\n"
+             "  -r  ... set running directory\n"
+             "  -s  ... specify output format string\n"
+             "  -u  ... set process owner\n"
+             "  -v  ... display version information\n");
 
         exit(EXIT_SUCCESS);
 }
@@ -730,6 +739,12 @@ int main(int argc, char *argv[]) {
         /* Test for argument error and warning conditions */
         if ((getuid() != 0) && !use_infile) {
                 log_die("Root priviledges required to access the NIC\n");
+        }
+        if (text_outfile && xml_outfile) {
+                log_die("Cannot specify more than one output format\n");
+        } else {
+                if (text_outfile) use_outfile = safe_strdup(text_outfile);
+                if (xml_outfile)  use_outfile = safe_strdup(xml_outfile);
         }
         if (daemon_mode && !use_outfile) {
                 log_die("Daemon mode requires an output file\n");
@@ -769,9 +784,8 @@ int main(int argc, char *argv[]) {
 
         /* General program setup */
         if (format_xml) {
-                printf("<?xml version=\"1.0\"?>\n");
-                printf("<?xml-stylesheet href=\"httpry.css\" type=\"text/css\"?>\n");
-                printf("<flow version=\"%s\" xmlversion=\"%s\">\n", PROG_VER, XML_VER);
+                printf(XML_HEADER, PROG_VER, XML_VER);
+                print_xml_footer = 1;
         }
         if (!capfilter) capfilter = safe_strdup(default_capfilter);
         if (!out_format) out_format = safe_strdup(default_format);
@@ -804,13 +818,15 @@ int main(int argc, char *argv[]) {
         if (new_user) change_user(new_user, user->pw_uid, user->pw_gid);
 
         /* Clean up allocated memory before main loop */
-        if (use_binfile) free(use_binfile);
-        if (interface)   free(interface);
-        if (capfilter)   free(capfilter);
-        if (use_outfile) free(use_outfile);
-        if (run_dir)     free(run_dir);
-        if (new_user)    free(new_user);
-        if (out_format)  free(out_format);
+        if (use_binfile)  free(use_binfile);
+        if (interface)    free(interface);
+        if (capfilter)    free(capfilter);
+        if (text_outfile) free(text_outfile);
+        if (xml_outfile)  free(xml_outfile);
+        if (use_outfile)  free(use_outfile);
+        if (run_dir)      free(run_dir);
+        if (new_user)     free(new_user);
+        if (out_format)   free(out_format);
 
         get_packets(pcap_hnd);
 
