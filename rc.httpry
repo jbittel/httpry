@@ -11,11 +11,12 @@
 # This script assumes you are storing all your configuration in a httpry
 # config file and running the program in daemon mode.
 
-config_file="" # Path to your config file
+config_file="" # Path to httpry config file
 
 
 if [ -r ${config_file} ] ; then
         echo "Error: Config file does not exist or is unreadable" >&2
+        exit 1
 fi
 
 case $1 in

@@ -3,19 +3,22 @@
 #
 # process_logs.sh | created: 6/29/2005
 #
-# Example shell script for orchestrating the included tools. This
-# is designed to stop the httpry service, move the log file to a
-# different directory, restart httpry and then process the new log
-# file. This demonstrates the majority of the functionality included
-# in these different tools, and should help in modifying them to
-# your particular use.
+# Am example shell script for orchestrating some of the included tools.
+# This script stops the httpry daemon, moves the log file to a
+# different directory, restarts httpry and then processes the new log
+# file.
+#
+# Some error checking is performed, but is intentionally not extensive
+# so as to not obfuscate the code. A production environment would
+# probably want to augment this script.
 #
 
 # !!! Change these values to reflect your particular setup !!!
 
-tools_dir=""      # Change this to the location of the perl tool scripts
-logs_dir=""       # Change this to where you want to store your logs
-log_fn="out.log"  # Default file name for active log file
+tools_dir=""                       # Change this to the location of the perl tool scripts
+logs_dir=""                        # Change this to where you want to store your logs
+log_fn="out.log"                   # Default file name for active log file
+parse_fn="`date +%-m-%-d-%Y`.log"  # Default date format used by rotate_log.pl
 
 
 die() {
@@ -47,8 +50,12 @@ perl ${tools_dir}/rotate_log.pl -ct -i ${tools_dir}/${log_fn} -d ${logs_dir}
 
 # Process new log file data; make sure appropriate plugins are
 # enabled/disabled for parse_log.pl
-if [ `ls -l ${logs_dir}/*.log | wc -l` -gt "0" ] ; then
-        perl ${tools_dir}/parse_log.pl -p ${tools_dir}/plugins ${logs_dir}/*.log
+if [ -r "${logs_dir}/${parse_fn}" ] ; then
+        perl ${tools_dir}/parse_log.pl -p ${tools_dir}/plugins ${logs_dir}/${parse_fn}
 else
-        die "No log files found in ${logs_dir}"
+        if [ -n ${parse_fn} ] ; then
+                die "File ${logs_dir}/${parse_fn} does not exist or is unreadable"
+        else
+                die "Parse file is not set"
+        fi
 fi
