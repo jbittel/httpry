@@ -20,7 +20,7 @@ logs_dir=""                        # Change this to where you want to store your
 log_fn="out.log"                   # Default file name for active log file
 parse_fn="`date +%-m-%-d-%Y`.log"  # Default date format used by rotate_log.pl
 
-
+# Generalized error sub; useful if you want to add file logging or somesuch
 die() {
         if [ -n "${1}" ] ; then
                 echo "Error: ${1}" >&2

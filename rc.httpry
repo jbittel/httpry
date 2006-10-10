@@ -6,22 +6,21 @@
 # init script, please send it to me and I'll include it in the package.
 #
 
-# !!! Change these values to reflect your particular setup !!!
-#
 # This script assumes you are storing all your configuration in a httpry
 # config file and running the program in daemon mode.
 
+# !!! Change these values to reflect your particular setup !!!
+
 config_file="" # Path to httpry config file
 
-
-if [ -r ${config_file} ] ; then
+if [ ! -r ${config_file} ] ; then
         echo "Error: Config file does not exist or is unreadable" >&2
         exit 1
 fi
 
 case $1 in
 start)
-        if [ -r /var/run/httpry.pid ]; then
+        if [ -r /var/run/httpry.pid ] ; then
                 echo "httpry already running with PID `cat /var/run/httpry.pid`"
         else
                 echo "Starting httpry..."
@@ -30,7 +29,7 @@ start)
         ;;
 stop)
         echo "Stopping httpry..."
-        if [ -r /var/run/httpry.pid ]; then
+        if [ -r /var/run/httpry.pid ] ; then
                 kill `cat /var/run/httpry.pid`
         else
                 killall httpry
