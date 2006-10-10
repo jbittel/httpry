@@ -746,6 +746,10 @@ int main(int argc, char *argv[]) {
                 if (text_outfile) use_outfile = safe_strdup(text_outfile);
                 if (xml_outfile)  use_outfile = safe_strdup(xml_outfile);
         }
+        if (use_outfile && (strlen(use_outfile) == 1) && (use_outfile[0] == '-')) {
+                free(use_outfile);
+                use_outfile = NULL;
+        }
         if (daemon_mode && !use_outfile) {
                 log_die("Daemon mode requires an output file\n");
         }

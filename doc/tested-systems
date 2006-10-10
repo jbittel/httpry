@@ -6,11 +6,21 @@ Note that this list is only applicable to the current release of the program
 and is not authoritative for prior releases.
 
 
-Compiled And Tested
--------------------
+Tested and Functional
+---------------------
 
 * Slackware 10.0
 * Slackware 10.1
 * Slackware 10.2
 * FreeBSD 6.1
 * OpenBSD 3.8
+
+Tested and Non-functional
+-------------------------
+
+
+
+Untested
+--------
+
+* All the rest, duh! You sure you're in the right line of work?

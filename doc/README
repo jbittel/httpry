@@ -72,7 +72,7 @@ These commands will compile the latest version of the code and then install it
 appropriately in /usr/sbin. Along with httpry itself, there are several Perl
 scripts included. These tools may either be useful as-is, or as a starting point
 for your own log parsing tools. Additionally, there is an included rc.httpry
-file for automatically starting the program under Linux. This file was written 
+file for automatically starting the program under Linux. This file was written
 for Slackware Linux; your distro may handle things differently. Finally, if you
 ever tire of httpry, simply run:
 
@@ -92,7 +92,7 @@ not complete documentation of program behavior. This section describes these
 options in greater detail.
 
 httpry [-dhpv] [-b file] [-c count] [-f file] [-i interface] [-l filter]
-       [-n count] [-o file] [-r dir] [-s string] [-u user]
+       [-n count] [-oT|oX file] [-r dir] [-s string] [-u user]
 
 -b <file> :
 Dumps a binary packet capture output file to the specified location. Note that
@@ -107,7 +107,7 @@ configuration file for the available options and proper syntax.
 -d :
 Runs the program as a daemon process. All program status output will be
 sent to the syslog. A pid file is created for the process in /var/run/httpry.pid
-by default. Requires -o.
+by default. Requires -oT or -oX.
 
 -f <file> :
 Provide an input capture file to read from instead of performing a
@@ -133,10 +133,14 @@ ports or to/from specific hosts.
 Specifies a number of HTTP packets to parse, following which the
 program will terminate.
 
--o <file> :
-Provides an output file for writing parsed packet data. Note that if the
-program is running as a daemon, its base directory may change so an absolute
-path to the output file should be specified.
+-oT, -oX <file> :
+Provides an output file for writing parsed packet data. The switch oT will
+print the output in a tab-delimited text format and the switch oX will print
+the output in XML format. These two switches cannot be combined. You can use
+'-' for the filename to force printing to STDOUT, however errors and other
+informational messages will still print to STDERR. Note that if the program
+is running as a daemon, its base directory may change so an absolute path to
+the output file should be specified.
 
 -p :
 Disables promiscuous mode on the NIC. Under most circumstances this should

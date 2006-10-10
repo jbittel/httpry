@@ -2,7 +2,7 @@
 .SH NAME
 httpry \- HTTP logging and information display tool
 .SH SYNOPSIS
-.B "httpry [-dp] [-b file] [-c count] [-f file] [-i interface] [-l filter] [-n count] [-o file] [-r dir] [-s string] [-u user]"
+.B "httpry [-dp] [-b file] [-c count] [-f file] [-i interface] [-l filter] [-n count] [-oT|oX file] [-r dir] [-s string] [-u user]"
 .br
 .B "httpry -h or --help"
 .br
@@ -29,13 +29,13 @@ configuration file for the available options and proper syntax.
 .IP "-d"
 Runs the program as a daemon process. All program status output will be
 sent to the syslog. A pid file is created for the process in /var/run/httpry.pid
-by default. Requires -o.
+by default. Requires -oT or -oX.
 .IP "-f \fIfile\fP"
 Provide an input capture file to read from instead of performing a
 live capture. The program expects a valid capture file as input. Note that this
 does not require the program to be run as root, as no access to the NIC is
 required.
-.IP "-h or --help"
+.IP "-h | --help"
 Displays a brief description of these options, after which the program
 terminates.
 .IP "-i \fIinterface\fP"
@@ -49,10 +49,14 @@ ports or to/from specific hosts.
 .IP "-n \fIcount\fP"
 Specifies a number of HTTP packets to parse, following which the
 program will terminate.
-.IP "-o \fIfile\fP"
-Provides an output file for writing parsed packet data. Note that if the
-program is running as a daemon, its base directory may change so an absolute
-path to the output file should be specified.
+.IP "-oT, oX \fIfile\fP"
+Provides an output file for writing parsed packet data. The switch oT will
+print the output in a tab-delimited text format and the switch oX will print
+the output in XML format. These two switches cannot be combined. You can use
+'-' for the filename to force printing to STDOUT, however errors and other
+informational messages will still print to STDERR. Note that if the program
+is running as a daemon, its base directory may change so an absolute path to
+the output file should be specified.
 .IP "-p"
 Disables promiscuous mode on the NIC. Under most circumstances this should
 not be required.
@@ -67,7 +71,7 @@ Allows an alternate user to take ownership of the process. This is
 particularly useful when running in daemon mode. Note that you still need root
 privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
-.IP "-v or --version"
+.IP "-v | --version"
 Displays the program name and version number, after which the program
 terminates.
 .SH BUGS

@@ -17,6 +17,7 @@ version 0.0.9
    + Add: additional sanity checking for output file paths
    + Add: XML output format (-x)
    = Chg: added compile directives for OpenBSD
+   + Add: '-' can be specified for the filename to force STDOUT
 
 version 0.0.8
    - Fix: crash on exit when reading from an input file

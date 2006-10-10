@@ -7,7 +7,7 @@ Each tool is expecting httpry to be run with the default format string. If you
 want the scripts to utilize different fields, they will have to be modified
 accordingly. In general, it is a relatively simple matter to add additional
 field support to each script. Additionally, if you add the new data to the end
-of each line, many of these scripts will simply ignore it by default and work
+of each line, most of these scripts will simply ignore it by default and work
 just fine.
 
 A summary of the scripts:
@@ -56,10 +56,10 @@ A summary of the scripts:
 
 These tools are not necessarily designed to be drop-in replacements for your
 own solutions. If one of these tools does what you need it to, great! However,
-they are more designed as starting points for your own processing code. Of
-course, parse_log.pl is designed to allow you to insert your own plugins and
+they are more designed as starting points for your own processing code. The
+parse_log.pl script is designed to allow you to insert your own plugins and
 for most tasks that will probably work just fine. For more complex tasks
-you'll want to write more robust code.
+you'll want to write more custom code.
 
 If you write scripts of your own and think they would be useful to other
 people, feel free to send them to me and I'll review them for release with
