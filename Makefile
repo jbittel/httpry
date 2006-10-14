@@ -1,8 +1,7 @@
 #
 # Makefile | created: 8/12/2005
 #
-# This is (hopefully) a universal makefile for httpry. Currently, it
-# has only been tested under Linux.
+# This is (hopefully) a universal makefile for httpry.
 #
 
 CC	= gcc
@@ -10,12 +9,11 @@ CFLAGS	= -Wall -Werror -O3 -funroll-loops -ansi
 LIBS	= -lpcap -I/usr/include/pcap -I/usr/local/include/pcap
 PROG	= httpry
 
-$(PROG): $(PROG).c
+$(PROG): $(PROG).c list.c
 	@echo "--------------------------------------------------"
-	@echo "This program has only been fully tested under"
-	@echo "Linux and may not compile or run properly under a"
-	@echo "different system. I'm always interested in"
-	@echo "feedback or help in this area."
+	@echo " $(PROG) has been tested under the systems listed"
+	@echo " in doc/tested-systems. It may not compile or run"
+	@echo " properly under other systems."
 	@echo "--------------------------------------------------"
 	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c list.c $(LIBS)
 
@@ -24,10 +22,10 @@ all:
 
 install: $(PROG)
 	@echo "--------------------------------------------------"
-	@echo "Installing httpry into /usr/sbin/"
+	@echo " Installing $(PROG) into /usr/sbin/"
 	@echo ""
-	@echo "You'll need to manually move the Perl scripts"
-	@echo "and other tools to a spot that makes sense to you."
+	@echo " You will need to move the Perl scripts and other"
+	@echo " tools to a location of your choosing manually."
 	@echo "--------------------------------------------------"
 	cp -f $(PROG) /usr/sbin/
 	cp -f $(PROG).1 /usr/man/man1/ || cp -f $(PROG).1 /usr/local/man/man1/

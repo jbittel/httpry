@@ -15,7 +15,8 @@ version 0.0.9
    + Add: output files are now chown'd to process owner
    = Chg: -n switch now counts parsed packets, not total packets
    + Add: additional sanity checking for output file paths
-   + Add: XML output format (-x)
+   + Add: XML file output format (-oX)
+   = Chg: split file output switch into -oT and -oX
    = Chg: added compile directives for OpenBSD
    + Add: '-' can be specified for the filename to force STDOUT
 
