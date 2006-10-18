@@ -67,10 +67,10 @@ sub init {
 }
 
 sub main {
-        my $self = shift;
-        my $data = shift;
+        my $self   = shift;
+        my %record = @_;
 
-        &process_data($data);
+        &process_data(%record);
 
         return;
 }
@@ -105,65 +105,55 @@ sub load_config {
 # Handle each line of data
 # -----------------------------------------------------------------------------
 sub process_data {
-        my $curr_line = shift;
-        my ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
-        my $term;
-        my $query;
-        my $request;
-
-        # Strip non-printable chars
-        $curr_line =~ tr/\x80-\xFF//d;
-
-        # Convert hex characters to ASCII
-        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-
-        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        return if $direction ne '>';
-        return if (!$hostname or !$uri); # Malformed line
+        my %record = @_;
+        my $search_term;
+        
+        return if $record{"direction"} ne '>';
 
         # These results can end up being a little messy, but it seems
         # most useful to simply dump out all search terms and let the user
         # parse through what they find interesting. It's hard to strike a
         # balance that cleans up the results and applies to all users. If
         # you can do it better, knock yourself out (oh, and send me the code).
-
-        if ($hostname =~ /\.google\.com/) {
-                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
-                $term = $1;
-        } elsif ($hostname =~ /\.youtube\.com/) {
-                return unless $uri =~ /[\?\&]search_query=(.+?)(?:\&|\Z)/;
-                $term = $1;
-        } elsif ($hostname =~ /\.yahoo\.com/) {
-                return unless $uri =~ /[\?\&]p=(.+?)(?:\&|\Z)/;
-                $term = $1;
-        } elsif ($hostname =~ /\.msn\.com/) {
-                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
-                $term = $1;
-        } elsif ($hostname =~ /\.ask\.com/) {
-                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
-                $term = $1;
-        } elsif ($hostname =~ /\.wikipedia\.org/) {
-                return unless $uri =~ /[\?\&]search=(.+?)(?:\&|\Z)/;
-                $term = $1;
-        } elsif ($hostname =~ /\.live\.com/) {
-                return unless $uri =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
-                $term = $1;
-        } elsif ($hostname =~ /search.ebay.com/) {
-                return unless $uri =~ /[\?\&]satitle=(.+?)(?:\&|\Z)/;
-                $term = $1;
+        if ($record{"host"} =~ /\.google\.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /\.youtube\.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]search_query=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /\.yahoo\.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]p=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /\.msn\.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /\.ask\.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /\.wikipedia\.org$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]search=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /\.live\.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /search.ebay.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]satitle=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
+        } elsif ($record{"host"} =~ /\.altavista.com$/) {
+                return unless $record{"request-uri"} =~ /[\?\&]q=(.+?)(?:\&|\Z)/;
+                $search_term = $1;
         }
 
         # Clean up search term, bail early as necessary; order is important here!
-        return unless $term;
-        $term =~ s/"//g;
-        $term =~ s/\+/ /g;
-        return if ($term =~ /^tbn:/);
-        return if ($term =~ /^info:/);
-        return if ($term =~ /^http:/);
-        return if ($term =~ /^music\/image/); # Unnecessary Froogle hits
+        return unless $search_term;
+        $search_term =~ s/"//g;
+        $search_term =~ s/\+/ /g;
+        return if ($search_term =~ /^tbn:/);
+        return if ($search_term =~ /^info:/);
+        return if ($search_term =~ /^http:/);
+        return if ($search_term =~ /^music\/image/); # Unnecessary Froogle hits
 
-        $search_terms{$hostname}->{$term}++;
+        $search_terms{$record{"host"}}->{$search_term}++;
 
         return;
 }

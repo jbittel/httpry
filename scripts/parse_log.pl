@@ -157,6 +157,7 @@ sub process_logfiles {
                         next if $curr_line eq "";
                         
                         @fields = split(/$PATTERN/, $curr_line);
+                        next if (scalar(@fields != 10)); # Malformed number of fields
 
                         # Default format:
                         # "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"

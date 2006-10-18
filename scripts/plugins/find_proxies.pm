@@ -74,7 +74,7 @@ sub init {
 
 sub main {
         my $self   = shift;
-        my %record = shift;
+        my %record = @_;
 
         &process_data(%record);
 
@@ -113,20 +113,23 @@ sub load_config {
 # Handle each line of data
 # -----------------------------------------------------------------------------
 sub process_data {
-        my %record = shift;
+        my %record = @_;
         my $word;
+        my $len;
+        my $encoded_uri;
+        my $decoded_uri = "";
 
         return if $record{"direction"} ne '>';
 
         # Perform hostname and uri keyword search
         foreach $word (@proxy_keywords) {
-                if ($record{"hostname"} =~ /$word/i) {
-                        $proxy_lines{$record{"source-ip"}}->{$record{"hostname"}}++;
+                if ($record{"host"} =~ /$word/i) {
+                        $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
                         return;
                 }
 
                 if ($record{"request-uri"} =~ /$word/i) {
-                        $proxy_lines{$record{"source-ip"}}->{$record{"hostname"}}++;
+                        $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
                         return;
                 }
         }
@@ -134,8 +137,30 @@ sub process_data {
         # Perform URI embedded request search; this works, but appears
         # to generate too many false positives to be useful as is
         if ($record{"request-uri"} =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
-                $proxy_lines{$record{"source-ip"}}->{$record{"hostname"}}++;
+                $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
                 return;
+        }
+
+        # Third time's the charm; do a base 64 decode of the URI and
+        # search again for an embedded request
+        if ($record{"request-uri"} =~ /(\.pl|\.php|\.asp).*=(.+?)(?:\&|\Z)/) {
+                $encoded_uri = $2;
+                
+                $encoded_uri =~ tr|A-Za-z0-9+=/||cd;
+                return if (length($encoded_uri) % 4);
+
+                $encoded_uri =~ s/=+$//;
+                $encoded_uri =~ tr|A-Za-z0-9+/| -_|;
+
+                while ($encoded_uri =~ /(.{1,60})/gs) {
+                	$len = chr(32 + length($1)*3/4);
+                 	$decoded_uri .= unpack("u", $len . $1 );
+                }
+
+                if ($decoded_uri =~ /http:\/\/[^\/:]+/) {
+                        $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
+                        return;
+                }
         }
 
         return;
@@ -171,26 +196,33 @@ sub prune_hits {
 sub write_output_file {
         my $ip;
         my $hostname;
-        my $count = 0;
+        my %output;
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nPOTENTIAL PROXIES\n\n";
         print OUTFILE "Generated: " . localtime() . "\n\n\n";
 
+        # Reformat data hash into a formatted output hash
         if ((keys %proxy_lines) > 0) {
-                foreach $ip (map { inet_ntoa $_ }
-                             sort
-                             map { inet_aton $_ } keys %proxy_lines) {
-                        print OUTFILE "$ip\n";
-
-                        foreach $hostname (sort keys %{$proxy_lines{$ip}}) {
-                                print OUTFILE "\t$hostname\t$proxy_lines{$ip}->{$hostname}\n";
+                foreach $ip (keys %proxy_lines) {
+                        foreach $hostname (keys %{$proxy_lines{$ip}}) {
+                                push(@{$output{$hostname}}, $ip);
                         }
-                        print OUTFILE "\n";
                 }
         } else {
                 print OUTFILE "*** No potential proxies found\n";
+        }
+
+        # Print output hash data to file
+        foreach $hostname (sort keys %output) {
+                print OUTFILE "$hostname\n\t[ ";
+
+                foreach $ip (@{$output{$hostname}}) {
+                        print OUTFILE "$ip ";
+                }
+
+                print OUTFILE "]\n\n";
         }
 
         close(OUTFILE);

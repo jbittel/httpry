@@ -84,7 +84,7 @@ sub init {
 # necessary) to act on individual components of the line.
 sub main {
         my $self   = shift;
-        my %record = shift;
+        my %record = @_;
 
         # Simple processing can be handled here; more complex processing
         # would probably be better handled in a different sub.

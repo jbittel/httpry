@@ -78,10 +78,24 @@ sub init {
 }
 
 sub main {
-        my $self = shift;
-        my $data = shift;
+        my $self   = shift;
+        my %record = @_;
 
-        &process_data($data);
+        # Gather statistics
+        $total_line_cnt++;
+
+        if ($record{"direction"} eq '>') {
+                $top_hosts{$record{"host"}}++;
+                $top_talkers{$record{"source-ip"}}++;
+
+                if ($filetype && ($record{"request-uri"} =~ /\.([\w\d]{2,5}?)$/i)) {
+                        $ext_cnt++;
+                        $filetypes{lc($1)}++;
+                }
+        } elsif ($record{"direction"} eq '<') {
+                $response_codes{$record{"status-code"}}++;
+                $srv_responses++;
+        }
 
         return;
 }
@@ -112,35 +126,6 @@ sub load_config {
         $summary_cap = $SUMMARY_CAP unless ($summary_cap > 0);
 
         return 1;
-}
-
-# -----------------------------------------------------------------------------
-# Handle each line of data
-# -----------------------------------------------------------------------------
-sub process_data {
-        my $curr_line = shift;
-        my @fields = ();
-
-        @fields = split(/$PATTERN/, $curr_line);
-        return if scalar @fields < 10; # Missing data
-
-        # Gather statistics
-        $total_line_cnt++;
-
-        if ($fields[3] eq '>') {
-                $top_hosts{$fields[5]}++;
-                $top_talkers{$fields[1]}++;
-
-                if ($filetype && ($fields[6] =~ /\.([\w\d]{2,5}?)$/i)) {
-                        $ext_cnt++;
-                        $filetypes{lc($1)}++;
-                }
-        } elsif ($fields[3] eq '<') {
-                $response_codes{$fields[8]}++;
-                $srv_responses++;
-        }
-
-        return;
 }
 
 # -----------------------------------------------------------------------------

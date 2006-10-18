@@ -77,34 +77,26 @@ sub init {
 }
 
 sub main {
-        my $self      = shift;
-        my $curr_line = shift;
-        my ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
+        my $self   = shift;
+        my %record = @_;
         my $sql;
 
-        # Strip non-printable chars
-        $curr_line =~ tr/\x80-\xFF//d;
-
-        # Convert hex characters to ASCII
-        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-
-        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        return if $direction ne '>';
+        return if $record{"direction"} ne '>';
 
         # Reformat date/time string
-        $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
-        $timestamp = "$3-$1-$2 $4:$5:$6";
+        $record{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
+        $record{"timestamp"} = "$3-$1-$2 $4:$5:$6";
 
         # Escape apostrophe/quote characters
-        $hostname =~ s/'/\\'/g;
-        $uri =~ s/'/\\'/g;
-        $hostname =~ s/"/\\"/g;
-        $uri =~ s/"/\\"/g;
+        $record{"host"} =~ s/'/\\'/g;
+        $record{"request-uri"} =~ s/'/\\'/g;
+        $record{"host"} =~ s/"/\\"/g;
+        $record{"request-uri"} =~ s/"/\\"/g;
 
         # Insert data into database
         $sql = qq{ INSERT INTO $table (timestamp, src_ip, dst_ip, hostname, uri)
-                   VALUES ('$timestamp', '$src_ip', '$dst_ip', '$hostname', '$uri') };
+                   VALUES ('$record{"timestamp"}', '$record{"source-ip"}',
+                   '$record{"dest-ip"}', '$record{"host"}', '$record{"request-uri"}') };
         &execute_query($dbh, $sql);
 
         return;
