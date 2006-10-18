@@ -43,7 +43,6 @@ use Socket qw(inet_ntoa inet_aton);
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
 my $SENDMAIL    = "/usr/lib/sendmail -i -t";
-my $PATTERN     = "\t";
 my $PRUNE_LIMIT = 20;
 
 # -----------------------------------------------------------------------------
@@ -74,10 +73,10 @@ sub init {
 }
 
 sub main {
-        my $self = shift;
-        my $data = shift;
+        my $self   = shift;
+        my %record = shift;
 
-        &process_data($data);
+        &process_data(%record);
 
         return;
 }
@@ -114,38 +113,29 @@ sub load_config {
 # Handle each line of data
 # -----------------------------------------------------------------------------
 sub process_data {
-        my $curr_line = shift;
-        my ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri);
+        my %record = shift;
         my $word;
 
-        # Strip non-printable chars
-        $curr_line =~ tr/\x80-\xFF//d;
-
-        # Convert hex characters to ASCII
-        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-
-        ($timestamp, $src_ip, $dst_ip, $direction, $method, $hostname, $uri) = split(/$PATTERN/, $curr_line);
-        return if $direction ne '>';
-        return if (!$src_ip or !$hostname or !$uri); # Malformed line
+        return if $record{"direction"} ne '>';
 
         # Perform hostname and uri keyword search
         foreach $word (@proxy_keywords) {
-                if ($hostname =~ /$word/i) {
-                        $proxy_lines{$src_ip}->{$hostname}++;
+                if ($record{"hostname"} =~ /$word/i) {
+                        $proxy_lines{$record{"source-ip"}}->{$record{"hostname"}}++;
                         return;
                 }
 
-                if ($uri =~ /$word/i) {
-                        $proxy_lines{$src_ip}->{$hostname}++;
+                if ($record{"request-uri"} =~ /$word/i) {
+                        $proxy_lines{$record{"source-ip"}}->{$record{"hostname"}}++;
                         return;
                 }
         }
 
-        # Perform uri embedded request search; this works, but appears
+        # Perform URI embedded request search; this works, but appears
         # to generate too many false positives to be useful as is
-        if ($uri =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
-                $proxy_lines{$src_ip}->{$hostname}++;
+        if ($record{"request-uri"} =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
+                $proxy_lines{$record{"source-ip"}}->{$record{"hostname"}}++;
+                return;
         }
 
         return;

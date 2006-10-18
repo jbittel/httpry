@@ -41,6 +41,7 @@ use Getopt::Std;
 # -----------------------------------------------------------------------------
 my $VERBOSE    = 0;
 my $PLUGIN_DIR = "./plugins";
+my $PATTERN    = "\t";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -134,6 +135,8 @@ sub process_logfiles {
         my $curr_line; # Current line in input file
         my $curr_file; # Current input file
         my $plugin;
+        my @fields;
+        my %record;
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
@@ -143,10 +146,33 @@ sub process_logfiles {
 
                 foreach $curr_line (<INFILE>) {
                         chomp $curr_line;
+        
+                        # Strip non-printable chars
+                        $curr_line =~ tr/\x80-\xFF//d;
+
+                        # Convert hex encoded chars to ASCII
+                        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+                        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+                        
                         next if $curr_line eq "";
+                        
+                        @fields = split(/$PATTERN/, $curr_line);
+
+                        # Default format:
+                        # "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+                        $record{"timestamp"}     = $fields[0];
+                        $record{"source-ip"}     = $fields[1];
+                        $record{"dest-ip"}       = $fields[2];
+                        $record{"direction"}     = $fields[3];
+                        $record{"method"}        = $fields[4];
+                        $record{"host"}          = $fields[5];
+                        $record{"request-uri"}   = $fields[6];
+                        $record{"http-version"}  = $fields[7];
+                        $record{"status-code"}   = $fields[8];
+                        $record{"reason-phrase"} = $fields[9];
 
                         foreach $plugin (@callbacks) {
-                                $plugin->main($curr_line);
+                                $plugin->main(%record);
                         }
                 }
 
