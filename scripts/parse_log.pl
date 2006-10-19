@@ -49,7 +49,7 @@ my $PATTERN    = "\t";
 my %nameof    = (); # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins   = (); # List of plugin files in directory
-my @ignore    = ("sample_plugin.pm");
+my @ignore    = ("sample_plugin.pm", "db_dump.pm");
                     # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments

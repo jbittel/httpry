@@ -88,9 +88,12 @@ sub main {
                 $top_hosts{$record{"host"}}++;
                 $top_talkers{$record{"source-ip"}}++;
 
-                if ($filetype && ($record{"request-uri"} =~ /\.([\w\d]{2,5}?)$/i)) {
-                        $ext_cnt++;
-                        $filetypes{lc($1)}++;
+                if ($filetype) {
+                        if (($record{"request-uri"} =~ /\.([\w\d]{2,5}?)$/i) or 
+                            ($record{"request-uri"} =~ /\/.*\.([\w\d]{2,5}?)\?/i)) {
+                                $ext_cnt++;
+                                $filetypes{lc($1)}++;
+                        }
                 }
         } elsif ($record{"direction"} eq '<') {
                 $response_codes{$record{"status-code"}}++;
