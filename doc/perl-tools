@@ -3,6 +3,8 @@ This provides a listing of those files and a brief description of what each
 script does. Run each tool with the -h parameter to get a listing of the
 available command line parameters for each.
 
+MIME::Lite
+
 Each tool is expecting httpry to be run with the default format string. If you
 want the scripts to utilize different fields, they will have to be modified
 accordingly. In general, it is a relatively simple matter to add additional

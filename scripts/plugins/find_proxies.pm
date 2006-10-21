@@ -35,10 +35,6 @@
 
 package find_proxies;
 
-use File::Basename;
-use MIME::Lite;
-use Socket qw(inet_ntoa inet_aton);
-
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
@@ -48,7 +44,6 @@ my $PRUNE_LIMIT = 20;
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my ($timestamp, $src_ip, $dst_ip, $hostname, $uri);
 my %proxy_lines = ();
 
 # -----------------------------------------------------------------------------
@@ -154,7 +149,7 @@ sub process_data {
 
                 while ($encoded_uri =~ /(.{1,60})/gs) {
                 	$len = chr(32 + length($1)*3/4);
-                 	$decoded_uri .= unpack("u", $len . $1 );
+                 	$decoded_uri .= unpack("u", $len . $1);
                 }
 
                 if ($decoded_uri =~ /http:\/\/[^\/:]+/) {

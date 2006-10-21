@@ -55,6 +55,9 @@ my %response_codes = ();
 my $total_line_cnt = 0;
 my $ext_cnt        = 0;
 my $srv_responses  = 0;
+my $start_time;
+my $end_time;
+
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -74,6 +77,8 @@ sub init {
                 return 0;
         }
 
+        $start_time = (times)[0];
+        
         return 1;
 }
 
@@ -104,6 +109,8 @@ sub main {
 }
 
 sub end {
+        $end_time = (times)[0];
+        
         &write_output_file();
         &send_email() if $email_addr;
 
@@ -146,7 +153,8 @@ sub write_output_file {
         print OUTFILE "Client count:     " . keys(%top_talkers) . "\n";
         print OUTFILE "Server count:     " . keys(%top_hosts) . "\n";
         print OUTFILE "Extension count:  " . keys(%filetypes) . "\n" if ($filetype);
-
+        print OUTFILE "Total run time:   " . sprintf("%.2f", $end_time - $start_time) . " secs\n";
+        
         print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
         foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
                 print OUTFILE "$key\t$top_hosts{$key}\t" . percent_of($top_hosts{$key}, $total_line_cnt) . "%\n";

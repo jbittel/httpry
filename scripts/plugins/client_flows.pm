@@ -73,7 +73,7 @@ my %flow_data_lines = (); # Holds actual log file lines for each flow
 my %tagged_flows    = (); # Ip/flow/hostname information for tagged flows
 my %output_flows    = (); # Pruned and cleaned tagged flows for display
 my %history         = (); # Holds history of content checks to avoid matching
-my @hitlist         = ();
+my @hitlist         = (); # List of content check keywords
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -387,13 +387,13 @@ sub send_email {
         $msg = MIME::Lite->new(
                 From    => 'admin@corban.edu',
                 To      => "$email_addr",
-                Subject => 'HTTPry Content Check Report - ' . localtime(),
+                Subject => 'httpry Content Check Report - ' . localtime(),
                 Type    => 'multipart/mixed'
         );
 
         $msg->attach(
                 Type => 'TEXT',
-                Data => 'HTTPry content check report for ' . localtime()
+                Data => 'httpry content check report for ' . localtime()
         );
 
         $msg->attach(
