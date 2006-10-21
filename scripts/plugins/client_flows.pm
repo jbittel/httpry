@@ -149,13 +149,13 @@ sub main {
                 }
         }
 
-        &timeout_flow($epochstamp);
+        &timeout_flows($epochstamp);
 
         return;
 }
 
 sub end {
-
+        &timeout_flows(0);
         &write_summary_file();
         &send_email() if $email_addr;
 
@@ -265,14 +265,16 @@ sub content_check {
 # -----------------------------------------------------------------------------
 # Handle end of flow duties: flush to disk and delete hash entries
 # -----------------------------------------------------------------------------
-sub timeout_flow {
+sub timeout_flows {
         my $epochstamp = shift;
         my $flow_str;
         my $ip;
         my $hostname;
 
         foreach $ip (keys %flow_info) {
-                next unless (($epochstamp - $flow_info{$ip}->{"end_epoch"}) > $FLOW_TIMEOUT);
+                if ($epochstamp) {
+                        next unless (($epochstamp - $flow_info{$ip}->{"end_epoch"}) > $FLOW_TIMEOUT);
+                }
 
                 # Set minimum/maximum flow length
                 $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
@@ -343,7 +345,9 @@ sub write_summary_file {
         print OUTFILE "Flow count:      $flow_cnt\n";
         print OUTFILE "Flow lines:      $flow_line_cnt\n";
         print OUTFILE "Max Concurrent:  $max_concurrent\n";
-        print OUTFILE "Min/Max/Avg:     $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+        unless (($flow_min_len == 999999) || ($flow_max_len == 0) || ($flow_cnt == 0)) { 
+                print OUTFILE "Min/Max/Avg:     $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+        }
 
         if ($hitlist_file) {
                 print OUTFILE "Tagged IPs:    " . (keys %output_flows) . "\n";

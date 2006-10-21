@@ -137,12 +137,20 @@ sub process_logfiles {
         my $plugin;
         my @fields;
         my %record;
+        my $is_xml_file;
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
                         print "Error: Cannot open $curr_file: $!\n";
                         next;
                 }
+
+                if (<INFILE> =~ /<\?xml version=\"1\.0\"\?>/) {
+                        $is_xml_file = 1;
+                } else {
+                        $is_xml_file = 0;
+                }
+                seek INFILE, 0, 0; # Reset filehandle to start of file
 
                 foreach $curr_line (<INFILE>) {
                         chomp $curr_line;
@@ -154,23 +162,45 @@ sub process_logfiles {
                         $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
                         $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
                         
-                        next if $curr_line eq "";
-                        
-                        @fields = split(/$PATTERN/, $curr_line);
-                        next if (scalar(@fields != 10)); # Malformed number of fields
+                        if ($is_xml_file) {
+                                next unless $curr_line =~ /^<step>/;
 
-                        # Default format:
-                        # "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
-                        $record{"timestamp"}     = $fields[0];
-                        $record{"source-ip"}     = $fields[1];
-                        $record{"dest-ip"}       = $fields[2];
-                        $record{"direction"}     = $fields[3];
-                        $record{"method"}        = $fields[4];
-                        $record{"host"}          = $fields[5];
-                        $record{"request-uri"}   = $fields[6];
-                        $record{"http-version"}  = $fields[7];
-                        $record{"status-code"}   = $fields[8];
-                        $record{"reason-phrase"} = $fields[9];
+                                # Replace XML entity characters
+                                $curr_line =~ s/\&amp\;/\&/g;
+                                $curr_line =~ s/\&lt\;/</g;
+                                $curr_line =~ s/\&gt\;/>/g;
+                                $curr_line =~ s/\&apos\;/\'/g;
+                                $curr_line =~ s/\&quot\;/\"/g;
+
+                                ($record{"timestamp"})     = ($curr_line =~ /<timestamp>(.*)<\/timestamp>/);
+                                ($record{"source-ip"})     = ($curr_line =~ /<source-ip>(.*)<\/source-ip>/);
+                                ($record{"dest-ip"})       = ($curr_line =~ /<dest-ip>(.*)<\/dest-ip>/);
+                                ($record{"direction"})     = ($curr_line =~ /<direction>(.*)<\/direction>/);
+                                ($record{"method"})        = ($curr_line =~ /<method>(.*)<\/method>/);
+                                ($record{"host"})          = ($curr_line =~ /<host>(.*)<\/host>/);
+                                ($record{"request-uri"})   = ($curr_line =~ /<request-uri>(.*)<\/request-uri>/);
+                                ($record{"http-version"})  = ($curr_line =~ /<http-version>(.*)<\/http-version>/);
+                                ($record{"status-code"})   = ($curr_line =~ /<status-code>(.*)<\/status-code>/);
+                                ($record{"reason-phrase"}) = ($curr_line =~ /<reason-phrase>(.*)<\/reason-phrase>/);
+                        } else {
+                                next if $curr_line eq "";
+                        
+                                @fields = split(/$PATTERN/, $curr_line);
+                                next if (scalar(@fields != 10)); # Malformed number of fields
+
+                                # Default format:
+                                # "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+                                $record{"timestamp"}     = $fields[0];
+                                $record{"source-ip"}     = $fields[1];
+                                $record{"dest-ip"}       = $fields[2];
+                                $record{"direction"}     = $fields[3];
+                                $record{"method"}        = $fields[4];
+                                $record{"host"}          = $fields[5];
+                                $record{"request-uri"}   = $fields[6];
+                                $record{"http-version"}  = $fields[7];
+                                $record{"status-code"}   = $fields[8];
+                                $record{"reason-phrase"} = $fields[9];
+                        }
 
                         foreach $plugin (@callbacks) {
                                 $plugin->main(%record);
