@@ -3,7 +3,9 @@ This provides a listing of those files and a brief description of what each
 script does. Run each tool with the -h parameter to get a listing of the
 available command line parameters for each.
 
-MIME::Lite
+The following Perl modules are required to run all the included plugins:
+        MIME::Lite
+        DBI
 
 Each tool is expecting httpry to be run with the default format string. If you
 want the scripts to utilize different fields, they will have to be modified
@@ -59,9 +61,8 @@ A summary of the scripts:
 These tools are not necessarily designed to be drop-in replacements for your
 own solutions. If one of these tools does what you need it to, great! However,
 they are more designed as starting points for your own processing code. The
-parse_log.pl script is designed to allow you to insert your own plugins and
-for most tasks that will probably work just fine. For more complex tasks
-you'll want to write more custom code.
+parse_log.pl script allows you to write your own plugins and for most tasks
+will work just fine. For more complex tasks you'll want to write custom code.
 
 If you write scripts of your own and think they would be useful to other
 people, feel free to send them to me and I'll review them for release with

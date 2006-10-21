@@ -263,7 +263,8 @@ sub content_check {
 }
 
 # -----------------------------------------------------------------------------
-# Handle end of flow duties: flush to disk and delete hash entries
+# Handle end of flow duties: flush to disk and delete hash entries; pass a
+# zero to force all active flows to be flushed
 # -----------------------------------------------------------------------------
 sub timeout_flows {
         my $epochstamp = shift;
@@ -345,9 +346,7 @@ sub write_summary_file {
         print OUTFILE "Flow count:      $flow_cnt\n";
         print OUTFILE "Flow lines:      $flow_line_cnt\n";
         print OUTFILE "Max Concurrent:  $max_concurrent\n";
-        unless (($flow_min_len == 999999) || ($flow_max_len == 0) || ($flow_cnt == 0)) { 
-                print OUTFILE "Min/Max/Avg:     $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
-        }
+        print OUTFILE "Min/Max/Avg:     $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
 
         if ($hitlist_file) {
                 print OUTFILE "Tagged IPs:    " . (keys %output_flows) . "\n";
