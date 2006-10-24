@@ -34,6 +34,10 @@ stop)
         else
                 killall httpry
         fi
+
+        if [ -f /var/run/httpry.pid ] ; then
+                rm -rf /var/run/httpry.pid
+        fi
         ;;
 restart)
         $0 stop

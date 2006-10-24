@@ -130,12 +130,11 @@ sub process_data {
 
         # Clean up search term, bail early as necessary; order is important here!
         return unless $search_term;
-        $search_term =~ s/"//g;
         $search_term =~ s/\+/ /g;
 
         # Custom cleanup rules; would be nice to generalize this better, but
         # this will work for now
-        return if ($search_term =~ /^tbn:/);  # Let's tidy up Google hits, shall we?
+        return if ($search_term =~ /^tbn:/);  # Let's ignore messy Google hits, shall we?
         return if ($search_term =~ /^info:/); # ...
         return if ($search_term =~ /^http:/); # ...
         return if ($search_term =~ /^music\/image/); # Unnecessary Froogle hits

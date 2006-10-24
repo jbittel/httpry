@@ -178,9 +178,9 @@ sub load_config {
                 print "Error: No output file provided\n";
                 return 0;
         }
-        if ($tagged_detail && !$hitlist_file) {
+        if ($tagged_dir && !$hitlist_file) {
                 print "Warning: -t requires -l, ignoring\n";
-                $tagged_detail = 0;
+                $tagged_dir = 0;
         }
 
         # Read in option files
@@ -201,19 +201,19 @@ sub load_config {
 # Remove text detail files to ensure they don't append between runs
 # -----------------------------------------------------------------------------
 sub delete_text_files {
-        $tagged_detail =~ s/\/$//; # Remove trailing slash
-        $all_detail    =~ s/\/$//; # ...
+        $tagged_dir =~ s/\/$//; # Remove trailing slash
+        $all_dir    =~ s/\/$//; # ...
 
-        if ($tagged_detail) {
-                opendir(DIR, $tagged_detail) or die "Error: Cannot open directory $tagged_detail: $!\n";
+        if ($tagged_dir) {
+                opendir(DIR, $tagged_dir) or die "Error: Cannot open directory $tagged_dir: $!\n";
                         foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
                                 unlink;
                         }
                 closedir(DIR);
         }
 
-        if ($all_detail) {
-                opendir(DIR, $all_detail) or die "Error: Cannot open directory $all_detail: $!\n";
+        if ($all_dir) {
+                opendir(DIR, $all_dir) or die "Error: Cannot open directory $all_dir: $!\n";
                         foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
                                 unlink;
                         }
@@ -281,7 +281,7 @@ sub timeout_flows {
                 $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
                 $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
 
-                &append_host_subfile("$all_detail/detail_$ip.txt", $ip) if $all_detail;
+                &append_host_subfile("$all_dir/detail_$ip.txt", $ip) if $all_dir;
 
                 # Check if we have enough hits to be interested in the flow
                 if ($flow_info{$ip}->{"tagged_lines"} > $TAGGED_LIMIT) {
@@ -295,7 +295,7 @@ sub timeout_flows {
                         }
                         delete $tagged_flows{$ip};
 
-                        &append_host_subfile("$tagged_detail/tagged_$ip.txt", $ip) if $tagged_detail;
+                        &append_host_subfile("$tagged_dir/tagged_$ip.txt", $ip) if $tagged_dir;
                 } else {
                         # Not an interesting flow, so delete any tagged lines/IPs that exist
                         delete $tagged_flows{$ip}->{$flow_info{$ip}->{"id"}} if exists $tagged_flows{$ip};
