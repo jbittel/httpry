@@ -1,0 +1,71 @@
+/* httpry.css | created: 08/31/2006
+ *
+ * Sample CSS formatting file for the default httpry
+ * XML format output fields.
+ *
+ */
+
+/* Top level block formatting */
+* {
+   font-family: Arial, Times, sans-serif;
+   font-size: 10pt;
+}
+flow {
+   padding: .25em;
+   display: block;
+   margin: 1px;
+   background: #ddd;
+}
+step {
+   padding: .25em;
+   display: block;
+   margin: 1px;
+   background: #eee;
+   white-space: nowrap;
+}
+
+/* Individual field formatting */
+timestamp {
+   color: #004080;
+   font-size: smaller;
+}
+source-ip {
+   color: #00B300;
+   font-size: smaller;
+   padding-left: 1em;
+}
+dest-ip:before {
+   content: " <--> ";
+}
+dest-ip {
+   color: #00B300;
+   font-size: smaller;
+}
+direction {
+   color: #aaa;
+   font-size: smaller;
+   font-weight: bold;
+   padding-left: 1em;
+}
+method {
+   color: #000;
+   font-size: smaller;
+   padding-left: 1em;
+}
+host {
+   color: #0000b7;
+   padding-left: 1em;
+}
+request-uri {
+   color: #b70000;
+}
+http-version {
+   color: #aaa;
+   font-size: smaller;
+   padding-left: 1em;
+}
+status-code,reason-phrase {
+   color: #aaa;
+   font-size: smaller;
+   padding-left: 1em;
+}

@@ -342,16 +342,16 @@ sub write_summary_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nFLOW SUMMARY STATS\n\n";
-        print OUTFILE "Generated:       " . localtime() . "\n";
-        print OUTFILE "Flow count:      $flow_cnt\n";
-        print OUTFILE "Flow lines:      $flow_line_cnt\n";
-        print OUTFILE "Max Concurrent:  $max_concurrent\n";
-        print OUTFILE "Min/Max/Avg:     $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+        print OUTFILE "Generated:      " . localtime() . "\n";
+        print OUTFILE "Flow count:     $flow_cnt\n";
+        print OUTFILE "Flow lines:     $flow_line_cnt\n";
+        print OUTFILE "Max Concurrent: $max_concurrent\n";
+        print OUTFILE "Min/Max/Avg:    $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
 
         if ($hitlist_file) {
-                print OUTFILE "Tagged IPs:    " . (keys %output_flows) . "\n";
-                print OUTFILE "Tagged flows:  $tagged_flows_cnt\n";
-                print OUTFILE "Tagged lines:  $total_tagged_lines_cnt\n";
+                print OUTFILE "Tagged IPs:     " . (keys %output_flows) . "\n";
+                print OUTFILE "Tagged flows:   $tagged_flows_cnt\n";
+                print OUTFILE "Tagged lines:   $total_tagged_lines_cnt\n";
                 print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
@@ -365,7 +365,7 @@ sub write_summary_file {
                                         print OUTFILE "\t$flow\n";
 
                                         foreach $hostname (sort keys %{$output_flows{$ip}->{$flow}}) {
-                                                print OUTFILE "\t\t$hostname\t$output_flows{$ip}->{$flow}->{$hostname}\n";
+                                                print OUTFILE "\t\t($output_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
                                         }
                                 }
                                 print OUTFILE "\n";

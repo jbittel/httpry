@@ -191,6 +191,7 @@ sub prune_hits {
 sub write_output_file {
         my $ip;
         my $hostname;
+        my %counts;
         my %output;
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
@@ -203,6 +204,7 @@ sub write_output_file {
                 foreach $ip (keys %proxy_lines) {
                         foreach $hostname (keys %{$proxy_lines{$ip}}) {
                                 push(@{$output{$hostname}}, $ip);
+                                $counts{$hostname} += $proxy_lines{$ip}->{$hostname};
                         }
                 }
         } else {
@@ -211,7 +213,7 @@ sub write_output_file {
 
         # Print output hash data to file
         foreach $hostname (sort keys %output) {
-                print OUTFILE "$hostname\n\t[ ";
+                print OUTFILE "$hostname  ($counts{$hostname})\n\t[ ";
 
                 foreach $ip (@{$output{$hostname}}) {
                         print OUTFILE "$ip ";
