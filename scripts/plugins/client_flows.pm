@@ -100,52 +100,52 @@ sub init {
 
 sub main {
         my $self   = shift;
-        my %record = @_;
+        my $record = shift;
         my $curr_line;
 
         if ((keys %flow_info) > $max_concurrent) {
                 $max_concurrent = keys %flow_info;
         }
 
-        return if $record{"direction"} ne '>';
+        return if $record->{"direction"} ne '>';
 
-        $curr_line = "$record{'timestamp'}\t$record{'source-ip'}\t$record{'dest-ip'}\t$record{'host'}\t$record{'request-uri'}";
+        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t$record->{'host'}\t$record->{'request-uri'}";
 
         # Convert timestamp of current record to epoch seconds
-        $record{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
+        $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
-        if (!exists $flow_info{$record{"source-ip"}}) { # No existing flow so begin a new one
+        if (!exists $flow_info{$record->{"source-ip"}}) { # No existing flow so begin a new one
                 $flow_cnt++;
                 $flow_line_cnt++;
 
-                $flow_info{$record{"source-ip"}}->{"id"} = $flow_cnt;
-                $flow_info{$record{"source-ip"}}->{"src_ip"} = $record{"source-ip"};
-                $flow_info{$record{"source-ip"}}->{"start_time"} = $record{"timestamp"};
-                $flow_info{$record{"source-ip"}}->{"end_time"} = $record{"timestamp"};
-                $flow_info{$record{"source-ip"}}->{"start_epoch"} = $epochstamp;
-                $flow_info{$record{"source-ip"}}->{"end_epoch"} = $epochstamp;
-                $flow_info{$record{"source-ip"}}->{"length"} = 1;
-                $flow_info{$record{"source-ip"}}->{"tagged_lines"} = 0;
+                $flow_info{$record->{"source-ip"}}->{"id"} = $flow_cnt;
+                $flow_info{$record->{"source-ip"}}->{"src_ip"} = $record->{"source-ip"};
+                $flow_info{$record->{"source-ip"}}->{"start_time"} = $record->{"timestamp"};
+                $flow_info{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
+                $flow_info{$record->{"source-ip"}}->{"start_epoch"} = $epochstamp;
+                $flow_info{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
+                $flow_info{$record->{"source-ip"}}->{"length"} = 1;
+                $flow_info{$record->{"source-ip"}}->{"tagged_lines"} = 0;
 
-                push(@{$flow_data_lines{$record{"source-ip"}}}, $curr_line);
+                push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
 
-                if ($hitlist_file && &content_check($record{"host"}, $record{"request-uri"})) {
-                        $tagged_flows{$record{"source-ip"}}->{$flow_info{$record{"source-ip"}}->{"id"}}->{$record{"host"}}++;
-                        $flow_info{$record{"source-ip"}}->{"tagged_lines"}++;
+                if ($hitlist_file && &content_check($record->{"host"}, $record->{"request-uri"})) {
+                        $tagged_flows{$record->{"source-ip"}}->{$flow_info{$record->{"source-ip"}}->{"id"}}->{$record->{"host"}}++;
+                        $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
                 }
         } else { # Existing flow found so update data as necessary
                 $flow_line_cnt++;
 
-                $flow_info{$record{"source-ip"}}->{"end_time"} = $record{"timestamp"};
-                $flow_info{$record{"source-ip"}}->{"end_epoch"} = $epochstamp;
-                $flow_info{$record{"source-ip"}}->{"length"}++;
+                $flow_info{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
+                $flow_info{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
+                $flow_info{$record->{"source-ip"}}->{"length"}++;
 
-                push(@{$flow_data_lines{$record{"source-ip"}}}, $curr_line);
+                push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
 
-                if ($hitlist_file && &content_check($record{"host"}, $record{"request-uri"})) {
-                        $tagged_flows{$record{"source-ip"}}->{$flow_info{$record{"source-ip"}}->{"id"}}->{$record{"host"}}++;
-                        $flow_info{$record{"source-ip"}}->{"tagged_lines"}++;
+                if ($hitlist_file && &content_check($record->{"host"}, $record->{"request-uri"})) {
+                        $tagged_flows{$record->{"source-ip"}}->{$flow_info{$record->{"source-ip"}}->{"id"}}->{$record->{"host"}}++;
+                        $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
                 }
         }
 

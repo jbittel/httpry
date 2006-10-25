@@ -69,9 +69,9 @@ sub init {
 
 sub main {
         my $self   = shift;
-        my %record = @_;
+        my $record = shift;
 
-        &process_data(%record);
+        &process_data($record);
 
         return;
 }
@@ -108,37 +108,37 @@ sub load_config {
 # Handle each line of data
 # -----------------------------------------------------------------------------
 sub process_data {
-        my %record = @_;
+        my $record = shift;
         my $word;
         my $len;
         my $encoded_uri;
         my $decoded_uri = "";
 
-        return if $record{"direction"} ne '>';
+        return if $record->{"direction"} ne '>';
 
         # Perform hostname and uri keyword search
         foreach $word (@proxy_keywords) {
-                if ($record{"host"} =~ /$word/i) {
-                        $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
+                if ($record->{"host"} =~ /$word/i) {
+                        $proxy_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
                         return;
                 }
 
-                if ($record{"request-uri"} =~ /$word/i) {
-                        $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
+                if ($record->{"request-uri"} =~ /$word/i) {
+                        $proxy_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
                         return;
                 }
         }
 
         # Perform URI embedded request search; this works, but appears
         # to generate too many false positives to be useful as is
-        if ($record{"request-uri"} =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
-                $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
+        if ($record->{"request-uri"} =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
+                $proxy_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
                 return;
         }
 
         # Third time's the charm; do a base 64 decode of the URI and
         # search again for an embedded request
-        if ($record{"request-uri"} =~ /(\.pl|\.php|\.asp).*=(.+?)(?:\&|\Z)/) {
+        if ($record->{"request-uri"} =~ /(\.pl|\.php|\.asp).*=(.+?)(?:\&|\Z)/) {
                 $encoded_uri = $2;
                 
                 $encoded_uri =~ tr|A-Za-z0-9+=/||cd;
@@ -153,7 +153,7 @@ sub process_data {
                 }
 
                 if ($decoded_uri =~ /http:\/\/[^\/:]+/) {
-                        $proxy_lines{$record{"source-ip"}}->{$record{"host"}}++;
+                        $proxy_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
                         return;
                 }
         }

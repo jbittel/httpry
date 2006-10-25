@@ -68,9 +68,41 @@ sub init {
 
 sub main {
         my $self   = shift;
-        my %record = @_;
+        my $record = shift;
+        my $search_term;
+        my $domain;
+        my $name;
+        
+        return if $record->{"direction"} ne '>';
 
-        &process_data(%record);
+        # These results can end up being a little messy, but it seems
+        # most useful to simply dump out all search terms and let the user
+        # parse through what they find interesting. It's hard to strike a
+        # balance that cleans up the results and applies to all users. If
+        # you can do it better, knock yourself out (oh, and send me the code).
+        foreach $domain (keys %domains) {
+                $name   = quotemeta($domains{$domain});
+                $domain = quotemeta($domain);
+
+                if ($record->{"host"} =~ /$domain$/) {
+                        return unless $record->{"request-uri"} =~ /[\?\&]$name=(.+?)(?:\&|\Z)/;
+                        $search_term = $1;
+                        last;
+                }
+        }
+
+        # Clean up search term, bail early as necessary; order is important here!
+        return unless $search_term;
+        $search_term =~ s/\+/ /g;
+
+        # Custom cleanup rules; would be nice to generalize this better, but
+        # this will work for now
+        return if ($search_term =~ /^tbn:/);  # Let's ignore messy Google hits, shall we?
+        return if ($search_term =~ /^info:/); # ...
+        return if ($search_term =~ /^http:/); # ...
+        return if ($search_term =~ /^music\/image/); # Unnecessary Froogle hits
+
+        $search_terms{$record->{"host"}}->{$search_term}++;
 
         return;
 }
@@ -99,49 +131,6 @@ sub load_config {
         }
 
         return 1;
-}
-
-# -----------------------------------------------------------------------------
-# Handle each line of data
-# -----------------------------------------------------------------------------
-sub process_data {
-        my %record = @_;
-        my $search_term;
-        my $domain;
-        my $name;
-        
-        return if $record{"direction"} ne '>';
-
-        # These results can end up being a little messy, but it seems
-        # most useful to simply dump out all search terms and let the user
-        # parse through what they find interesting. It's hard to strike a
-        # balance that cleans up the results and applies to all users. If
-        # you can do it better, knock yourself out (oh, and send me the code).
-        foreach $domain (keys %domains) {
-                $name   = quotemeta($domains{$domain});
-                $domain = quotemeta($domain);
-
-                if ($record{"host"} =~ /$domain$/) {
-                        return unless $record{"request-uri"} =~ /[\?\&]$name=(.+?)(?:\&|\Z)/;
-                        $search_term = $1;
-                        last;
-                }
-        }
-
-        # Clean up search term, bail early as necessary; order is important here!
-        return unless $search_term;
-        $search_term =~ s/\+/ /g;
-
-        # Custom cleanup rules; would be nice to generalize this better, but
-        # this will work for now
-        return if ($search_term =~ /^tbn:/);  # Let's ignore messy Google hits, shall we?
-        return if ($search_term =~ /^info:/); # ...
-        return if ($search_term =~ /^http:/); # ...
-        return if ($search_term =~ /^music\/image/); # Unnecessary Froogle hits
-
-        $search_terms{$record{"host"}}->{$search_term}++;
-
-        return;
 }
 
 # -----------------------------------------------------------------------------

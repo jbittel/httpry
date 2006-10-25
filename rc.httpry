@@ -35,13 +35,15 @@ stop)
                 killall httpry
         fi
 
+        sleep 1
+
         if [ -f /var/run/httpry.pid ] ; then
                 rm -rf /var/run/httpry.pid
         fi
         ;;
 restart)
         $0 stop
-        sleep 2
+        sleep 1
         $0 start
         ;;
 *)

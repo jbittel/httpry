@@ -203,7 +203,7 @@ sub process_logfiles {
                         }
 
                         foreach $plugin (@callbacks) {
-                                $plugin->main(%record);
+                                $plugin->main(\%record);
                         }
                 }
 
