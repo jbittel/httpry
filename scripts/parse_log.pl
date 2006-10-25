@@ -49,7 +49,7 @@ my $PATTERN    = "\t";
 my %nameof    = (); # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins   = (); # List of plugin files in directory
-my @ignore    = ("sample_plugin.pm", "db_dump.pm");
+my @ignore    = ("sample_plugin.pm", "db_dump.pm", "client_flows.pm", "search_terms.pm");
                     # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments
@@ -158,10 +158,6 @@ sub process_logfiles {
                         # Strip non-printable chars
                         $curr_line =~ tr/\x80-\xFF//d;
 
-                        # Convert hex encoded chars to ASCII
-                        $curr_line =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-                        $curr_line =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-                        
                         if ($is_xml_file) {
                                 next unless $curr_line =~ /^<step>/;
 
@@ -201,6 +197,11 @@ sub process_logfiles {
                                 $record{"status-code"}   = $fields[8];
                                 $record{"reason-phrase"} = $fields[9];
                         }
+                        
+                        # Convert hex encoded chars to ASCII
+                        $record{"request-uri-encoded"} = $record{"request-uri"};
+                        $record{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+                        $record{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
                         foreach $plugin (@callbacks) {
                                 $plugin->main(\%record);

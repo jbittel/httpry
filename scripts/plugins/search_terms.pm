@@ -85,7 +85,9 @@ sub main {
                 $domain = quotemeta($domain);
 
                 if ($record->{"host"} =~ /$domain$/) {
-                        return unless $record->{"request-uri"} =~ /[\?\&]$name=(.+?)(?:\&|\Z)/;
+                        # Here we use the encoded URI to ensure that '&' chars in the search term
+                        # don't break the regexp; we'll clean them out if we have a valid search
+                        return unless $record->{"request-uri-encoded"} =~ /[\?\&]$name=([^\&]+?)(?:\&|\Z)/;
                         $search_term = $1;
                         last;
                 }
@@ -94,6 +96,8 @@ sub main {
         # Clean up search term, bail early as necessary; order is important here!
         return unless $search_term;
         $search_term =~ s/\+/ /g;
+        $search_term =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+        $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
         # Custom cleanup rules; would be nice to generalize this better, but
         # this will work for now

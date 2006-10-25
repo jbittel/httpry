@@ -113,6 +113,7 @@ sub process_data {
         my $len;
         my $encoded_uri;
         my $decoded_uri = "";
+        my $domain;
 
         return if $record->{"direction"} ne '>';
 
@@ -191,6 +192,7 @@ sub prune_hits {
 sub write_output_file {
         my $ip;
         my $hostname;
+        my $domain;
         my %counts;
         my %output;
 
@@ -203,23 +205,32 @@ sub write_output_file {
         if ((keys %proxy_lines) > 0) {
                 foreach $ip (keys %proxy_lines) {
                         foreach $hostname (keys %{$proxy_lines{$ip}}) {
-                                push(@{$output{$hostname}}, $ip);
+                                # Attempt to cluster data by domain
+                                if (($hostname =~ /\.([^\.]+?\.[^\.]+?)$/) && !($hostname =~ /\d+\.\d+\.\d+\.\d+/)) {
+                                        $domain = $1;
+                                }
+                                
+                                push(@{$output{$domain}->{$hostname}}, $ip);
                                 $counts{$hostname} += $proxy_lines{$ip}->{$hostname};
                         }
                 }
+
+                # Print output hash data to file
+                foreach $domain (sort keys %output) {
+                        print OUTFILE "$domain\n";
+                        foreach $hostname (sort keys %{$output{$domain}}) {
+                                print OUTFILE "\t($counts{$hostname})\t$hostname\t[ ";
+
+                                foreach $ip (@{$output{$domain}->{$hostname}}) {
+                                        print OUTFILE "$ip ";
+                                }
+        
+                                print OUTFILE "]\n";
+                        }
+                        print OUTFILE "\n";
+                }
         } else {
                 print OUTFILE "*** No potential proxies found\n";
-        }
-
-        # Print output hash data to file
-        foreach $hostname (sort keys %output) {
-                print OUTFILE "$hostname  ($counts{$hostname})\n\t[ ";
-
-                foreach $ip (@{$output{$hostname}}) {
-                        print OUTFILE "$ip ";
-                }
-
-                print OUTFILE "]\n\n";
         }
 
         close(OUTFILE);
