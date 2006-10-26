@@ -153,32 +153,38 @@ sub write_output_file {
         print OUTFILE "Client count:    " . keys(%top_talkers) . "\n";
         print OUTFILE "Server count:    " . keys(%top_hosts) . "\n";
         print OUTFILE "Extension count: " . keys(%filetypes) . "\n" if ($filetype);
-        print OUTFILE "Total run time:  " . sprintf("%.2f", $end_time - $start_time) . " secs\n";
-        
-        print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
-        foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
-                print OUTFILE "$key\t$top_hosts{$key}\t" . percent_of($top_hosts{$key}, $total_line_cnt) . "%\n";
-                $count++;
-                last if ($count == $summary_cap);
+        print OUTFILE "Total run time:  " . sprintf("%.1f", $end_time - $start_time) . " secs\n";
+
+        if ((keys %top_hosts) > 0) {
+                print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
+                foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
+                        print OUTFILE "$key\t$top_hosts{$key}\t" . percent_of($top_hosts{$key}, $total_line_cnt) . "%\n";
+                        $count++;
+                        last if ($count == $summary_cap);
+                }
         }
 
-        $count = 0;
-        print OUTFILE "\n\nTOP $summary_cap TOP TALKERS\n\n";
-        foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
-                print OUTFILE "$key\t$top_talkers{$key}\t" . percent_of($top_talkers{$key}, $total_line_cnt) . "%\n";
-                $count++;
-                last if ($count == $summary_cap);
+        if ((keys %top_talkers) > 0) {
+                $count = 0;
+                print OUTFILE "\n\nTOP $summary_cap TOP TALKERS\n\n";
+                foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
+                        print OUTFILE "$key\t$top_talkers{$key}\t" . percent_of($top_talkers{$key}, $total_line_cnt) . "%\n";
+                        $count++;
+                        last if ($count == $summary_cap);
+                }
         }
 
-        $count = 0;
-        print OUTFILE "\n\nTOP $summary_cap RESPONSE CODES\n\n";
-        foreach $key (sort { $response_codes{$b} <=> $response_codes{$a} } keys %response_codes) {
-                print OUTFILE "$key\t$response_codes{$key}\t" . percent_of($response_codes{$key}, $srv_responses) . "%\n";
-                $count++;
-                last if ($count == $summary_cap);
+        if ((keys %response_codes) > 0) {
+                $count = 0;
+                print OUTFILE "\n\nTOP $summary_cap RESPONSE CODES\n\n";
+                foreach $key (sort { $response_codes{$b} <=> $response_codes{$a} } keys %response_codes) {
+                        print OUTFILE "$key\t$response_codes{$key}\t" . percent_of($response_codes{$key}, $srv_responses) . "%\n";
+                        $count++;
+                        last if ($count == $summary_cap);
+                }
         }
 
-        if ($filetype) {
+        if ($filetype && ((keys %filetypes) > 0) {
                 $count = 0;
                 print OUTFILE "\n\nTOP $summary_cap FILE EXTENSIONS\n\n";
                 foreach $key (sort { $filetypes{$b} <=> $filetypes{$a} } keys %filetypes) {
