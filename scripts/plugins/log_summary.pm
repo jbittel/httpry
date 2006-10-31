@@ -184,7 +184,7 @@ sub write_output_file {
                 }
         }
 
-        if ($filetype && ((keys %filetypes) > 0) {
+        if ($filetype && ((keys %filetypes) > 0)) {
                 $count = 0;
                 print OUTFILE "\n\nTOP $summary_cap FILE EXTENSIONS\n\n";
                 foreach $key (sort { $filetypes{$b} <=> $filetypes{$a} } keys %filetypes) {
