@@ -208,8 +208,10 @@ sub write_output_file {
                                 # Attempt to cluster data by domain
                                 if (($hostname =~ /\.([^\.]+?\.[^\.]+?)$/) && !($hostname =~ /\d+\.\d+\.\d+\.\d+/)) {
                                         $domain = $1;
+                                } else {
+                                        $domain = $hostname;
                                 }
-                                
+ 
                                 push(@{$output{$domain}->{$hostname}}, $ip);
                                 $counts{$hostname} += $proxy_lines{$ip}->{$hostname};
                         }
@@ -217,17 +219,15 @@ sub write_output_file {
 
                 # Print output hash data to file
                 foreach $domain (sort keys %output) {
-                        print OUTFILE "$domain\n";
                         foreach $hostname (sort keys %{$output{$domain}}) {
-                                print OUTFILE "\t($counts{$hostname})\t$hostname\t[ ";
+                                print OUTFILE "($counts{$hostname}) $hostname\n\t[ ";
 
                                 foreach $ip (@{$output{$domain}->{$hostname}}) {
                                         print OUTFILE "$ip ";
                                 }
-        
                                 print OUTFILE "]\n";
                         }
-                        print OUTFILE "\n";
+                        print OUTFILE "\n\n";
                 }
         } else {
                 print OUTFILE "*** No potential proxies found\n";
