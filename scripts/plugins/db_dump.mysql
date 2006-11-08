@@ -1,13 +1,22 @@
--- MySQL dump 9.11
 --
--- Host: localhost    Database: httpry
--- ------------------------------------------------------
--- Server version	4.0.22
-
---
--- Table structure for table `client_data`
+-- MySQL databse creation script for db_dump.pm
+-- 
+-- !!! Warning: This script will delete all preexisting data !!!
 --
 
+--
+-- Create httpry database; wipe database if it already exists
+--
+
+DROP DATABASE IF EXISTS httpry;
+CREATE DATABASE httpry;
+USE httpry;
+
+--
+-- Create client_data table; wipe table if it already exists
+--
+
+DROP TABLE IF EXISTS client_data;
 CREATE TABLE client_data (
   id int(10) unsigned NOT NULL auto_increment,
   timestamp datetime NOT NULL default '0000-00-00 00:00:00',
@@ -15,6 +24,21 @@ CREATE TABLE client_data (
   dst_ip varchar(45) NOT NULL default '',
   hostname varchar(255) NOT NULL default '',
   uri varchar(255) NOT NULL default '',
+  PRIMARY KEY  (id)
+) TYPE=InnoDB;
+
+--
+-- Create server_data table; wipe table if it already exists
+--
+
+DROP TABLE IF EXISTS server_data;
+CREATE TABLE server_data (
+  id int(10) unsigned NOT NULL auto_increment,
+  timestamp datetime NOT NULL default '0000-00-00 00:00:00',
+  src_ip varchar(45) NOT NULL default '',
+  dst_ip varchar(45) NOT NULL default '',
+  status-code varchar(255) NOT NULL default '',
+  reason-phrase varchar(255) NOT NULL default '',
   PRIMARY KEY  (id)
 ) TYPE=InnoDB;
 

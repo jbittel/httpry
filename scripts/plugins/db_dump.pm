@@ -80,24 +80,25 @@ sub main {
         my $record = shift;
         my $sql;
 
-        return if $record->{"direction"} ne '>';
-
         # Reformat date/time string
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
         $record->{"timestamp"} = "$3-$1-$2 $4:$5:$6";
 
-        # Escape apostrophe/quote characters
-        $record->{"host"} =~ s/'/\\'/g;
-        $record->{"request-uri"} =~ s/'/\\'/g;
-        $record->{"host"} =~ s/"/\\"/g;
-        $record->{"request-uri"} =~ s/"/\\"/g;
+        if ($record->{"direction"} eq '>') {
+                $record->{"request-uri"} =~ s/'/\\'/g; # Escape apostrophe/quote characters
+                $record->{"request-uri"} =~ s/"/\\"/g; # ...
 
-        # Insert data into database
-        $sql = qq{ INSERT INTO $table (timestamp, src_ip, dst_ip, hostname, uri)
-                   VALUES ('$record->{"timestamp"}', '$record->{"source-ip"}',
-                   '$record->{"dest-ip"}', '$record->{"host"}', '$record->{"request-uri"}') };
+                $sql = qq{ INSERT INTO client_data (timestamp, src_ip, dst_ip, hostname, uri)
+                           VALUES ('$record->{"timestamp"}', '$record->{"source-ip"}',
+                           '$record->{"dest-ip"}', '$record->{"host"}', '$record->{"request-uri"}') };
+        } elsif ($record->{"direction"} eq '<') {
+                $sql = qq{ INSERT INTO server_data (timestamp, src_ip, dst_ip, status-code, reason-phrase)
+                           VALUES ('$record->{"timestamp"}', '$record->{"source-ip"}',
+                           '$record->{"dest-ip"}', '$record->{"status-code"}', '$record->{"reason-phrase"}') };
+        }
+
         &execute_query($dbh, $sql);
-
+        
         return;
 }
 
