@@ -36,11 +36,6 @@
 package search_terms;
 
 # -----------------------------------------------------------------------------
-# GLOBAL CONSTANTS
-# -----------------------------------------------------------------------------
-my $PATTERN = "\t";
-
-# -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %search_terms = ();
@@ -147,7 +142,7 @@ sub write_output_file {
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nSEARCH TERMS\n\n";
+        print OUTFILE "\n\nSEARCH TERMS SUMMARY\n\n";
         print OUTFILE "Generated: " . localtime() . "\n\n\n";
 
         foreach $hostname (sort keys %search_terms) {

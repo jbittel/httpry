@@ -42,7 +42,6 @@ use MIME::Lite;
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
 my $SENDMAIL    = "/usr/lib/sendmail -i -t";
-my $PATTERN     = "\t";
 my $SUMMARY_CAP = 10;
 
 # -----------------------------------------------------------------------------
@@ -147,7 +146,7 @@ sub write_output_file {
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nSUMMARY STATS\n\n";
+        print OUTFILE "\n\nLOG SUMMARY\n\n";
         print OUTFILE "Generated:       " . localtime() . "\n";
         print OUTFILE "Total lines:     " . $total_line_cnt . "\n";
         print OUTFILE "Client count:    " . keys(%top_talkers) . "\n";

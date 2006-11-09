@@ -50,7 +50,6 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PATTERN      = "\t";
 my $SENDMAIL     = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
 my $TAGGED_LIMIT = 15;
@@ -341,7 +340,7 @@ sub write_summary_file {
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nFLOW SUMMARY STATS\n\n";
+        print OUTFILE "\n\nCLIENT FLOWS SUMMARY\n\n";
         print OUTFILE "Generated:      " . localtime() . "\n";
         print OUTFILE "Flow count:     $flow_cnt\n";
         print OUTFILE "Flow lines:     $flow_line_cnt\n";
@@ -352,7 +351,7 @@ sub write_summary_file {
                 print OUTFILE "Tagged IPs:     " . (keys %output_flows) . "\n";
                 print OUTFILE "Tagged flows:   $tagged_flows_cnt\n";
                 print OUTFILE "Tagged lines:   $total_tagged_lines_cnt\n";
-                print OUTFILE "\n\nFLOW CONTENT CHECKS\n";
+                print OUTFILE "\n\nCLIENT FLOWS CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
                 if ($total_tagged_lines_cnt > 0) {
