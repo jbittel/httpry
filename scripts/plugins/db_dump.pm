@@ -73,26 +73,27 @@ sub init {
 sub main {
         my $self   = shift;
         my $record = shift;
-        my $sql;
+        my $sql    = "";
+        my ($year, $mon, $day) = (localtime)[5,4,3];
+        my $now = $year+1900."-".$mon+1."-$day " . join ':', (localtime)[2,1,0];
 
-        # Reformat date/time string
+        # Reformat packet date/time string
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
         $record->{"timestamp"} = "$3-$1-$2 $4:$5:$6";
 
         if ($record->{"direction"} eq '>') {
-                $record->{"request-uri"} =~ s/'/\\'/g; # Escape apostrophe/quote characters
-                $record->{"request-uri"} =~ s/"/\\"/g; # ...
+                $record->{"request-uri"} = quotemeta($record->{"request-uri"});
 
-                $sql = qq{ INSERT INTO client_data (timestamp, src_ip, dst_ip, hostname, uri)
-                           VALUES ('$record->{"timestamp"}', '$record->{"source-ip"}',
+                $sql = qq{ INSERT INTO client_data (timestamp, pktstamp, src_ip, dst_ip, hostname, uri)
+                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}',
                            '$record->{"dest-ip"}', '$record->{"host"}', '$record->{"request-uri"}') };
         } elsif ($record->{"direction"} eq '<') {
-                $sql = qq{ INSERT INTO server_data (timestamp, src_ip, dst_ip, status-code, reason-phrase)
-                           VALUES ('$record->{"timestamp"}', '$record->{"source-ip"}',
+                $sql = qq{ INSERT INTO server_data (timestamp, pktstamp, src_ip, dst_ip, status_code, reason_phrase)
+                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}',
                            '$record->{"dest-ip"}', '$record->{"status-code"}', '$record->{"reason-phrase"}') };
         }
 
-        &execute_query($dbh, $sql);
+        &execute_query($dbh, $sql) if $sql;
         
         return;
 }
@@ -125,10 +126,6 @@ sub load_config {
         }
         if (!$host) {
                 print "Error: No database hostname provided\n";
-                return 0;
-        }
-        if (!$table) {
-                print "Error: No database table provided\n";
                 return 0;
         }
         $port = '3306' unless ($port);

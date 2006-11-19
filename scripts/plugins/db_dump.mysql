@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS client_data;
 CREATE TABLE client_data (
   id int(10) unsigned NOT NULL auto_increment,
   timestamp datetime NOT NULL default '0000-00-00 00:00:00',
+  pktstamp datetime NOT NULL default '0000-00-00 00:00:00',
   src_ip varchar(45) NOT NULL default '',
   dst_ip varchar(45) NOT NULL default '',
   hostname varchar(255) NOT NULL default '',
@@ -35,10 +36,11 @@ DROP TABLE IF EXISTS server_data;
 CREATE TABLE server_data (
   id int(10) unsigned NOT NULL auto_increment,
   timestamp datetime NOT NULL default '0000-00-00 00:00:00',
+  pktstamp datetime NOT NULL default '0000-00-00 00:00:00',
   src_ip varchar(45) NOT NULL default '',
   dst_ip varchar(45) NOT NULL default '',
-  status-code varchar(255) NOT NULL default '',
-  reason-phrase varchar(255) NOT NULL default '',
+  status_code varchar(255) NOT NULL default '',
+  reason_phrase varchar(255) NOT NULL default '',
   PRIMARY KEY  (id)
 ) TYPE=InnoDB;
 
