@@ -36,6 +36,7 @@
 use strict;
 use Getopt::Std;
 use Time::Local;
+use Cwd;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -83,9 +84,9 @@ if ($del_text) {
 sub compress_files {
         my $log_file;
         my $filename;
-        my $dir;
+        my $curr_dir;
 
-        $dir = `pwd`;
+        $curr_dir = cwd;
         chdir($output_dir); # Must be in local dir for relative paths in tar file
 
         foreach $log_file (grep /\.log$/, @dir_list) {
@@ -100,7 +101,7 @@ sub compress_files {
                 }
         }
 
-        chdir($dir);
+        chdir($curr_dir);
 
         return;
 }

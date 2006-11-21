@@ -35,6 +35,8 @@
 
 use strict;
 use Getopt::Std;
+use File::Basename;
+use Cwd;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -56,6 +58,7 @@ my @ignore    = ("sample_plugin.pm", "db_dump.pm");
 my %opts;
 my @input_files;
 my $plugin_dir;
+my $custom_plugin_dir = 0;
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -72,6 +75,21 @@ sub init_plugins {
         my $plugin_dir = shift;
         my $plugin;
         my $i = 0;
+        my $curr_dir;
+
+        # If a custom plugin directory, assume the user knows what they're doing;
+        # otherwise, search the current dir and the script base dir for a matching
+        # plugin folder
+        $curr_dir = cwd;
+        unless ($custom_plugin_dir) {
+                if (-d $plugin_dir) {
+                        chdir(dirname($plugin_dir));
+                } elsif (-d dirname($0).'/'.basename($plugin_dir)) {
+                        chdir(dirname($0));
+                } else {
+                        die "Error: Could not find a valid plugins directory\n";
+                }
+        } 
 
         unless (-d $plugin_dir) {
                 die "Error: '$plugin_dir' is not a valid directory\n";
@@ -88,7 +106,7 @@ sub init_plugins {
                 print "Loading $plugin_dir/$plugin...\n" if $VERBOSE;
                 require "$plugin_dir/$plugin";
         }
-
+        
         foreach $plugin (@callbacks) {
                 unless ($plugin->can('main')) {
                         print "Warning: Plugin '$nameof{$plugin}' does not contain a required main() function...disabling\n";
@@ -107,6 +125,8 @@ sub init_plugins {
                 }
         }
 
+        chdir($curr_dir);
+        
         return;
 }
 
@@ -145,6 +165,7 @@ sub process_logfiles {
                         next;
                 }
 
+                # Check first line of file to determine contents
                 if (<INFILE> =~ /<\?xml version=\"1\.0\"\?>/) {
                         $is_xml_file = 1;
                 } else {
@@ -167,7 +188,7 @@ sub process_logfiles {
                                 $curr_line =~ s/\&gt\;/>/g;
                                 $curr_line =~ s/\&apos\;/\'/g;
                                 $curr_line =~ s/\&quot\;/\"/g;
-
+                                
                                 ($record{"timestamp"})     = ($curr_line =~ /<timestamp>(.*)<\/timestamp>/);
                                 ($record{"source-ip"})     = ($curr_line =~ /<source-ip>(.*)<\/source-ip>/);
                                 ($record{"dest-ip"})       = ($curr_line =~ /<dest-ip>(.*)<\/dest-ip>/);
@@ -243,6 +264,7 @@ sub get_arguments {
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
         $plugin_dir  = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
+        $custom_plugin_dir = 1 if ($opts{p});
 
         # Strip trailing slash from plugin directory path
         if ($plugin_dir =~ /(.*)\/$/) {
