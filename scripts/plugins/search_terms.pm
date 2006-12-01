@@ -145,6 +145,13 @@ sub write_output_file {
         print OUTFILE "\n\nSEARCH TERMS SUMMARY\n\n";
         print OUTFILE "Generated: " . localtime() . "\n\n\n";
 
+        if ((keys %search_terms) == 0) {
+                print OUTFILE "*** No search terms found\n";
+                close(OUTFILE);
+
+                return;
+        }
+        
         foreach $hostname (sort keys %search_terms) {
                 print OUTFILE "$hostname\n";
                 foreach $term (sort keys %{$search_terms{$hostname}}) {

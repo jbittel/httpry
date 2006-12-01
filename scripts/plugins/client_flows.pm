@@ -355,22 +355,25 @@ sub write_summary_file {
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
                 if ($total_tagged_lines_cnt > 0) {
-                        foreach $ip (map { inet_ntoa $_ }
-                                     sort
-                                     map { inet_aton $_ } keys %output_flows) {
-                                print OUTFILE "$ip\n";
-
-                                foreach $flow (sort keys %{$output_flows{$ip}}) {
-                                        print OUTFILE "\t$flow\n";
-
-                                        foreach $hostname (sort keys %{$output_flows{$ip}->{$flow}}) {
-                                                print OUTFILE "\t\t($output_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
-                                        }
-                                }
-                                print OUTFILE "\n";
-                        }
-                } else {
                         print OUTFILE "*** No tagged flows found\n";
+                        close(OUTFILE);
+                        
+                        return;
+                }
+
+                foreach $ip (map { inet_ntoa $_ }
+                             sort
+                             map { inet_aton $_ } keys %output_flows) {
+                        print OUTFILE "$ip\n";
+
+                        foreach $flow (sort keys %{$output_flows{$ip}}) {
+                                print OUTFILE "\t$flow\n";
+
+                                foreach $hostname (sort keys %{$output_flows{$ip}->{$flow}}) {
+                                        print OUTFILE "\t\t($output_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
+                                }
+                        }
+                        print OUTFILE "\n";
                 }
         }
 

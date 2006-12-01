@@ -75,7 +75,7 @@ sub main {
         my $record = shift;
         my $sql    = "";
         my ($year, $mon, $day) = (localtime)[5,4,3];
-        my $now = $year+1900."-".$mon+1."-$day " . join ':', (localtime)[2,1,0];
+        my $now = $year+1900 . "-" . $mon+1 . "-$day " . join ':', (localtime)[2,1,0];
 
         # Reformat packet date/time string
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;

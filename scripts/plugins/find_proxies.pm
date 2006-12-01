@@ -200,36 +200,39 @@ sub write_output_file {
         print OUTFILE "\n\nPOTENTIAL PROXIES\n\n";
         print OUTFILE "Generated: " . localtime() . "\n\n\n";
 
-        # Reformat data hash into a formatted output hash
-        if ((keys %proxy_lines) > 0) {
-                foreach $ip (keys %proxy_lines) {
-                        foreach $hostname (keys %{$proxy_lines{$ip}}) {
-                                # Attempt to cluster data by domain
-                                if (($hostname =~ /\.([^\.]+?\.[^\.]+?)$/) && !($hostname =~ /\d+\.\d+\.\d+\.\d+/)) {
-                                        $domain = $1;
-                                } else {
-                                        $domain = $hostname;
-                                }
- 
-                                push(@{$output{$domain}->{$hostname}}, $ip);
-                                $counts{$hostname} += $proxy_lines{$ip}->{$hostname};
-                        }
-                }
-
-                # Print output hash data to file
-                foreach $domain (sort keys %output) {
-                        foreach $hostname (sort keys %{$output{$domain}}) {
-                                print OUTFILE "($counts{$hostname}) $hostname\n\t[ ";
-
-                                foreach $ip (@{$output{$domain}->{$hostname}}) {
-                                        print OUTFILE "$ip ";
-                                }
-                                print OUTFILE "]\n";
-                        }
-                        print OUTFILE "\n\n";
-                }
-        } else {
+        if ((keys %proxy_lines) == 0) {
                 print OUTFILE "*** No potential proxies found\n";
+                close(OUTFILE);
+
+                return;
+        }
+        
+        # Reformat data hash into a formatted output hash
+        foreach $ip (keys %proxy_lines) {
+                foreach $hostname (keys %{$proxy_lines{$ip}}) {
+                        # Attempt to cluster data by domain
+                        if (($hostname =~ /\.([^\.]+?\.[^\.]+?)$/) && !($hostname =~ /\d+\.\d+\.\d+\.\d+/)) {
+                                $domain = $1;
+                        } else {
+                                $domain = $hostname;
+                        }
+
+                        push(@{$output{$domain}->{$hostname}}, $ip);
+                        $counts{$hostname} += $proxy_lines{$ip}->{$hostname};
+                }
+        }
+
+        # Print output hash data to file
+        foreach $domain (sort keys %output) {
+                foreach $hostname (sort keys %{$output{$domain}}) {
+                        print OUTFILE "($counts{$hostname}) $hostname\n\t[ ";
+
+                        foreach $ip (@{$output{$domain}->{$hostname}}) {
+                                print OUTFILE "$ip ";
+                        }
+                        print OUTFILE "]\n";
+                }
+                print OUTFILE "\n\n";
         }
 
         close(OUTFILE);
