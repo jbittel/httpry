@@ -56,6 +56,7 @@ sub init {
         my $self = shift;
         my $plugin_dir = shift;
         my $sql;
+        my $limit;
 
         if (&load_config($plugin_dir) == 0) {
                 return 0;
@@ -63,9 +64,17 @@ sub init {
 
         $dbh = &connect_db($type, $db, $host, $port, $user, $pass);
 
-        # TODO: Remove old data from DB as necessary
-        #$sql = qq{ DELETE FROM $table WHERE
-        #&execute_query($dbh, $sql);
+        # Delete data inserted $rmbefore days prior
+        if ($rmbefore > 0) {
+                my ($year, $mon, $day, $hour, $min, $sec) = (localtime(time-(86400*$rmbefore)))[5,4,3,2,1,0];
+                $limit = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
+
+                $sql = qq{ DELETE FROM client_data WHERE timestamp < '$limit' };
+                &execute_query($dbh, $sql);
+                
+                $sql = qq{ DELETE FROM server_data WHERE timestamp < '$limit' };
+                &execute_query($dbh, $sql);
+        }
 
         return 1;
 }
@@ -74,8 +83,8 @@ sub main {
         my $self   = shift;
         my $record = shift;
         my $sql    = "";
-        my ($year, $mon, $day) = (localtime)[5,4,3];
-        my $now = $year+1900 . "-" . $mon+1 . "-$day " . join ':', (localtime)[2,1,0];
+        my ($year, $mon, $day, $hour, $min, $sec) = (localtime)[5,4,3,2,1,0];
+        my $now = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
 
         # Reformat packet date/time string
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;

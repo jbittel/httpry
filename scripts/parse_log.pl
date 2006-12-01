@@ -51,7 +51,7 @@ my $PATTERN    = "\t";
 my %nameof    = (); # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins   = (); # List of plugin files in directory
-my @ignore    = ("sample_plugin.pm", "db_dump.pm");
+my @ignore    = ("sample_plugin.pm");
                     # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments
@@ -78,8 +78,7 @@ sub init_plugins {
         my $curr_dir;
 
         # If a custom plugin directory, assume the user knows what they're doing;
-        # otherwise, search the current dir and the script base dir for a matching
-        # plugin folder
+        # otherwise, search the current dir and script base dir for a plugin folder
         $curr_dir = cwd;
         unless ($custom_plugin_dir) {
                 if (-d $plugin_dir) {
