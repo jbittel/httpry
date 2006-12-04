@@ -102,12 +102,18 @@ sub main {
         my $record = shift;
         my $curr_line;
 
+        # Make sure we really want to be here
+        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
+        return unless exists $record->{"timestamp"};
+        return unless exists $record->{"source-ip"};
+        return unless exists $record->{"dest-ip"};
+        return unless exists $record->{"host"};
+        return unless exists $record->{"request-uri"};
+        
         if ((keys %flow_info) > $max_concurrent) {
                 $max_concurrent = keys %flow_info;
         }
 
-        return if $record->{"direction"} ne '>';
-        
         # Convert hex encoded chars to ASCII
         if (exists $record{"request-uri"}) {
                 $record{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded

@@ -114,7 +114,11 @@ sub process_data {
         my $decoded_uri = "";
         my $domain;
 
-        return if $record->{"direction"} ne '>';
+        # Make sure we really want to be here
+        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
+        return unless exists $record->{"request-uri"};
+        return unless exists $record->{"source-ip"};
+        return unless exists $record->{"host"};
 
         # Convert hex encoded chars to ASCII
         if (exists $record{"request-uri"}) {

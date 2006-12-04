@@ -69,8 +69,11 @@ sub main {
         my $name;
         my $request_uri_encoded;
         
-        return if $record->{"direction"} ne '>';
-        
+        # Make sure we really want to be here
+        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
+        return unless exists $record->{"request-uri"};
+        return unless exists $record->{"host"};
+
         # Convert hex encoded chars to ASCII
         if (exists $record{"request-uri"}) {
                 $request_uri_encoded = $record{"request-uri"};

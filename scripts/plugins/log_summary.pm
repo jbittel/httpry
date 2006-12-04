@@ -85,14 +85,16 @@ sub main {
         my $self   = shift;
         my $record = shift;
 
+        return unless exists $record->{"direction"};
+
         # Gather statistics
         $total_line_cnt++;
 
         if ($record->{"direction"} eq '>') {
-                $top_hosts{$record->{"host"}}++;
-                $top_talkers{$record->{"source-ip"}}++;
+                $top_hosts{$record->{"host"}}++ if exists $record->{"host"};
+                $top_talkers{$record->{"source-ip"}}++ if exists $record->{"source-ip"};
 
-                if ($filetype) {
+                if ($filetype && (exists $record->{"request-uri"})) {
                         if (($record->{"request-uri"} =~ /\.([\w\d]{2,5}?)$/i) or 
                             ($record->{"request-uri"} =~ /\/.*\.([\w\d]{2,5}?)\?/i)) {
                                 $ext_cnt++;
@@ -100,7 +102,7 @@ sub main {
                         }
                 }
         } elsif ($record->{"direction"} eq '<') {
-                $response_codes{$record->{"status-code"}}++;
+                $response_codes{$record->{"status-code"}}++ if exists $record->{"status-code"};
                 $srv_responses++;
         }
 

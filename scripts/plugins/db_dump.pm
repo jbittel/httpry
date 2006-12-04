@@ -90,6 +90,14 @@ sub main {
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
         $record->{"timestamp"} = "$3-$1-$2 $4:$5:$6";
 
+        # Make sure we really want to be here
+        return unless exists $record->{"direction"};
+        return unless exists $record->{"timestamp"};
+        return unless exists $record->{"source-ip"};
+        return unless exists $record->{"dest-ip"};
+        return unless exists $record->{"host"};
+        return unless exists $record->{"request-uri"};
+
         if ($record->{"direction"} eq '>') {
                 $record->{"request-uri"} = quotemeta($record->{"request-uri"});
 

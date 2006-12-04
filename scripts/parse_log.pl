@@ -36,7 +36,7 @@
 use strict;
 use Getopt::Std;
 use File::Basename;
-use File::Tail;
+#use File::Tail;
 use Cwd;
 
 # -----------------------------------------------------------------------------
@@ -180,15 +180,16 @@ sub process_logfiles {
                         $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
                         next if $curr_line eq "";
 
-                        # Default format:
+                        # Default header format:
                         # Fields: Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase
                         if ($curr_line =~ /^#/) {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @headers = split(/,/, $1);
+                                %record = ();
                         }
                         
                         @fields = split(/$PATTERN/, $curr_line);
-                        next if (scalar(@fields != 10)); # Malformed number of fields
+                        next if (scalar(@fields) != scalar(@headers)); # Malformed fields count
 
                         for ($i = 0; $i <= scalar @fields; $i++) {
                                 $record{lc($headers[$i])} = $fields[$i];

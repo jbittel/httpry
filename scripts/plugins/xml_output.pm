@@ -64,7 +64,7 @@ sub init {
         } else {
                 open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
                 print OUTFILE "<?xml version=\"1.0\"?>\n";
-                print OUTFILE "<?xml-stylesheet href=\"httpry.css\" type=\"text/css\"?>\n";
+                print OUTFILE "<?xml-stylesheet href=\"xml_output.css\" type=\"text/css\"?>\n";
                 print OUTFILE "<flow version=\"$flow_version\" xmlversion=\"$xml_version\">\n";
         }
 
