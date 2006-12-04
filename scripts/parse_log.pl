@@ -43,7 +43,7 @@ use Cwd;
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
 my $VERBOSE    = 0;
-my $PLUGIN_DIR = "./plugins";
+my $PLUGIN_DIR = "plugins";
 my $PATTERN    = "\t";
 
 # -----------------------------------------------------------------------------
@@ -88,12 +88,11 @@ sub init_plugins {
 
         # If a custom plugin directory, assume the user knows what they're doing;
         # otherwise, search the current dir and script base dir for a plugin folder
-        $curr_dir = cwd;
         unless ($custom_plugin_dir) {
                 if (-d $plugin_dir) {
-                        chdir(dirname($plugin_dir));
+                        $plugin_dir = "./" . $plugin_dir;
                 } elsif (-d dirname($0).'/'.basename($plugin_dir)) {
-                        chdir(dirname($0));
+                        $plugin_dir = dirname($0).'/'.$plugin_dir;
                 } else {
                         die "Error: Could not find a valid plugins directory\n";
                 }
@@ -137,8 +136,6 @@ sub init_plugins {
                 }
         }
 
-        chdir($curr_dir);
-        
         return;
 }
 
@@ -168,7 +165,9 @@ sub process_logfiles {
         my $curr_file; # Current input file
         my $plugin;
         my @fields;
+        my @headers;
         my %record;
+        my $i;
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
@@ -180,27 +179,20 @@ sub process_logfiles {
                         chomp $curr_line;
                         $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
                         next if $curr_line eq "";
-                
+
                         # Default format:
-                        # "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+                        # Fields: Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase
+                        if ($curr_line =~ /^#/) {
+                                next unless $curr_line =~ /^# Fields: (.*)$/;
+                                @headers = split(/,/, $1);
+                        }
+                        
                         @fields = split(/$PATTERN/, $curr_line);
                         next if (scalar(@fields != 10)); # Malformed number of fields
 
-                        $record{"timestamp"}     = $fields[0];
-                        $record{"source-ip"}     = $fields[1];
-                        $record{"dest-ip"}       = $fields[2];
-                        $record{"direction"}     = $fields[3];
-                        $record{"method"}        = $fields[4];
-                        $record{"host"}          = $fields[5];
-                        $record{"request-uri"}   = $fields[6];
-                        $record{"http-version"}  = $fields[7];
-                        $record{"status-code"}   = $fields[8];
-                        $record{"reason-phrase"} = $fields[9];
-                        
-                        # Convert hex encoded chars to ASCII
-                        $record{"request-uri-encoded"} = $record{"request-uri"};
-                        $record{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-                        $record{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+                        for ($i = 0; $i <= scalar @fields; $i++) {
+                                $record{lc($headers[$i])} = $fields[$i];
+                        }
 
                         foreach $plugin (@callbacks) {
                                 $plugin->main(\%record);

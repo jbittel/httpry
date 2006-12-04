@@ -100,6 +100,21 @@ int insert_node(NODE *list, char *str) {
         return 1;
 }
 
+/* Print a list of all output field names contained in the format string */
+void print_names(NODE *list) {
+        printf("# Fields: ");
+        while (list->next != NULL) {
+                printf("%s", list->name);
+
+                list = list->next;
+                if (list->next != NULL)
+                        printf(",");
+        }
+        printf("\n");
+
+        return;
+}
+
 /* Destructively print each node value in the list; once printed, each
    existing value is assigned to NULL to clear it for the next packet */
 void print_list(NODE *list) {

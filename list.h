@@ -47,5 +47,6 @@ struct node {
 NODE *create_node();
 NODE *find_node(NODE *list, char *str);
 int insert_node(NODE *list, char *str);
+void print_names(NODE *list);
 void print_list(NODE *list);
 void free_list(NODE *list);

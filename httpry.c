@@ -765,6 +765,7 @@ int main(int argc, char *argv[]) {
         if (!out_format) out_format = safe_strdup(default_format);
         if (!run_dir) run_dir = safe_strdup(default_rundir);
         parse_format_string(out_format);
+        if (use_outfile) print_names(format_str);
 
         /* Set up packet capture */
         get_dev_info(&dev, &net, interface);

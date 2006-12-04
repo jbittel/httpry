@@ -67,9 +67,20 @@ sub main {
         my $search_term;
         my $domain;
         my $name;
+        my $request_uri_encoded;
         
         return if $record->{"direction"} ne '>';
+        
+        # Convert hex encoded chars to ASCII
+        if (exists $record{"request-uri"}) {
+                $request_uri_encoded = $record{"request-uri"};
 
+                $record{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+                $record{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        } else {
+                return;
+        }
+        
         # These results can end up being a little messy, but it seems
         # most useful to simply dump out all search terms and let the user
         # parse through what they find interesting. It's hard to strike a
@@ -82,7 +93,7 @@ sub main {
                 if ($record->{"host"} =~ /$domain$/) {
                         # Here we use the encoded URI to ensure that '&' chars in the search term
                         # don't break the regexp; we'll clean them out if we have a valid search
-                        return unless $record->{"request-uri-encoded"} =~ /[\?\&]$name=([^\&]+?)(?:\&|\Z)/;
+                        return unless $request_uri_encoded =~ /[\?\&]$name=([^\&]+?)(?:\&|\Z)/;
                         $search_term = $1;
                         last;
                 }

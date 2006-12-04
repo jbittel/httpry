@@ -116,6 +116,12 @@ sub process_data {
 
         return if $record->{"direction"} ne '>';
 
+        # Convert hex encoded chars to ASCII
+        if (exists $record{"request-uri"}) {
+                $record{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+                $record{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        }
+
         # Perform hostname and uri keyword search
         foreach $word (@proxy_keywords) {
                 if ($record->{"host"} =~ /$word/i) {
