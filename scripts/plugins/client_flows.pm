@@ -33,13 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-#
-# This is an example plugin for the perl parse script parse_log.pl.  It shows
-# the basic structure of a simple plugin and provides a good starting point for
-# writing a custom plugin. Some of the other included plugins will also provide
-# a good idea of how the different pieces work.
-#
-
 package client_flows;
 
 use File::Basename;

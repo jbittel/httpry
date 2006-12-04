@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# content_check.pl | created: 2/16/2006
+# client_flows.pl | created: 2/16/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 #
@@ -221,7 +221,9 @@ sub timeout_flow {
         my $hostname;
 
         foreach $ip (keys %flow_info) {
-                next unless (($epochstamp - $flow_info{$ip}->{"end_epoch"}) > $FLOW_TIMEOUT);
+                if ($epochstamp) {
+                        next unless (($epochstamp - $flow_info{$ip}->{"end_epoch"}) > $FLOW_TIMEOUT);
+                }
 
                 # Set minimum/maximum flow length
                 $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
@@ -369,13 +371,13 @@ sub send_email {
         $msg = MIME::Lite->new(
                 From    => 'admin@corban.edu',
                 To      => "$email_addr",
-                Subject => 'HTTPry Content Check Report - ' . localtime(),
+                Subject => 'httpry Content Check Report - ' . localtime(),
                 Type    => 'multipart/mixed'
         );
 
         $msg->attach(
                 Type => 'TEXT',
-                Data => 'HTTPry content check report for ' . localtime()
+                Data => 'httpry content check report for ' . localtime()
         );
 
         $msg->attach(

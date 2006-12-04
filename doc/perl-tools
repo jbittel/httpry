@@ -1,19 +1,20 @@
 Along with the core httpry program a number of Perl scripts are also included.
-This provides a listing of those files and a brief description of what each
-script does. Run each tool with the -h parameter to get a listing of the
-available command line parameters for each.
+There is a central Perl script (parse_log.pl) that handles all of the core
+log parsing duties, and a set of Perl plugins (plugins/*.pm) that perform
+assorted processing duties. It is also very straightforward to write your own
+plugins to extend the processing abilities.
+
+The parse script is expecting a valid httpry log file, including the field
+specifier at the start. Note that this field specifier can change between log
+files, and even within the same log file. The parse script will note the
+difference and update its internal data structures accordingly. The plugins
+should check to ensure that each data line has all of the information
+required.
 
 The following Perl modules are required to run all the included plugins:
         MIME::Lite
         DBI
         File::Tail
-
-Each tool is expecting httpry to be run with the default format string. If you
-want the scripts to utilize different fields, they will have to be modified
-accordingly. In general, it is a relatively simple matter to add additional
-field support to each script. Additionally, if you add the new data to the end
-of each line, most of these scripts will simply ignore it by default and work
-just fine.
 
 A summary of the scripts:
 
@@ -65,6 +66,11 @@ A summary of the scripts:
         Moves an active log file into a specified directory. Also offers options
         for deleting text files, compressing the log files and/or purging old
         log files according to number or total size.
+
+ ./scripts/client_flows.pl
+        A standalone version of the client_flows.pm plugin. Included mostly for
+        historical reasons, should be considered depricated, and may disappear
+        without warning.
 
 These tools are not necessarily designed to be drop-in replacements for your
 own solutions. If one of these tools does what you need it to, great! However,
