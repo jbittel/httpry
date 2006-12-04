@@ -5,19 +5,17 @@ changes and updates to the core httpry program.
 
 
 version 0.0.9
-   + Add: parse both client requests and server responses
+   + Add: parsing of both client requests and server responses
    = Chg: default capture filter less restrictive
    - Fix: command line arguments now *always* take precedence
    = Chg: wrote custom command line argument parser
    - Fix: removed chance to test against invalid data on exit
-   = Chg: all output fields are now configurable
+   = Chg: all output fields are now selectable
    = Chg: config file options are now all lowercase
    + Add: output files are now chown'd to process owner
    = Chg: -n switch now counts parsed packets, not total packets
    + Add: additional sanity checking for output file paths
-   + Add: XML file output format (-oX)
-   = Chg: split file output switch into -oT and -oX
-   = Chg: added compile directives for OpenBSD
+   = Chg: added necessary compile directives for OpenBSD
    + Add: '-' can be specified for the filename to force STDOUT
 
 version 0.0.8

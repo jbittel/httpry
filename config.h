@@ -77,7 +77,3 @@
 
 /* Start of HTTP version string in response header; should never change! */
 #define HTTP_STRING "HTTP/"
-
-/* Header and footer for XML output file */
-#define XML_HEADER "<?xml version=\"1.0\"?>\n<?xml-stylesheet href=\"httpry.css\" type=\"text/css\"?>\n<flow version=\"%s\" xmlversion=\"%s\">\n"
-#define XML_FOOTER "</flow>\n"

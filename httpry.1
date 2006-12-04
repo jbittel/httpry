@@ -1,8 +1,8 @@
-.TH HTTPRY 1 "October 2006"
+.TH HTTPRY 1 "December 2006"
 .SH NAME
 httpry \- HTTP logging and information display tool
 .SH SYNOPSIS
-.B "httpry [-dp] [-b file] [-c count] [-f file] [-i interface] [-l filter] [-n count] [-oT|oX file] [-r dir] [-s string] [-u user]"
+.B "httpry [-dp] [-b file] [-c count] [-f file] [-i interface] [-l filter] [-n count] [-o file] [-r dir] [-s string] [-u user]"
 .br
 .B "httpry -h or --help"
 .br
@@ -49,14 +49,12 @@ ports or to/from specific hosts.
 .IP "-n \fIcount\fP"
 Specifies a number of HTTP packets to parse, following which the
 program will terminate.
-.IP "-oT, -oX \fIfile\fP"
-Provides an output file for writing parsed packet data. The switch oT will
-print the output in a tab-delimited text format and the switch oX will print
-the output in XML format. These two switches cannot be combined. You can use
-'-' for the filename to force printing to STDOUT, however errors and other
-informational messages will still print to STDERR. Note that if the program
-is running as a daemon, its base directory may change so an absolute path to
-the output file should be specified.
+.IP "-o \fIfile\fP"
+Specifies an output file for writing parsed packet data in tab-delimited text
+format. You can use '-' for the filename to force printing to STDOUT, however
+errors and other informational messages will still print to STDERR. Note that
+if the program is running as a daemon, its base directory may change so an
+absolute path to the output file should be specified.
 .IP "-p"
 Disables promiscuous mode on the NIC. Under most circumstances this should
 not be required.

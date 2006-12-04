@@ -44,8 +44,6 @@
 #include "error.h"
 #include "list.h"
 
-void to_lowercase(char *str);
-
 /* Create a new node for insertion into an existing list */
 NODE *create_node() {
         NODE *list;
@@ -55,7 +53,6 @@ NODE *create_node() {
         }
 
         list->name = NULL;
-        list->name_lc = NULL;
         list->value = NULL;
         list->next = NULL;
 
@@ -97,12 +94,6 @@ int insert_node(NODE *list, char *str) {
         }
         strncpy(list->name, str, strlen(str));
         list->name[strlen(str)] = '\0';
-        if ((list->name_lc = malloc(strlen(str) + 1)) == NULL) {
-                log_die("Cannot allocate memory for lowercase node name\n");
-        }
-        strncpy(list->name_lc, str, strlen(str));
-        list->name_lc[strlen(str)] = '\0';
-        to_lowercase(list->name_lc);
         list->value = NULL;
         list->next = tail;
 
@@ -111,7 +102,7 @@ int insert_node(NODE *list, char *str) {
 
 /* Destructively print each node value in the list; once printed, each
    existing value is assigned to NULL to clear it for the next packet */
-void print_list_text(NODE *list) {
+void print_list(NODE *list) {
         while (list->next != NULL) {
                 if (list->value != NULL) {
                         printf("%s\t", list->value);
@@ -123,52 +114,6 @@ void print_list_text(NODE *list) {
                 list = list->next;
         }
         printf("\n");
-
-        return;
-}
-
-/* Destructively print each node value, wrapping them in the proper XML tags
-   for output; also escape all XML entities found in the strings */
-void print_list_xml(NODE *list) {
-        char *str;
-        char *entity;
-
-        printf("<step>");
-        while (list->next != NULL) {
-                if (list->value == NULL) {
-                        list = list->next;
-                        continue;
-                }
-
-                printf("<%s>", list->name_lc);
-                str = list->value;
-                while ((entity = strpbrk(str, "&<>\'\"")) != NULL) {
-                        switch (*entity) {
-                                case '&':  *entity = '\0';
-                                           printf("%s&amp;", str);
-                                           break;
-                                case '<':  *entity = '\0';
-                                           printf("%s&lt;", str);
-                                           break;
-                                case '>':  *entity = '\0';
-                                           printf("%s&gt;", str);
-                                           break;
-                                case '\'': *entity = '\0';
-                                           printf("%s&apos;", str);
-                                           break;
-                                case '\"': *entity = '\0';
-                                           printf("%s&quot;", str);
-                                           break;
-                        }
-
-                        str = ++entity;
-                }
-                printf("%s</%s>", str, list->name_lc);
-                list->value = NULL;
-
-                list = list->next;
-        }
-        printf("</step>\n");
 
         return;
 }
@@ -188,7 +133,6 @@ void free_list(NODE *list) {
         curr = prev->next;
         while (curr->next != NULL) {
                 free(prev->name);
-                free(prev->name_lc);
                 free(prev);
 
                 prev = curr;
@@ -196,20 +140,8 @@ void free_list(NODE *list) {
         }
 
         free(prev->name);
-        free(prev->name_lc);
         free(prev);
         free(curr);
-
-        return;
-}
-
-/* Lowercase the parameter string in place
-   Warning! Modifies parameter string! */
-void to_lowercase(char *str) {
-        while (*str) {
-                *str = tolower(*str);
-                str++;
-        }
 
         return;
 }

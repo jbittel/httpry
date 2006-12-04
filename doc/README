@@ -92,7 +92,7 @@ not complete documentation of program behavior. This section describes these
 options in greater detail.
 
 httpry [-dhpv] [-b file] [-c count] [-f file] [-i interface] [-l filter]
-       [-n count] [-oT|oX file] [-r dir] [-s string] [-u user]
+       [-n count] [-o file] [-r dir] [-s string] [-u user]
 
 -b <file> :
 Dumps a binary packet capture output file to the specified location. Note that
@@ -133,14 +133,12 @@ ports or to/from specific hosts.
 Specifies a number of HTTP packets to parse, following which the
 program will terminate.
 
--oT, -oX <file> :
-Provides an output file for writing parsed packet data. The switch oT will
-print the output in a tab-delimited text format and the switch oX will print
-the output in XML format. These two switches cannot be combined. You can use
-'-' for the filename to force printing to STDOUT, however errors and other
-informational messages will still print to STDERR. Note that if the program
-is running as a daemon, its base directory may change so an absolute path to
-the output file should be specified.
+-o <file> :
+Specifies an output file for writing parsed packet data in tab-delimited text
+format. You can use '-' for the filename to force printing to STDOUT, however
+errors and other informational messages will still print to STDERR. Note that
+if the program is running as a daemon, its base directory may change so an
+absolute path to the output file should be specified.
 
 -p :
 Disables promiscuous mode on the NIC. Under most circumstances this should

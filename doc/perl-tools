@@ -6,6 +6,7 @@ available command line parameters for each.
 The following Perl modules are required to run all the included plugins:
         MIME::Lite
         DBI
+        File::Tail
 
 Each tool is expecting httpry to be run with the default format string. If you
 want the scripts to utilize different fields, they will have to be modified
@@ -19,10 +20,13 @@ A summary of the scripts:
  ./scripts/parse_log.pl
         Core script for plugins. Processes input log files and delivers the data
         to each initialized plugin. Plugins are activated by simply having a .pm
-        extension and being placed in the specified plugin directory (default is
-        ./plugins, can be overridden with -p). To ignore a plugin, either remove
-        it from the plugin directory or add it to the @ignore array within the
-        script.
+        extension and being placed in the plugin directory (default is
+        ./plugins). If a plugins directory is specified (-p), that is used. If
+        no directory is specified, the script first searches the current directory
+        for a plugin directory followed by the base directory of the script. The
+        first directory found is used. If no directory is found, the script
+        exist. To ignore a plugin, either remove it from the plugin directory or
+        add it to the @ignore array within the script.
 
  ./scripts/plugins/client_flows.pm
         Checks for specified content in the input file according to a list of
@@ -52,6 +56,10 @@ A summary of the scripts:
  ./scripts/plugins/search_terms.pm
         Outputs a raw dump of all entered search terms for a number of the major
         search services. The output is grouped by domain name.
+
+ ./scripts/plugins/xml_format.pm
+        Outputs the input log file in XML format. If the output file already
+        exists, a new flow is appended.
 
  ./scripts/rotate_log.pl
         Moves an active log file into a specified directory. Also offers options

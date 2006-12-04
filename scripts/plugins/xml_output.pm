@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 #
-# sample_plugin.pm | created: 4/3/2006
+# xml_output.pm | created: 12/3/2006
 #
 # Copyright (c) 2006, Jason Bittel <jbittel@corban.edu>. All rights reserved.
 #
@@ -33,69 +33,86 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-#
-# This is an example plugin for the perl parse script parse_log.pl.  It shows
-# the basic structure of a simple plugin and provides a good starting point for
-# writing a custom plugin. Some of the other included plugins will also provide
-# a good idea of how the different pieces work.
-#
-
-package sample_plugin;
-
-# -----------------------------------------------------------------------------
-# GLOBAL CONSTANTS
-# -----------------------------------------------------------------------------
+package xml_output;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
+my $fh;
 
 # -----------------------------------------------------------------------------
 # Plugin core
 # -----------------------------------------------------------------------------
 
-# On initialization, this call registers the plugin with the core
 &main::register_plugin(__PACKAGE__);
 
-# This sub is called once at initialization to create the plugin object
 sub new {
         return bless {};
 }
 
-# This sub is called once at initialization; all startup code should be
-# included here. Currently the sub only loads the configuration file, but
-# any startup specific code or subs should be done here.
 sub init {
         my $self = shift;
         my $plugin_dir = shift;
 
-        # Call our load configuration sub; this can be good to break out
-        # into a separate sub like this, particularly if you end up with
-        # many checks on the config variables.
         if (&load_config($plugin_dir) == 0) {
                 return 0;
         }
 
+        if (-e $output_file) {
+                open(OUTFILE, ">>$output_file") or die "Error: Cannot open $output_file: $!\n";
+                print OUTFILE "<flow version=\"$flow_version\" xmlversion=\"$xml_version\">\n";
+        } else {
+                open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
+                print OUTFILE "<?xml version=\"1.0\"?>\n";
+                print OUTFILE "<?xml-stylesheet href=\"httpry.css\" type=\"text/css\"?>\n";
+                print OUTFILE "<flow version=\"$flow_version\" xmlversion=\"$xml_version\">\n";
+        }
+
+        $fh = *OUTFILE;
+
         return 1;
 }
 
-# This sub is called once for each data line in the input file(s). Note
-# that the data is sent here as a single line and so must be parsed (if
-# necessary) to act on individual components of the line.
 sub main {
         my $self   = shift;
         my $record = shift; # Reference to hash containing record data
+        my $direction;
+        my $request_uri;
 
-        # Simple processing can be handled here; more complex processing
-        # would probably be better handled in a different sub.
+        # Replace XML entity characters
+        if (exists $record->{"direction"}) {
+                $direction = "&lt;" if ($record->{"direction"} eq '<');
+                $direction = "&gt;" if ($record->{"direction"} eq '>');
+        }
+        if (exists $record->{"request-uri"}) {
+                $request_uri = $record->{"request-uri"};
+        
+                $request_uri =~ s/&/\&amp\;/g;
+                $request_uri =~ s/</\&lt\;/g;
+                $request_uri =~ s/>/\&gt\;/g;
+                $request_uri =~ s/\'/\&apos\;/g;
+                $request_uri =~ s/\"/\&quot\;/g;
+        }
+        
+        print $fh "<timestamp>$record->{'timestamp'}</timestamp>" if exists $record->{"timestamp"};
+        print $fh "<source-ip>$record->{'source-ip'}</source-ip>" if (exists $record->{"source-ip"});
+        print $fh "<dest-ip>$record->{'dest-ip'}</dest-ip>" if (exists $record->{"dest-ip"});
+        print $fh "<direction>$direction</direction>" if (exists $record->{"direction"});
+        print $fh "<method>$record->{'method'}</method>" if (exists $record->{"method"});
+        print $fh "<host>$record->{'host'}</host>" if (exists $record->{"host"});
+        print $fh "<request-uri>$request_uri</request-uri>" if (exists $record->{"request-uri"});
+        print $fh "<http-version>$record->{'http-version'}</http-version>" if (exists $record->{"http-version"});
+        print $fh "<status-code>$record->{'status-code'}</status-code>" if (exists $record->{"status-code"});
+        print $fh "<reason-phrase>$record->{'reason-phrase'}</reason-phrase>" if (exists $record->{"reason-phrase"});
+        print $fh "\n";
 
         return;
 }
 
-# This sub is called once at program termination; all shutdown code (i.e.
-# closing files, deleting temp files, sending email, etc) should be
-# included here.
 sub end {
+
+        print $fh "</flow>\n";
+        close($fh);
 
         return;
 }
@@ -111,9 +128,11 @@ sub load_config {
                 require "$plugin_dir/" . __PACKAGE__ . ".cfg";
         }
 
-        # Check for required options and combinations from the configuration
-        # file variables. This can also be a good place to do file reads for
-        # initializing run time data structures.
+        # Check for required options and combinations
+        if (!$output_file) {
+                print "Error: No output file provided\n";
+                return 0;
+        }
 
         return 1;
 }
