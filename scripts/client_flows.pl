@@ -165,10 +165,12 @@ sub parse_flows {
                                 }
                         }
 
-                        &timeout_flow($epochstamp);
+                        &timeout_flows($epochstamp);
                 }
         }
+
         $end_time = (times)[0];
+        &timeout_flows(0);
 
         return;
 }
@@ -214,7 +216,7 @@ sub content_check {
 # -----------------------------------------------------------------------------
 # Handle end of flow duties: flush to disk and delete hash entries
 # -----------------------------------------------------------------------------
-sub timeout_flow {
+sub timeout_flows {
         my $epochstamp = shift;
         my $flow_str;
         my $ip;

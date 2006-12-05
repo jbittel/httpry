@@ -63,8 +63,8 @@ sub new {
 }
 
 # This sub is called once at initialization; all startup code should be
-# included here. Currently the sub only loads the configuration file, but
-# any startup specific code or subs should be done here.
+# included here. Currently this sub only loads the configuration file, but
+# any startup specific code or subs are handled here.
 sub init {
         my $self = shift;
         my $plugin_dir = shift;

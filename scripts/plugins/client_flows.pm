@@ -349,8 +349,10 @@ sub write_summary_file {
         print OUTFILE "Generated:      " . localtime() . "\n";
         print OUTFILE "Flow count:     $flow_cnt\n";
         print OUTFILE "Flow lines:     $flow_line_cnt\n";
-        print OUTFILE "Max Concurrent: $max_concurrent\n";
-        print OUTFILE "Min/Max/Avg:    $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+        if ($flow_cnt > 0) {
+                print OUTFILE "Max Concurrent: $max_concurrent\n";
+                print OUTFILE "Min/Max/Avg:    $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+        }
 
         if ($hitlist_file) {
                 print OUTFILE "Tagged IPs:     " . (keys %output_flows) . "\n";

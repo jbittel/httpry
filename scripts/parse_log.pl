@@ -44,7 +44,8 @@ use Cwd;
 # -----------------------------------------------------------------------------
 my $VERBOSE    = 0;
 my $PLUGIN_DIR = "plugins";
-my $PATTERN    = "\t";
+my $TAB        = "\t";
+my $COMMA      = ",";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -102,6 +103,7 @@ sub init_plugins {
                 die "Error: '$plugin_dir' is not a valid directory\n";
         }
 
+        # Extract all plugins from specified directory
         opendir PLUGINS, $plugin_dir or die "Error: Cannot access directory $plugin_dir: $!\n";
                 @plugins = grep { /\.pm$/ } readdir(PLUGINS);
         closedir PLUGINS;
@@ -110,6 +112,7 @@ sub init_plugins {
                 die "Error: No plugins found in specified directory\n";
         }
 
+        # Load up each plugin, unless specifically exempted 
         PLUGIN: foreach $plugin (@plugins) {
                 foreach (@ignore) {
                         next PLUGIN if $_ eq $plugin;
@@ -117,7 +120,8 @@ sub init_plugins {
                 print "Loading $plugin_dir/$plugin...\n" if $VERBOSE;
                 require "$plugin_dir/$plugin";
         }
-        
+       
+        # Check for required functions and initialize each loaded plugin
         foreach $plugin (@callbacks) {
                 unless ($plugin->can('main')) {
                         print "Warning: Plugin '$nameof{$plugin}' does not contain a required main() function...disabling\n";
@@ -184,11 +188,14 @@ sub process_logfiles {
                         # Fields: Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase
                         if ($curr_line =~ /^#/) {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
-                                @headers = split(/,/, $1);
+                                @headers = split(/$COMMA/, $1);
                                 %record = ();
                         }
                         
-                        @fields = split(/$PATTERN/, $curr_line);
+                        if (scalar(@headers) == 0) {
+                                die "Error: No field description line found; cannot proceed\n";
+                        }
+                        @fields = split(/$TAB/, $curr_line);
                         next if (scalar(@fields) != scalar(@headers)); # Malformed fields count
 
                         for ($i = 0; $i <= scalar @fields; $i++) {
