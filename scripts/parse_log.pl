@@ -36,7 +36,6 @@
 use strict;
 use Getopt::Std;
 use File::Basename;
-#use File::Tail;
 use Cwd;
 
 # -----------------------------------------------------------------------------
@@ -61,21 +60,14 @@ my %opts;
 my @input_files;
 my $plugin_dir;
 my $custom_plugin_dir = 0;
-my $tail_mode = 0;
 
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
 
-$SIG{INT} = sub { exit };
-
 &get_arguments();
 &init_plugins($plugin_dir);
-if ($tail_mode) {
-        &tail_logfile();
-} else {
-        &process_logfiles();
-}
+&process_logfiles();
 &end_plugins();
 
 # -----------------------------------------------------------------------------
@@ -198,7 +190,7 @@ sub process_logfiles {
                         @fields = split(/$TAB/, $curr_line);
                         next if (scalar(@fields) != scalar(@headers)); # Malformed fields count
 
-                        for ($i = 0; $i <= scalar @fields; $i++) {
+                        for ($i = 0; $i < scalar @fields; $i++) {
                                 $record{lc($headers[$i])} = $fields[$i];
                         }
 
@@ -209,15 +201,6 @@ sub process_logfiles {
 
                 close(INFILE);
         }
-
-        return;
-}
-
-# -----------------------------------------------------------------------------
-#
-# -----------------------------------------------------------------------------
-sub tail_logfile {
-
 
         return;
 }
@@ -239,7 +222,7 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('hp:t', \%opts) or &print_usage();
+        getopts('hp:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -252,7 +235,6 @@ sub get_arguments {
         @input_files = @ARGV;
         $plugin_dir  = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
         $custom_plugin_dir = 1 if ($opts{p});
-        $tail_mode = 1 if ($opts{t});
 
         # Strip trailing slash from plugin directory path
         if ($plugin_dir =~ /(.*)\/$/) {
@@ -267,9 +249,8 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [-ht] [-p dir] file1 [file2 ...]
+Usage: $0 [-h] [-p dir] file1 [file2 ...]
   -h ... print this help information and exit
   -p ... load plugins from specified directory
-  -t ... enter tail mode to continuously process a file
 USAGE
 }

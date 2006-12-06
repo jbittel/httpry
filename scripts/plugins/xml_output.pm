@@ -79,31 +79,17 @@ sub main {
         my $direction;
         my $request_uri;
 
-        # Replace XML entity characters
-        if (exists $record->{"direction"}) {
-                $direction = "&lt;" if ($record->{"direction"} eq '<');
-                $direction = "&gt;" if ($record->{"direction"} eq '>');
+        foreach my $field (keys %$record) {
+                my $data = $record->{$field};
+
+                $data =~ s/&/\&amp\;/g;
+                $data =~ s/</\&lt\;/g;
+                $data =~ s/>/\&gt\;/g;
+                $data =~ s/\'/\&apos\;/g;
+                $data =~ s/\"/\&quot\;/g;
+                
+                print $fh "<$field>$data</$field>";
         }
-        if (exists $record->{"request-uri"}) {
-                $request_uri = $record->{"request-uri"};
-        
-                $request_uri =~ s/&/\&amp\;/g;
-                $request_uri =~ s/</\&lt\;/g;
-                $request_uri =~ s/>/\&gt\;/g;
-                $request_uri =~ s/\'/\&apos\;/g;
-                $request_uri =~ s/\"/\&quot\;/g;
-        }
-        
-        print $fh "<timestamp>$record->{'timestamp'}</timestamp>" if exists $record->{"timestamp"};
-        print $fh "<source-ip>$record->{'source-ip'}</source-ip>" if (exists $record->{"source-ip"});
-        print $fh "<dest-ip>$record->{'dest-ip'}</dest-ip>" if (exists $record->{"dest-ip"});
-        print $fh "<direction>$direction</direction>" if (exists $record->{"direction"});
-        print $fh "<method>$record->{'method'}</method>" if (exists $record->{"method"});
-        print $fh "<host>$record->{'host'}</host>" if (exists $record->{"host"});
-        print $fh "<request-uri>$request_uri</request-uri>" if (exists $record->{"request-uri"});
-        print $fh "<http-version>$record->{'http-version'}</http-version>" if (exists $record->{"http-version"});
-        print $fh "<status-code>$record->{'status-code'}</status-code>" if (exists $record->{"status-code"});
-        print $fh "<reason-phrase>$record->{'reason-phrase'}</reason-phrase>" if (exists $record->{"reason-phrase"});
         print $fh "\n";
 
         return;

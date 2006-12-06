@@ -86,10 +86,6 @@ sub main {
         my ($year, $mon, $day, $hour, $min, $sec) = (localtime)[5,4,3,2,1,0];
         my $now = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
 
-        # Reformat packet date/time string
-        $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
-        $record->{"timestamp"} = "$3-$1-$2 $4:$5:$6";
-
         # Make sure we really want to be here
         return unless exists $record->{"direction"};
         return unless exists $record->{"timestamp"};
@@ -97,6 +93,10 @@ sub main {
         return unless exists $record->{"dest-ip"};
         return unless exists $record->{"host"};
         return unless exists $record->{"request-uri"};
+
+        # Reformat packet date/time string
+        $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
+        $record->{"timestamp"} = "$3-$1-$2 $4:$5:$6";
 
         if ($record->{"direction"} eq '>') {
                 $record->{"request-uri"} = quotemeta($record->{"request-uri"});

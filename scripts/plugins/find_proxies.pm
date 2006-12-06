@@ -112,7 +112,6 @@ sub process_data {
         my $len;
         my $encoded_uri;
         my $decoded_uri = "";
-        my $domain;
 
         # Make sure we really want to be here
         return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
@@ -121,10 +120,8 @@ sub process_data {
         return unless exists $record->{"host"};
 
         # Convert hex encoded chars to ASCII
-        if (exists $record{"request-uri"}) {
-                $record{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-                $record{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-        }
+        $record->{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+        $record->{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
         # Perform hostname and uri keyword search
         foreach $word (@proxy_keywords) {
