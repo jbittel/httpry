@@ -94,6 +94,7 @@ sub main {
         my $self   = shift;
         my $record = shift;
         my $curr_line;
+        my $decoded_uri;
 
         # Make sure we really want to be here
         return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
@@ -102,16 +103,16 @@ sub main {
         return unless exists $record->{"dest-ip"};
         return unless exists $record->{"host"};
         return unless exists $record->{"request-uri"};
-        
+
+        $decoded_uri = $record->{"request-uri"};
+        $decoded_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+        $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+
         if ((keys %flow_info) > $max_concurrent) {
                 $max_concurrent = keys %flow_info;
         }
 
-        # Convert hex encoded chars to ASCII
-        $record->{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $record->{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-
-        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t$record->{'host'}\t$record->{'request-uri'}";
+        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
 
         # Convert timestamp of current record to epoch seconds
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
@@ -132,7 +133,7 @@ sub main {
 
                 push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
 
-                if ($hitlist_file && &content_check($record->{"host"}, $record->{"request-uri"})) {
+                if ($hitlist_file && &content_check($record->{"host"}, $decoded_uri)) {
                         $tagged_flows{$record->{"source-ip"}}->{$flow_info{$record->{"source-ip"}}->{"id"}}->{$record->{"host"}}++;
                         $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
                 }
@@ -145,7 +146,7 @@ sub main {
 
                 push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
 
-                if ($hitlist_file && &content_check($record->{"host"}, $record->{"request-uri"})) {
+                if ($hitlist_file && &content_check($record->{"host"}, $decoded_uri)) {
                         $tagged_flows{$record->{"source-ip"}}->{$flow_info{$record->{"source-ip"}}->{"id"}}->{$record->{"host"}}++;
                         $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
                 }

@@ -112,6 +112,7 @@ sub process_data {
         my $len;
         my $encoded_uri;
         my $decoded_uri = "";
+        my $request_uri;
 
         # Make sure we really want to be here
         return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
@@ -119,9 +120,9 @@ sub process_data {
         return unless exists $record->{"source-ip"};
         return unless exists $record->{"host"};
 
-        # Convert hex encoded chars to ASCII
-        $record->{"request-uri"} =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $record->{"request-uri"} =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        $request_uri = $record->{"request-uri"};
+        $request_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
+        $request_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
         # Perform hostname and uri keyword search
         foreach $word (@proxy_keywords) {
@@ -130,7 +131,7 @@ sub process_data {
                         return;
                 }
 
-                if ($record->{"request-uri"} =~ /$word/i) {
+                if ($request_uri =~ /$word/i) {
                         $proxy_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
                         return;
                 }
@@ -138,14 +139,14 @@ sub process_data {
 
         # Perform URI embedded request search; this works, but appears
         # to generate too many false positives to be useful as is
-        if ($record->{"request-uri"} =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
+        if ($request_uri =~ /(\.pl|\.php|\.asp).*http:\/\/[^\/:]+/) {
                 $proxy_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
                 return;
         }
 
         # Third time's the charm; do a base 64 decode of the URI and
         # search again for an embedded request
-        if ($record->{"request-uri"} =~ /(\.pl|\.php|\.asp).*=(.+?)(?:\&|\Z)/) {
+        if ($request_uri =~ /(\.pl|\.php|\.asp).*=(.+?)(?:\&|\Z)/) {
                 $encoded_uri = $2;
                 
                 $encoded_uri =~ tr|A-Za-z0-9+=/||cd;
