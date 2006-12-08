@@ -218,15 +218,15 @@ sub send_email {
         my $output_filename = basename($output_file);
 
         $msg = MIME::Lite->new(
-                From    => 'admin@corban.edu',
+                From    => 'noreply@example.com',
                 To      => "$email_addr",
-                Subject => 'HTTPry Log Summary - ' . localtime(),
+                Subject => 'httpry Log Summary - ' . localtime(),
                 Type    => 'multipart/mixed'
         );
 
         $msg->attach(
                 Type => 'TEXT',
-                Data => 'HTTPry log summary for ' . localtime()
+                Data => 'httpry log summary for ' . localtime()
         );
 
         $msg->attach(

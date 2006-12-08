@@ -75,7 +75,7 @@ sub init {
 
 sub main {
         my $self   = shift;
-        my $record = shift; # Reference to hash containing record data
+        my $record = shift;
         my $direction;
         my $request_uri;
 

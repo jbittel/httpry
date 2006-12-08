@@ -85,29 +85,35 @@ sub main {
         my $sql    = "";
         my ($year, $mon, $day, $hour, $min, $sec) = (localtime)[5,4,3,2,1,0];
         my $now = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
+        my $timestamp;
+        my $request_uri;
 
         # Make sure we really want to be here
         return unless exists $record->{"direction"};
         return unless exists $record->{"timestamp"};
         return unless exists $record->{"source-ip"};
         return unless exists $record->{"dest-ip"};
-        return unless exists $record->{"host"};
-        return unless exists $record->{"request-uri"};
-
+        
         # Reformat packet date/time string
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
-        $record->{"timestamp"} = "$3-$1-$2 $4:$5:$6";
+        $timestamp = "$3-$1-$2 $4:$5:$6";
 
         if ($record->{"direction"} eq '>') {
-                $record->{"request-uri"} = quotemeta($record->{"request-uri"});
+                return unless exists $record->{"host"};
+                return unless exists $record->{"request-uri"};
+
+                $request_uri = quotemeta($record->{"request-uri"});
 
                 $sql = qq{ INSERT INTO client_data (timestamp, pktstamp, src_ip, dst_ip, hostname, uri)
-                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}',
-                           '$record->{"dest-ip"}', '$record->{"host"}', '$record->{"request-uri"}') };
+                           VALUES ('$now', '$timestamp', '$record->{"source-ip"}', '$record->{"dest-ip"}',
+                           '$record->{"host"}', '$request_uri') };
         } elsif ($record->{"direction"} eq '<') {
+                return unless exists $record->{"status-code"};
+                return unless exists $record->{"reason-phrase"};
+
                 $sql = qq{ INSERT INTO server_data (timestamp, pktstamp, src_ip, dst_ip, status_code, reason_phrase)
-                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}',
-                           '$record->{"dest-ip"}', '$record->{"status-code"}', '$record->{"reason-phrase"}') };
+                           VALUES ('$now', '$timestamp', '$record->{"source-ip"}', '$record->{"dest-ip"}',
+                           '$record->{"status-code"}', '$record->{"reason-phrase"}') };
         }
 
         &execute_query($dbh, $sql) if $sql;
@@ -168,7 +174,7 @@ sub connect_db {
         $dsn .= ":$port" if $port;
 
         $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1, AutoCommit => 1 })
-                or die "Error: Cannot connect to database: " . DBI->errstr;
+                or die "Error: Cannot connect to database: " . DBI->errstr . "\n";
 
         &execute_query($dbh, qq{ USE $db });
 
@@ -183,8 +189,8 @@ sub execute_query {
         my $sql = shift;
         my $sth;
 
-        $sth = $dbh->prepare($sql) or die "Error: Cannot prepare query: " . DBI->errstr;
-        $sth->execute() or die "Error: Cannot execute query: " . DBI->errstr;
+        $sth = $dbh->prepare($sql) or die "Error: Cannot prepare query: " . DBI->errstr . "\n";
+        $sth->execute() or die "Error: Cannot execute query: " . DBI->errstr . "\n";
 
         return $sth;
 }
