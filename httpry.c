@@ -376,8 +376,6 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char *header_line;
         char *req_value;
         NODE *element;
-        char client_request[] = ">";
-        char server_response[] = "<";
         char saddr[INET_ADDRSTRLEN];
         char daddr[INET_ADDRSTRLEN];
         char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
@@ -422,7 +420,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                         return;
                 }
                 if ((element = find_node(format_str, "Direction")) != NULL) {
-                        element->value = client_request;
+                        element->value = ">";
                 }
         } else if (strncmp(header_line, HTTP_STRING, 5) == 0) {
                 if (parse_server_response(header_line) == 0) {
@@ -430,7 +428,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                         return;
                 }
                 if ((element = find_node(format_str, "Direction")) != NULL) {
-                        element->value = server_response;
+                        element->value = "<";
                 }
         } else {
                 free(data);
@@ -464,7 +462,9 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 element->value = ts;
         }
 
-        /* Print data to stdout/output file according to format list */
+        /* Print data to output medium; this print is destructive so
+         * NONE of the values in this list can be legally accessed after 
+         * this function call */
         print_list(format_str);
 
         free(data);
