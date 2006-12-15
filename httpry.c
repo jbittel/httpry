@@ -648,9 +648,10 @@ void cleanup_exit(int exit_value) {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
                         warn("Could not obtain packet capture statistics\n");
                 } else {
-                        info("  %d packets received\n", pkt_stats.ps_recv);
+                        /*info("  %d packets received\n", pkt_stats.ps_recv);
                         info("  %d packets dropped\n", pkt_stats.ps_drop);
-                        info("  %d packets parsed\n", pkt_parsed);
+                        info("  %d packets parsed\n", pkt_parsed);*/
+                        info("Packets recv/drop/parsed: %d/%d/%d\n", pkt_stats.ps_recv, pkt_stats.ps_drop, pkt_parsed);
                 }
         }
 
