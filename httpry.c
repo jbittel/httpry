@@ -83,17 +83,17 @@ void display_version();
 void display_help();
 
 /* Program flags/options, set by arguments or config file */
-static char *use_binfile  = NULL;
-static int   parse_count  = -1;
-static int   daemon_mode  = 0;
-static char *use_infile   = NULL;
-static char *interface    = NULL;
-static char *capfilter    = NULL;
-static char *use_outfile  = NULL;
-static int   set_promisc  = 1;
-static char *new_user     = NULL;
-static char *out_format   = NULL;
-static char *run_dir      = NULL;
+static char *use_binfile = NULL;
+static int   parse_count = -1;
+static int   daemon_mode = 0;
+static char *use_infile  = NULL;
+static char *interface   = NULL;
+static char *capfilter   = NULL;
+static char *use_outfile = NULL;
+static int   set_promisc = 1;
+static char *new_user    = NULL;
+static char *out_format  = NULL;
+static char *run_dir     = NULL;
 
 static pcap_t *pcap_hnd         = NULL; /* Opened pcap device handle */
 static pcap_dumper_t *dump_file = NULL;
@@ -255,6 +255,8 @@ void parse_config(char *filename) {
 /* Parse format string to determine output fields */
 void parse_format_string(char *str) {
         char *element = NULL;
+
+        if (format_str != NULL) free_list(format_str); /* Hey, it could happen */
 
         format_str = create_node();
         str = strip_whitespace(str);
@@ -471,7 +473,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         if (use_binfile) pcap_dump((u_char *) dump_file, header, pkt);
         pkt_parsed++;
-        if ((parse_count != -1) && (pkt_parsed >= parse_count)) cleanup_exit(EXIT_SUCCESS);
+        if ((parse_count != -1) && (pkt_parsed >= parse_count)) {
+                info("Reached requested packet count threshold\n");
+                cleanup_exit(EXIT_SUCCESS);
+        }
 
         return;
 }
@@ -648,10 +653,7 @@ void cleanup_exit(int exit_value) {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
                         warn("Could not obtain packet capture statistics\n");
                 } else {
-                        /*info("  %d packets received\n", pkt_stats.ps_recv);
-                        info("  %d packets dropped\n", pkt_stats.ps_drop);
-                        info("  %d packets parsed\n", pkt_parsed);*/
-                        info("Packets recv/drop/parsed: %d/%d/%d\n", pkt_stats.ps_recv, pkt_stats.ps_drop, pkt_parsed);
+                        info("Statistics: %d received, %d dropped, %d parsed\n", pkt_stats.ps_recv, pkt_stats.ps_drop, pkt_parsed);
                 }
         }
 

@@ -9,7 +9,7 @@ be used in the format string.
 
 The default format that is used if none is specified consists of:
 
-        Timestamp,Source-IP,Dest-IP,Direction,Method,Hostname,Request-URI,
+        Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,
                 HTTP-Version,Status-Code,Reason-Phrase
 
 This prints the data contained in either the client request header or the
