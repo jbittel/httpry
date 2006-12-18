@@ -70,7 +70,6 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
 pcap_t *open_dev(char *dev, int promisc, char *fname);
 void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net);
 void change_user(char *name, uid_t uid, gid_t gid);
-void get_packets(pcap_t *pcap_hnd);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
@@ -360,17 +359,6 @@ void change_user(char *name, uid_t uid, gid_t gid) {
         return;
 }
 
-/* Begin packet capture/processing session */
-void get_packets(pcap_t *pcap_hnd) {
-        if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0) {
-                log_die("Cannot read packets from interface\n");
-        }
-
-        pcap_close(pcap_hnd);
-
-        return;
-}
-
 /* Process each packet that passes the capture filter */
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
@@ -465,8 +453,8 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         }
 
         /* Print data to output medium; this print is destructive so
-         * NONE of the values in this list can be legally accessed after 
-         * this function call */
+           NONE of the values in this list can be legally accessed after 
+           this function call */
         print_list(format_str);
 
         free(data);
@@ -649,7 +637,7 @@ void cleanup_exit(int exit_value) {
                 pcap_dump_close(dump_file);
         }
 
-        if (pcap_hnd && !use_infile) { /* Stats are not calculated when reading from an input file */
+        if (pcap_hnd && !use_infile) { /* Stats are not calculated when reading from a file */
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
                         warn("Could not obtain packet capture statistics\n");
                 } else {
@@ -796,15 +784,20 @@ int main(int argc, char *argv[]) {
         if (new_user) change_user(new_user, user->pw_uid, user->pw_gid);
 
         /* Clean up allocated memory before main loop */
-        if (use_binfile)  free(use_binfile);
-        if (interface)    free(interface);
-        if (capfilter)    free(capfilter);
-        if (use_outfile)  free(use_outfile);
-        if (run_dir)      free(run_dir);
-        if (new_user)     free(new_user);
-        if (out_format)   free(out_format);
+        if (use_binfile) free(use_binfile);
+        if (interface)   free(interface);
+        if (capfilter)   free(capfilter);
+        if (use_outfile) free(use_outfile);
+        if (run_dir)     free(run_dir);
+        if (new_user)    free(new_user);
+        if (out_format)  free(out_format);
 
-        get_packets(pcap_hnd);
+        /* Main packet capture loop */ 
+        if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0) {
+                log_die("Cannot read packets from interface\n");
+        }
+
+        pcap_close(pcap_hnd);
 
         cleanup_exit(EXIT_SUCCESS);
 
