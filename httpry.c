@@ -305,13 +305,13 @@ pcap_t *open_dev(char *dev, int promisc, char *fname) {
                 /* Open saved capture file */
                 pcap_hnd = pcap_open_offline(fname, errbuf);
                 if (pcap_hnd == NULL) {
-                        log_die("Cannot open capture file '%s': %s\n", fname, errbuf);
+                        log_die("Cannot open capture file: %s\n", errbuf);
                 }
         } else {
                 /* Open live capture */
                 pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, TO_MS, errbuf);
                 if (pcap_hnd == NULL) {
-                        log_die("Invalid device '%s': %s\n", dev, errbuf);
+                        log_die("Cannot start capture on '%s': %s\n", dev, errbuf);
                 }
         }
 
@@ -546,7 +546,7 @@ void runas_daemon(char *run_dir) {
         dup2(1,2);
         close(0);
         if (freopen(NULL_FILE, "a", stderr) == NULL) {
-                log_die("Cannot re-open stderr to '%s'\n", NULL_FILE);
+                log_die("Cannot reopen stderr to '%s'\n", NULL_FILE);
         }
 
         /* Assign new process group for child */
@@ -708,9 +708,6 @@ int main(int argc, char *argv[]) {
         }
 
         /* Test for argument error and warning conditions */
-        if ((getuid() != 0) && !use_infile) {
-                log_die("Root priviledges required to access the NIC\n");
-        }
         if (use_outfile && (strlen(use_outfile) == 1) && (use_outfile[0] == '-')) {
                 free(use_outfile);
                 use_outfile = NULL;
@@ -722,6 +719,12 @@ int main(int argc, char *argv[]) {
                 log_warn("Run directory only utilized when running in daemon mode\n");
         }
 
+        /* General program setup */
+        if (!capfilter) capfilter = safe_strdup(default_capfilter);
+        if (!out_format) out_format = safe_strdup(default_format);
+        if (!run_dir) run_dir = safe_strdup(default_rundir);
+        parse_format_string(out_format);
+        
         /* Get user information if we need to switch from root */
         if (new_user) {
                 if (getuid() != 0) {
@@ -741,7 +744,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (freopen(use_outfile, "a", stdout) == NULL) {
-                        log_die("Cannot re-open output stream to '%s'\n", use_outfile);
+                        log_die("Cannot reopen output stream to '%s'\n", use_outfile);
         	}
 
         	if (new_user) {
@@ -749,14 +752,10 @@ int main(int argc, char *argv[]) {
                                 log_warn("Cannot change ownership of output file\n");
                         }
         	}
-        }
 
-        /* General program setup */
-        if (!capfilter) capfilter = safe_strdup(default_capfilter);
-        if (!out_format) out_format = safe_strdup(default_format);
-        if (!run_dir) run_dir = safe_strdup(default_rundir);
-        parse_format_string(out_format);
-        if (use_outfile) print_names(format_str);
+                /* Print header line describing active output fields */
+                print_names(format_str);
+        }
 
         /* Set up packet capture */
         get_dev_info(&dev, &net, interface);
