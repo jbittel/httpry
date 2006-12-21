@@ -37,8 +37,8 @@ stop)
 
         sleep 1
 
-        if [ -f /var/run/httpry.pid ] ; then
-                rm -rf /var/run/httpry.pid
+        if [ -r /var/run/httpry.pid ] ; then
+                rm -f /var/run/httpry.pid
         fi
         ;;
 restart)

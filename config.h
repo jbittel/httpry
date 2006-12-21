@@ -46,7 +46,6 @@
 
 #define PROG_NAME "httpry"
 #define PROG_VER "0.0.9"
-#define XML_VER "0.1"
 
 /* Directory to switch to when running in daemon mode
    *** Can be overridden with -r */
@@ -60,7 +59,7 @@
 
 /* Default packet capture filter; must be standard Pcap format
    *** Can be overridden with -l */
-#define DEFAULT_CAPFILTER "tcp port 80 or port 8080"
+#define DEFAULT_CAPFILTER "tcp port 80 or 8080"
 
 /* Default output format string
    *** Can be overridden with -s */
