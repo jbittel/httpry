@@ -43,8 +43,6 @@ use Cwd;
 # -----------------------------------------------------------------------------
 my $VERBOSE    = 0;
 my $PLUGIN_DIR = "plugins";
-my $TAB        = "\t";
-my $COMMA      = ",";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -89,7 +87,7 @@ sub init_plugins {
                 } else {
                         die "Error: Could not find a valid plugins directory\n";
                 }
-        } 
+        }
 
         unless (-d $plugin_dir) {
                 die "Error: '$plugin_dir' is not a valid directory\n";
@@ -104,7 +102,7 @@ sub init_plugins {
                 die "Error: No plugins found in specified directory\n";
         }
 
-        # Load up each plugin, unless specifically exempted 
+        # Load up each plugin, unless specifically exempted
         PLUGIN: foreach $plugin (@plugins) {
                 foreach (@ignore) {
                         next PLUGIN if $_ eq $plugin;
@@ -112,7 +110,7 @@ sub init_plugins {
                 print "Loading $plugin_dir/$plugin...\n" if $VERBOSE;
                 require "$plugin_dir/$plugin";
         }
-       
+
         # Check for required functions and initialize each loaded plugin
         foreach $plugin (@callbacks) {
                 unless ($plugin->can('main')) {
@@ -180,14 +178,14 @@ sub process_logfiles {
                         # Fields: Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase
                         if ($curr_line =~ /^#/) {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
-                                @headers = split(/$COMMA/, $1);
+                                @headers = split(/\,/, $1);
                                 %record = ();
                         }
-                        
+
                         if (scalar(@headers) == 0) {
                                 die "Error: No field description line found; cannot proceed\n";
                         }
-                        @fields = split(/$TAB/, $curr_line);
+                        @fields = split(/\t/, $curr_line);
                         next if (scalar(@fields) != scalar(@headers)); # Malformed fields count
 
                         for ($i = 0; $i < scalar @fields; $i++) {
@@ -230,7 +228,7 @@ sub get_arguments {
                 print "Error: No input file(s) provided\n";
                 &print_usage();
         }
-        
+
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
         $plugin_dir  = $PLUGIN_DIR unless ($plugin_dir = $opts{p});

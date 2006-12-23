@@ -87,7 +87,7 @@ sub main {
                 $data =~ s/>/\&gt\;/g;
                 $data =~ s/\'/\&apos\;/g;
                 $data =~ s/\"/\&quot\;/g;
-                
+
                 print $fh "<$field>$data</$field>";
         }
         print $fh "\n";
@@ -96,7 +96,6 @@ sub main {
 }
 
 sub end {
-
         print $fh "</flow>\n";
         close($fh);
 
