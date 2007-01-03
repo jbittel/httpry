@@ -62,7 +62,6 @@ my $custom_plugin_dir = 0;
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
-
 &get_arguments();
 &init_plugins($plugin_dir);
 &process_logfiles();
@@ -155,8 +154,8 @@ sub register_plugin {
 # Process all files, passing each line to all registered plugins
 # -----------------------------------------------------------------------------
 sub process_logfiles {
-        my $curr_line; # Current line in input file
         my $curr_file; # Current input file
+        my $curr_line; # Current line in input file
         my $plugin;
         my @fields;
         my @headers;

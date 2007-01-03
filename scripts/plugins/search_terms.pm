@@ -141,7 +141,6 @@ sub load_config {
 sub write_output_file {
         my $hostname;
         my $term;
-        my $count = 0;
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 

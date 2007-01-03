@@ -125,7 +125,11 @@ sub move_file {
                         mkdir $output_dir;
                 }
 
-                rename "$input_file", "$output_dir/$mon-$mday-$year.log";
+                if (! -e "$output_dir/$mon-$mday-$year.log") {
+                        rename "$input_file", "$output_dir/$mon-$mday-$year.log";
+                } else {
+                        print "Error: '$output_dir/$mon-$mday-$year.log' already exists\n";
+                }
         } else {
                 print "Error: Input file '$input_file' does not exist\n";
         }

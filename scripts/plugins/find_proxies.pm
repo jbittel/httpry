@@ -215,7 +215,7 @@ sub write_output_file {
                 return;
         }
         
-        # Reformat data hash into a formatted output hash
+        # Reformat data hash into a formatted output hash, clustering by domain name
         foreach $ip (keys %proxy_lines) {
                 foreach $hostname (keys %{$proxy_lines{$ip}}) {
                         # Attempt to cluster data by domain
