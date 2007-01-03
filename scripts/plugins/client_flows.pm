@@ -360,7 +360,7 @@ sub write_summary_file {
                 print OUTFILE "\n\nCLIENT FLOWS CONTENT CHECKS\n";
                 print OUTFILE "FILTER FILE: $hitlist_file\n\n";
 
-                if ($total_tagged_lines_cnt > 0) {
+                if ($tagged_flows_cnt == 0) {
                         print OUTFILE "*** No tagged flows found\n";
                         close(OUTFILE);
                         

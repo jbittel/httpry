@@ -90,12 +90,12 @@ sub main {
                         last;
                 }
         }
-
-        # Clean up search term, bail early as necessary; order is important here!
         return unless $search_term;
-        $search_term =~ s/\+/ /g;
+
+        # Clean up search term
         $search_term =~ s/%25/%/g; # Sometimes '%' chars are double encoded
         $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        $search_term =~ s/\+/ /g;
 
         # Custom cleanup rules; would be nice to generalize this better, but
         # this will work for now
