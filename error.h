@@ -42,10 +42,10 @@
 #include "config.h"
 
 /* Macros for logging/displaying status messages */
-#define info(x...) fprintf(stderr, x)
-#define warn(x...) fprintf(stderr, "Warning: " x)
+#define info(x...) fprintf(stderr, x); fprintf(stderr, "\n");
+#define warn(x...) fprintf(stderr, "Warning: " x); fprintf(stderr, "\n");
 #define log(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
-#define die(x...) { fprintf(stderr, "Error: " x); raise(SIGINT); }
+#define die(x...) { fprintf(stderr, "Error: " x); fprintf(stderr, "\n"); raise(SIGINT); }
 #define log_info(x...) { log(x); info(x); }
 #define log_warn(x...) { log(x); warn(x); }
 #define log_die(x...) { log(x); die(x); }

@@ -157,7 +157,7 @@ void parse_args(int argc, char** argv) {
                 } else if (!strncmp(argv[argn], "-v", 2) || !strncmp(argv[argn], "--version", 9)) {
                         display_version();
                 } else {
-                        warn("Parameter '%s' unknown or missing required value\n", argv[argn]);
+                        warn("Parameter '%s' unknown or missing required value", argv[argn]);
                         display_help();
                 }
 
@@ -165,7 +165,7 @@ void parse_args(int argc, char** argv) {
         }
 
         if (argn != argc) {
-                warn("Malformed parameter list...perhaps you want to rethink it?\n");
+                warn("Malformed parameter list...perhaps you want to rethink it?");
                 display_help();
         }
 
@@ -183,7 +183,7 @@ void parse_config(char *filename) {
         int len;
 
         if ((config_file = fopen(filename, "r")) == NULL) {
-                log_die("Cannot open config file '%s'\n", filename);
+                log_die("Cannot open config file '%s'", filename);
         }
 
         while ((line = fgets(buf, sizeof(buf), config_file))) {
@@ -198,7 +198,7 @@ void parse_config(char *filename) {
                 /* Parse each line into name/value pairs */
                 name = line;
                 if ((value = strchr(line, '=')) == NULL) {
-                        warn("No separator found in config file at line %d\n", line_count);
+                        warn("No separator found in config file at line %d", line_count);
                         continue;
                 }
                 *value++ = '\0';
@@ -210,11 +210,11 @@ void parse_config(char *filename) {
                 while (isspace(*value)) value++;
 
                 if (!strlen(name)) {
-                        warn("No name found in config file at line %d\n", line_count);
+                        warn("No name found in config file at line %d", line_count);
                         continue;
                 }
                 if (!strlen(value)) {
-                        warn("No value found in config file at line %d\n", line_count);
+                        warn("No value found in config file at line %d", line_count);
                         continue;
                 }
 
@@ -241,7 +241,7 @@ void parse_config(char *filename) {
                 } else if (!strcmp(name, "binary_file")) {
                         use_binfile = safe_strdup(value);
                 } else {
-                        warn("Config file option '%s' at line %d not recognized\n", name, line_count);
+                        warn("Config file option '%s' at line %d not recognized", name, line_count);
                         continue;
                 }
         }
@@ -263,7 +263,7 @@ void parse_format_string(char *str) {
         element = strtok(str, ",");
         while (element != NULL) {
                 if (insert_node(format_str, element) == 0) {
-                        warn("Format element '%s' already provided\n", element);
+                        warn("Format element '%s' already provided", element);
                 }
 
                 element = strtok(NULL, ",");
@@ -281,7 +281,7 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
                 /* Search for network device */
                 *dev = pcap_lookupdev(errbuf);
                 if (dev == NULL) {
-                        log_die("Cannot find a valid capture device: %s\n", errbuf);
+                        log_die("Cannot find a valid capture device: %s", errbuf);
                 }
         } else {
                 /* Use network interface from user parameter */
@@ -290,7 +290,7 @@ void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
 
         /* Retrieve network information */
         if (pcap_lookupnet(*dev, net, &mask, errbuf) == -1) {
-                log_die("Cannot find network info for '%s': %s\n", *dev, errbuf);
+                log_die("Cannot find network info for '%s': %s", *dev, errbuf);
         }
 
         return;
@@ -305,13 +305,13 @@ pcap_t *open_dev(char *dev, int promisc, char *fname) {
                 /* Open saved capture file */
                 pcap_hnd = pcap_open_offline(fname, errbuf);
                 if (pcap_hnd == NULL) {
-                        log_die("Cannot open capture file: %s\n", errbuf);
+                        log_die("Cannot open capture file: %s", errbuf);
                 }
         } else {
                 /* Open live capture */
                 pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, TO_MS, errbuf);
                 if (pcap_hnd == NULL) {
-                        log_die("Cannot start capture on '%s': %s\n", dev, errbuf);
+                        log_die("Cannot start capture on '%s': %s", dev, errbuf);
                 }
         }
 
@@ -324,12 +324,12 @@ void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net) {
 
         /* Compile filter string */
         if (pcap_compile(pcap_hnd, &filter, cap_filter, 0, net) == -1) {
-                log_die("Bad capture filter syntax in '%s'\n", cap_filter);
+                log_die("Bad capture filter syntax in '%s'", cap_filter);
         }
 
         /* Apply compiled filter to pcap handle */
         if (pcap_setfilter(pcap_hnd, &filter) == -1) {
-                log_die("Cannot compile capture filter\n");
+                log_die("Cannot compile capture filter");
         }
 
         /* Clean up compiled filter */
@@ -342,18 +342,18 @@ void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net) {
 void change_user(char *name, uid_t uid, gid_t gid) {
         /* Set group information, UID and GID */
         if (initgroups(name, gid)) {
-                log_die("Cannot initialize the group access list\n");
+                log_die("Cannot initialize the group access list");
         }
         if (setgid(gid)) {
-                log_die("Cannot set GID\n");
+                log_die("Cannot set GID");
         }
         if (setuid(uid)) {
-                log_die("Cannot set UID\n");
+                log_die("Cannot set UID");
         }
 
         /* Test to see if we actually made it to the new user */
         if ((getegid() != gid) || (geteuid() != uid)) {
-                log_die("Cannot change process owner to '%s'\n", name);
+                log_die("Cannot change process owner to '%s'", name);
         }
 
         return;
@@ -391,7 +391,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         /* Copy packet payload to editable buffer */
         if ((data = malloc(size_data + 1)) == NULL) {
-                log_die("Cannot allocate memory for packet data\n");
+                log_die("Cannot allocate memory for packet data");
         }
         strncpy(data, payload, size_data);
         data[size_data] = '\0';
@@ -462,7 +462,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         if (use_binfile) pcap_dump((u_char *) dump_file, header, pkt);
         pkt_parsed++;
         if ((parse_count != -1) && (pkt_parsed >= parse_count)) {
-                info("Reached requested packet count threshold\n");
+                info("Reached requested packet count threshold");
                 cleanup_exit(EXIT_SUCCESS);
         }
 
@@ -538,7 +538,7 @@ void runas_daemon(char *run_dir) {
 
         child_pid = fork();
         if (child_pid < 0) { /* Error forking child */
-                log_die("Cannot fork child process\n");
+                log_die("Cannot fork child process");
         }
         if (child_pid > 0) exit(0); /* Parent bows out */
 
@@ -546,27 +546,27 @@ void runas_daemon(char *run_dir) {
         dup2(1,2);
         close(0);
         if (freopen(NULL_FILE, "a", stderr) == NULL) {
-                log_die("Cannot reopen stderr to '%s'\n", NULL_FILE);
+                log_die("Cannot reopen stderr to '%s'", NULL_FILE);
         }
 
         /* Assign new process group for child */
         if (setsid() == -1) {
-                log_warn("Cannot assign new session for child process\n");
+                log_warn("Cannot assign new session for child process");
         }
 
         umask(0); /* Reset file creation mask */
         if (chdir(run_dir) == -1) {
-                log_warn("Cannot change run directory to '%s', defaulting to '%s'\n", run_dir, RUN_DIR);
+                log_warn("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
                 if (chdir(RUN_DIR) == -1) {
-                        log_die("Cannot change run directory to '%s'\n", RUN_DIR);
+                        log_die("Cannot change run directory to '%s'", RUN_DIR);
                 }
         }
 
         /* Write PID into file */
         if ((pid_file = fopen(PID_FILE, "w")) == NULL) {
-                log_warn("Cannot open PID file '%s'\n", PID_FILE);
+                log_warn("Cannot open PID file '%s'", PID_FILE);
         } else {
-                fprintf(pid_file, "%d\n", getpid());
+                fprintf(pid_file, "%d", getpid());
                 fclose(pid_file);
         }
 
@@ -587,11 +587,11 @@ void runas_daemon(char *run_dir) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        log_info("Caught SIGINT, shutting down...\n");
+                        log_info("Caught SIGINT, shutting down...");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
                 case SIGTERM:
-                        log_info("Caught SIGTERM, shutting down...\n");
+                        log_info("Caught SIGTERM, shutting down...");
                         cleanup_exit(EXIT_SUCCESS);
                         break;
         }
@@ -604,7 +604,7 @@ char *safe_strdup(char *curr_str) {
         char *new_str;
 
         if ((new_str = strdup(curr_str)) == NULL) {
-                log_die("Cannot duplicate string '%s'\n", curr_str);
+                log_die("Cannot duplicate string '%s'", curr_str);
         }
 
         return new_str;
@@ -639,9 +639,9 @@ void cleanup_exit(int exit_value) {
 
         if (pcap_hnd && !use_infile) { /* Stats are not calculated when reading from a file */
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
-                        warn("Could not obtain packet capture statistics\n");
+                        warn("Could not obtain packet capture statistics");
                 } else {
-                        info("Statistics: %d received, %d dropped, %d parsed\n", pkt_stats.ps_recv, pkt_stats.ps_drop, pkt_parsed);
+                        info("Statistics: %d received, %d dropped, %d parsed", pkt_stats.ps_recv, pkt_stats.ps_drop, pkt_parsed);
                 }
         }
 
@@ -654,16 +654,16 @@ void cleanup_exit(int exit_value) {
 
 /* Display program version information */
 void display_version() {
-        info("%s version %s\n", PROG_NAME, PROG_VER);
+        info("%s version %s", PROG_NAME, PROG_VER);
 
         exit(EXIT_SUCCESS);
 }
 
 /* Display program help/usage information */
 void display_help() {
-        info("%s version %s\n", PROG_NAME, PROG_VER);
+        info("%s version %s", PROG_NAME, PROG_VER);
         info("Usage: %s [-dhpv] [-b file] [-c file] [-f file] [-i interface]\n"
-             "        [-l filter] [-n count] [-o file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
+             "        [-l filter] [-n count] [-o file] [-r dir ] [-s format] [-u user]", PROG_NAME);
         info("  -b ... binary packet output file\n"
              "  -c ... specify config file\n"
              "  -d ... run as daemon\n"
@@ -698,13 +698,13 @@ int main(int argc, char *argv[]) {
 
         /* Check for valid data from arguments */
         if ((parse_count != -1) && (parse_count < 1)) {
-                log_die("Invalid -n value of '%d': must be -1 or greater than 0\n", parse_count);
+                log_die("Invalid -n value of '%d': must be -1 or greater than 0", parse_count);
         }
         if ((daemon_mode != 0) && (daemon_mode != 1)) {
-                log_die("Invalid -d value of '%d': must be 0 or 1\n", daemon_mode);
+                log_die("Invalid -d value of '%d': must be 0 or 1", daemon_mode);
         }
         if ((set_promisc != 0) && (set_promisc != 1)) {
-                log_die("Invalid -p value of '%d': must be 0 or 1\n", set_promisc);
+                log_die("Invalid -p value of '%d': must be 0 or 1", set_promisc);
         }
 
         /* Test for argument error and warning conditions */
@@ -713,10 +713,10 @@ int main(int argc, char *argv[]) {
                 use_outfile = NULL;
         }
         if (daemon_mode && !use_outfile) {
-                log_die("Daemon mode requires an output file\n");
+                log_die("Daemon mode requires an output file");
         }
         if (!daemon_mode && run_dir) {
-                log_warn("Run directory only utilized when running in daemon mode\n");
+                log_warn("Run directory only utilized when running in daemon mode");
         }
 
         /* General program setup */
@@ -728,28 +728,28 @@ int main(int argc, char *argv[]) {
         /* Get user information if we need to switch from root */
         if (new_user) {
                 if (getuid() != 0) {
-                        log_die("You must be root to switch users\n");
+                        log_die("You must be root to switch users");
                 }
 
                 /* Get user info; die if user doesn't exist */
                 if (!(user = getpwnam(new_user))) {
-                        log_die("User '%s' not found in system\n", new_user);
+                        log_die("User '%s' not found in system", new_user);
                 }
         }
 
         /* Prepare output file if requested */
         if (use_outfile) {
                 if (use_outfile[0] != '/') {
-                        log_warn("Output file path is not absolute and may become inaccessible\n");
+                        log_warn("Output file path is not absolute and may become inaccessible");
                 }
 
                 if (freopen(use_outfile, "a", stdout) == NULL) {
-                        log_die("Cannot reopen output stream to '%s'\n", use_outfile);
+                        log_die("Cannot reopen output stream to '%s'", use_outfile);
         	}
 
         	if (new_user) {
                         if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0) {
-                                log_warn("Cannot change ownership of output file\n");
+                                log_warn("Cannot change ownership of output file");
                         }
         	}
 
@@ -765,16 +765,16 @@ int main(int argc, char *argv[]) {
         /* Open binary pcap output file for writing */
         if (use_binfile) {
                 if (use_binfile[0] != '/') {
-                        log_warn("Binary dump file path is not absolute and may become inaccessible\n");
+                        log_warn("Binary dump file path is not absolute and may become inaccessible");
                 }
 
                 if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL) {
-                        log_die("Cannot open binary dump file '%s'\n", use_binfile);
+                        log_die("Cannot open binary dump file '%s'", use_binfile);
                 }
 
                 if (new_user) {
                         if (chown(use_binfile, user->pw_uid, user->pw_gid) < 0) {
-                                log_warn("Cannot change ownership of binary dump file\n");
+                                log_warn("Cannot change ownership of binary dump file");
                         }
         	}
         }
@@ -793,7 +793,7 @@ int main(int argc, char *argv[]) {
 
         /* Main packet capture loop */ 
         if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0) {
-                log_die("Cannot read packets from interface\n");
+                log_die("Cannot read packets from interface");
         }
 
         pcap_close(pcap_hnd);
