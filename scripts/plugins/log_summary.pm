@@ -159,7 +159,7 @@ sub write_output_file {
         if ((keys %top_hosts) > 0) {
                 print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
                 foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
-                        print OUTFILE "$key\t$top_hosts{$key}\t" . percent_of($top_hosts{$key}, $total_line_cnt) . "%\n";
+                        print OUTFILE "$top_hosts{$key}\t" . percent_of($top_hosts{$key}, $total_line_cnt) . "%\t$key\n";
                         $count++;
                         last if ($count == $summary_cap);
                 }
@@ -169,7 +169,7 @@ sub write_output_file {
                 $count = 0;
                 print OUTFILE "\n\nTOP $summary_cap TOP TALKERS\n\n";
                 foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
-                        print OUTFILE "$key\t$top_talkers{$key}\t" . percent_of($top_talkers{$key}, $total_line_cnt) . "%\n";
+                        print OUTFILE "$top_talkers{$key}\t" . percent_of($top_talkers{$key}, $total_line_cnt) . "%\t$key\n";
                         $count++;
                         last if ($count == $summary_cap);
                 }
@@ -179,7 +179,7 @@ sub write_output_file {
                 $count = 0;
                 print OUTFILE "\n\nTOP $summary_cap RESPONSE CODES\n\n";
                 foreach $key (sort { $response_codes{$b} <=> $response_codes{$a} } keys %response_codes) {
-                        print OUTFILE "$key\t$response_codes{$key}\t" . percent_of($response_codes{$key}, $srv_responses) . "%\n";
+                        print OUTFILE "$response_codes{$key}\t" . percent_of($response_codes{$key}, $srv_responses) . "%\t$key\n";
                         $count++;
                         last if ($count == $summary_cap);
                 }
@@ -189,7 +189,7 @@ sub write_output_file {
                 $count = 0;
                 print OUTFILE "\n\nTOP $summary_cap FILE EXTENSIONS\n\n";
                 foreach $key (sort { $filetypes{$b} <=> $filetypes{$a} } keys %filetypes) {
-                        print OUTFILE "$key\t$filetypes{$key}\t" . percent_of($filetypes{$key}, $ext_cnt) . "%\n";
+                        print OUTFILE "$filetypes{$key}\t" . percent_of($filetypes{$key}, $ext_cnt) . "%\t$key\n";
                         $count++;
                         last if ($count == $summary_cap);
                 }
