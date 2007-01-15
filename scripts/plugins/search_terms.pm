@@ -102,7 +102,8 @@ sub main {
         return if ($search_term =~ /^tbn:/);  # Let's ignore messy Google hits, shall we?
         return if ($search_term =~ /^info:/); # ...
         return if ($search_term =~ /^http:/); # ...
-        return if ($search_term =~ /^music\/image/); # Unnecessary Froogle hits
+        return if ($search_term =~ /^music\/image/);   # Unnecessary Froogle hits
+        return if ($search_term =~ /^mail_candygram/); # Spammy Yahoo! mail hits
 
         $search_terms{$record->{"host"}}->{$search_term}++;
 
