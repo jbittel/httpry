@@ -131,6 +131,8 @@ sub parse_flows {
                         $timestamp =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
                         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
+                        &timeout_flows($epochstamp);
+
                         if (!exists $flow_info{$src_ip}) { # No existing flow so begin a new one
                                 $flow_cnt++;
                                 $flow_line_cnt++;
@@ -165,7 +167,6 @@ sub parse_flows {
                                 }
                         }
 
-                        &timeout_flows($epochstamp);
                 }
         }
 

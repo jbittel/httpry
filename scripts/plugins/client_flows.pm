@@ -118,6 +118,8 @@ sub main {
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
+        &timeout_flows($epochstamp);
+        
         if (!exists $flow_info{$record->{"source-ip"}}) { # No existing flow so begin a new one
                 $flow_cnt++;
                 $flow_line_cnt++;
@@ -151,8 +153,6 @@ sub main {
                         $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
                 }
         }
-
-        &timeout_flows($epochstamp);
 
         return;
 }
