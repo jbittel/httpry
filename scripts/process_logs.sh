@@ -1,9 +1,7 @@
 #!/bin/sh
 
 #
-# process_logs.sh | created: 6/29/2005
-#
-# Am example shell script for orchestrating some of the included tools.
+# An example shell script for orchestrating some of the included tools.
 # This script stops the httpry daemon, moves the log file to a
 # different directory, restarts httpry and then processes the new log
 # file.
