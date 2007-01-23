@@ -61,7 +61,7 @@ sub init {
 
 sub main {
         my $self   = shift;
-        my $record = shift; # Reference to hash containing record data
+        my $record = shift;
         my $hostname;
 
         # Make sure we really want to be here
@@ -69,12 +69,12 @@ sub main {
         return unless exists $record->{"host"};
 
         $hostname = $record->{"host"};
-        $hostname =~ s/[^\-\.0-9A-Za-z]//g;
+        $hostname =~ s/[^\-\.:0-9A-Za-z]//g;
  
         # Eliminate invalid hostnames and online services
         return if ($hostname eq "");
         return if ($hostname eq "-");
-        return if ($hostname =~ /^ads?\./);
+        return if ($hostname =~ /^ads?\d*?\./);
         return if ($hostname =~ /^proxy/);
         return if ($hostname =~ /^redir/);
         return if ($hostname =~ /^liveupdate/);
@@ -84,10 +84,10 @@ sub main {
         return if ($hostname =~ /^images/);
         return if ($hostname =~ /^myspace/);
 
-        # Only allow hostnames of the forms: a.b, a.b.c, a.b.c.d
-        return unless ($hostname =~ /^([\-\w]+?\.){1,3}[\-\w]+?$/);
+        # Only allow hostnames of the forms: a.b, a.b.c, a.b.c.d (with optional port)
+        return unless ($hostname =~ /^([\-\w]+?\.){1,3}[\-\w]+?(:\d+?)??$/);
 
-        $hostnames{$record->{"host"}} = "" unless exists($hostnames{$record->{"host"}});
+        $hostnames{$hostname} = "" unless exists($hostnames{$hostname});
 
         return;
 }
