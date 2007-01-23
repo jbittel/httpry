@@ -34,10 +34,6 @@
 package hostnames;
 
 # -----------------------------------------------------------------------------
-# GLOBAL CONSTANTS
-# -----------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %hostnames = ();
@@ -66,10 +62,30 @@ sub init {
 sub main {
         my $self   = shift;
         my $record = shift; # Reference to hash containing record data
+        my $hostname;
 
         # Make sure we really want to be here
         return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
         return unless exists $record->{"host"};
+
+        $hostname = $record->{"host"};
+        $hostname =~ s/[^\-\.0-9A-Za-z]//g;
+ 
+        # Eliminate invalid hostnames and online services
+        return if ($hostname eq "");
+        return if ($hostname eq "-");
+        return if ($hostname =~ /^ads?\./);
+        return if ($hostname =~ /^proxy/);
+        return if ($hostname =~ /^redir/);
+        return if ($hostname =~ /^liveupdate/);
+        return if ($hostname =~ /^anti-phishing/);
+        return if ($hostname =~ /^stats/);
+        return if ($hostname =~ /^photos/);
+        return if ($hostname =~ /^images/);
+        return if ($hostname =~ /^myspace/);
+
+        # Only allow hostnames of the forms: a.b, a.b.c, a.b.c.d
+        return unless ($hostname =~ /^([\-\w]+?\.){1,3}[\-\w]+?$/);
 
         $hostnames{$record->{"host"}} = "" unless exists($hostnames{$record->{"host"}});
 
