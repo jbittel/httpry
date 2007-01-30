@@ -1,6 +1,4 @@
 #
-# Makefile | created: 8/12/2005
-#
 # This is (hopefully) a universal makefile for httpry.
 #
 

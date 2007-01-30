@@ -47,7 +47,7 @@ NODE *create_node() {
         NODE *list;
 
         if ((list = (NODE *) malloc(sizeof(NODE))) == NULL) {
-                log_die("Cannot allocate memory for new node\n");
+                log_die("Cannot allocate memory for new node");
         }
 
         list->name = NULL;
@@ -88,7 +88,7 @@ int insert_node(NODE *list, char *str) {
 
         /* Populate node with new data */
         if ((list->name = malloc(strlen(str) + 1)) == NULL) {
-                log_die("Cannot allocate memory for node name\n");
+                log_die("Cannot allocate memory for node name");
         }
         strncpy(list->name, str, strlen(str));
         list->name[strlen(str)] = '\0';
