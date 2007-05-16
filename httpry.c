@@ -798,5 +798,5 @@ int main(int argc, char *argv[]) {
 
         cleanup_exit(EXIT_SUCCESS);
 
-        return 1;
+        return EXIT_SUCCESS;
 }

@@ -33,7 +33,7 @@ fi
 if [ ! -d "${logs_dir}" ] ; then
         die "Log file directory is not set or is invalid"
 fi
-if [ ! -r "${tools_dir}/${log_fn}" ] ; then
+if [ ! -r "${logs_dir}/${log_fn}" ] ; then
         die "Log file does not exist or is unreadable"
 fi
 
@@ -41,7 +41,7 @@ fi
 /etc/rc.d/rc.httpry stop
 
 # Compress/move/purge log files
-perl ${tools_dir}/rotate_log.pl -ct -i ${tools_dir}/${log_fn} -d ${logs_dir}
+perl ${tools_dir}/rotate_log.pl -ct -i ${logs_dir}/${log_fn} -d ${logs_dir}
 
 # Restart the httpry service
 /etc/rc.d/rc.httpry start

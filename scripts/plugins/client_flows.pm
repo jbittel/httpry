@@ -226,7 +226,7 @@ sub delete_text_files {
 }
 
 # -----------------------------------------------------------------------------
-# Search history for specified content; returns true if match occurs; store
+# Search cache for specified content; returns true if match occurs; store
 # results of search in hash so we don't have to match the same text twice
 #
 # Potential hash values: -1 unmatched / 1 matched / 0 no match
