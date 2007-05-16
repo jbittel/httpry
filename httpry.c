@@ -6,37 +6,9 @@
 
   Copyright (c) 2005-2007, Jason Bittel <jason.bittel@gmail.edu>. All rights reserved.
 
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are
-  met:
-
-  1. Redistributions of source code must retain the above copyright notice,
-     this list of conditions and the following disclaimer.
-
-  2. Redistributions in binary form must reproduce the above copyright notice,
-     this list of conditions and the following disclaimer in the documentation
-     and/or other materials provided with the distribution.
-
-  3. Neither the name of the author nor the names of its
-     contributors may be used to endorse or promote products derived from
-     this software without specific prior written permission.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
-
 */
 
 #define _BSD_SOURCE 1 /* Needed for Linux/BSD compatibility */
-#define TO_MS 0
 #define MAX_CONFIG_LEN 512
 #define MAX_TIME_LEN 20
 #define SPACE_CHAR '\x20'
@@ -64,9 +36,7 @@
 void parse_args(int argc, char** argv);
 void parse_config(char *filename);
 void parse_format_string(char *str);
-void get_dev_info(char **dev, bpf_u_int32 *net, char *interface);
-pcap_t *open_dev(char *dev, int promisc, char *fname);
-void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net);
+pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
 void change_user(char *name, uid_t uid, gid_t gid);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
@@ -270,89 +240,62 @@ void parse_format_string(char *str) {
         return;
 }
 
-/* Gather information about local network device */
-void get_dev_info(char **dev, bpf_u_int32 *net, char *interface) {
-        char errbuf[PCAP_ERRBUF_SIZE]; /* Pcap error string */
-        bpf_u_int32 mask;              /* Network mask */
+/* Find and prepare ethernet device for capturing */
+pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter) {
+        char errbuf[PCAP_ERRBUF_SIZE];
+        pcap_t *pcap_hnd;
+        char *dev = NULL;
+        bpf_u_int32 net, mask;
+        struct bpf_program filter;
 
-        if (!interface) {
-                /* Search for network device */
-                *dev = pcap_lookupdev(errbuf);
-                if (dev == NULL) {
-                        log_die("Cannot find a valid capture device: %s", errbuf);
+        /* Find interface to use and retrieve capture handle */
+        if (!filename) {
+                if (!interface) {
+                        dev = pcap_lookupdev(errbuf);
+                        if (dev == NULL)
+                                log_die("Cannot find a valid capture device: %s", errbuf);
+                } else {
+                        dev = interface;
                 }
-        } else {
-                /* Use network interface from user parameter */
-                *dev = interface;
-        }
 
-        /* Retrieve network information */
-        if (pcap_lookupnet(*dev, net, &mask, errbuf) == -1) {
-                log_die("Cannot find network info for '%s': %s", *dev, errbuf);
-        }
+                if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1)
+                        log_die("Cannot find network info for '%s': %s", dev, errbuf);
 
-        return;
-}
-
-/* Open selected device for capturing */
-pcap_t *open_dev(char *dev, int promisc, char *fname) {
-        char errbuf[PCAP_ERRBUF_SIZE]; /* Pcap error string */
-        pcap_t *pcap_hnd;              /* Opened pcap device handle */
-
-        if (fname) {
-                /* Open saved capture file */
-                pcap_hnd = pcap_open_offline(fname, errbuf);
-                if (pcap_hnd == NULL) {
-                        log_die("Cannot open capture file: %s", errbuf);
-                }
-        } else {
-                /* Open live capture */
-                pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, TO_MS, errbuf);
-                if (pcap_hnd == NULL) {
+                pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, 0, errbuf);
+                if (pcap_hnd == NULL)
                         log_die("Cannot start capture on '%s': %s", dev, errbuf);
-                }
+        } else {
+                pcap_hnd = pcap_open_offline(filename, errbuf);
+                if (pcap_hnd == NULL)
+                        log_die("Cannot open capture file: %s", errbuf);
         }
+
+        /* Compile capture filter and apply to handle */
+        if (pcap_compile(pcap_hnd, &filter, capfilter, 0, net) == -1)
+                log_die("Bad capture filter syntax in '%s'", capfilter);
+
+        if (pcap_setfilter(pcap_hnd, &filter) == -1)
+                log_die("Cannot compile capture filter");
+
+        pcap_freecode(&filter);
 
         return pcap_hnd;
 }
 
-/* Compile and set pcap filter on device handle */
-void set_filter(pcap_t *pcap_hnd, char *cap_filter, bpf_u_int32 net) {
-        struct bpf_program filter; /* Compiled capture filter */
-
-        /* Compile filter string */
-        if (pcap_compile(pcap_hnd, &filter, cap_filter, 0, net) == -1) {
-                log_die("Bad capture filter syntax in '%s'", cap_filter);
-        }
-
-        /* Apply compiled filter to pcap handle */
-        if (pcap_setfilter(pcap_hnd, &filter) == -1) {
-                log_die("Cannot compile capture filter");
-        }
-
-        /* Clean up compiled filter */
-        pcap_freecode(&filter);
-
-        return;
-}
-
 /* Change process owner to specified username */
 void change_user(char *name, uid_t uid, gid_t gid) {
-        /* Set group information, UID and GID */
-        if (initgroups(name, gid)) {
+        if (initgroups(name, gid))
                 log_die("Cannot initialize the group access list");
-        }
-        if (setgid(gid)) {
+        
+        if (setgid(gid))
                 log_die("Cannot set GID");
-        }
-        if (setuid(uid)) {
+        
+        if (setuid(uid))
                 log_die("Cannot set UID");
-        }
 
         /* Test to see if we actually made it to the new user */
-        if ((getegid() != gid) || (geteuid() != uid)) {
+        if ((getegid() != gid) || (geteuid() != uid))
                 log_die("Cannot change process owner to '%s'", name);
-        }
 
         return;
 }
@@ -535,26 +478,23 @@ void runas_daemon(char *run_dir) {
         fflush(NULL);
 
         child_pid = fork();
-        if (child_pid < 0) { /* Error forking child */
-                log_die("Cannot fork child process");
-        }
+        if (child_pid < 0) log_die("Cannot fork child process");
         if (child_pid > 0) exit(0); /* Parent bows out */
 
         /* Configure default output streams */
         dup2(1,2);
         close(0);
-        if (freopen(NULL_FILE, "a", stderr) == NULL) {
+        if (freopen(NULL_FILE, "a", stderr) == NULL)
                 log_die("Cannot reopen stderr to '%s'", NULL_FILE);
-        }
 
         /* Assign new process group for child */
-        if (setsid() == -1) {
+        if (setsid() == -1)
                 log_warn("Cannot assign new session for child process");
-        }
 
         umask(0); /* Reset file creation mask */
         if (chdir(run_dir) == -1) {
                 log_warn("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
+
                 if (chdir(RUN_DIR) == -1) {
                         log_die("Cannot change run directory to '%s'", RUN_DIR);
                 }
@@ -682,12 +622,11 @@ void display_help() {
 
 /* Main, duh */
 int main(int argc, char *argv[]) {
-        char *dev = NULL;
-        bpf_u_int32 net;
         char default_capfilter[] = DEFAULT_CAPFILTER;
         char default_format[] = DEFAULT_FORMAT;
         char default_rundir[] = RUN_DIR;
         struct passwd *user = NULL;
+        static pcap_t *pcap_hnd = NULL;
 
         signal(SIGINT, handle_signal);
 
@@ -695,27 +634,22 @@ int main(int argc, char *argv[]) {
         parse_args(argc, argv);
 
         /* Check for valid data from arguments */
-        if ((parse_count != -1) && (parse_count < 1)) {
+        if ((parse_count != -1) && (parse_count < 1))
                 log_die("Invalid -n value of '%d': must be -1 or greater than 0", parse_count);
-        }
-        if ((daemon_mode != 0) && (daemon_mode != 1)) {
+        if ((daemon_mode != 0) && (daemon_mode != 1))
                 log_die("Invalid -d value of '%d': must be 0 or 1", daemon_mode);
-        }
-        if ((set_promisc != 0) && (set_promisc != 1)) {
+        if ((set_promisc != 0) && (set_promisc != 1))
                 log_die("Invalid -p value of '%d': must be 0 or 1", set_promisc);
-        }
 
         /* Test for argument error and warning conditions */
         if (use_outfile && (strlen(use_outfile) == 1) && (use_outfile[0] == '-')) {
                 free(use_outfile);
                 use_outfile = NULL;
         }
-        if (daemon_mode && !use_outfile) {
+        if (daemon_mode && !use_outfile)
                 log_die("Daemon mode requires an output file");
-        }
-        if (!daemon_mode && run_dir) {
+        if (!daemon_mode && run_dir)
                 log_warn("Run directory only utilized when running in daemon mode");
-        }
 
         /* General program setup */
         if (!capfilter) capfilter = safe_strdup(default_capfilter);
@@ -725,55 +659,44 @@ int main(int argc, char *argv[]) {
         
         /* Get user information if we need to switch from root */
         if (new_user) {
-                if (getuid() != 0) {
+                if (getuid() != 0)
                         log_die("You must be root to switch users");
-                }
 
                 /* Get user info; die if user doesn't exist */
-                if (!(user = getpwnam(new_user))) {
+                if (!(user = getpwnam(new_user)))
                         log_die("User '%s' not found in system", new_user);
-                }
         }
 
         /* Prepare output file if requested */
         if (use_outfile) {
-                if (use_outfile[0] != '/') {
+                if (use_outfile[0] != '/')
                         log_warn("Output file path is not absolute and may become inaccessible");
-                }
 
-                if (freopen(use_outfile, "a", stdout) == NULL) {
+                if (freopen(use_outfile, "a", stdout) == NULL)
                         log_die("Cannot reopen output stream to '%s'", use_outfile);
-        	}
 
         	if (new_user) {
-                        if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0) {
+                        if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
                                 log_warn("Cannot change ownership of output file");
-                        }
         	}
 
                 /* Print header line describing active output fields */
                 print_names(format_str);
         }
 
-        /* Set up packet capture */
-        get_dev_info(&dev, &net, interface);
-        pcap_hnd = open_dev(dev, set_promisc, use_infile);
-        set_filter(pcap_hnd, capfilter, net);
+        pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
         /* Open binary pcap output file for writing */
         if (use_binfile) {
-                if (use_binfile[0] != '/') {
+                if (use_binfile[0] != '/')
                         log_warn("Binary dump file path is not absolute and may become inaccessible");
-                }
 
-                if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL) {
+                if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL)
                         log_die("Cannot open binary dump file '%s'", use_binfile);
-                }
 
                 if (new_user) {
-                        if (chown(use_binfile, user->pw_uid, user->pw_gid) < 0) {
+                        if (chown(use_binfile, user->pw_uid, user->pw_gid) < 0)
                                 log_warn("Cannot change ownership of binary dump file");
-                        }
         	}
         }
 
@@ -790,9 +713,8 @@ int main(int argc, char *argv[]) {
         if (out_format)  free(out_format);
 
         /* Main packet capture loop */ 
-        if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0) {
+        if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0)
                 log_die("Cannot read packets from interface");
-        }
 
         pcap_close(pcap_hnd);
 
