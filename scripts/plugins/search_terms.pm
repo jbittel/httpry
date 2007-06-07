@@ -37,6 +37,8 @@ package search_terms;
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %search_terms = ();
+my $num_terms = 0;
+my $num_queries = 0;
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -82,7 +84,7 @@ sub main {
 
                 if ($record->{"host"} =~ /$domain$/) {
                         # Here we use the encoded URI to ensure that '&' chars in the search term
-                        # don't break the regexp; we'll clean them out if we have a valid search
+                        # don't break the regexp; we'll clean them out if we have a valid search term
                         return unless $record->{"request-uri"} =~ /[\?\&]$name=([^\&]+?)(?:\&|\Z)/;
                         $search_term = $1;
                         last;
@@ -101,9 +103,16 @@ sub main {
         return if ($search_term =~ /^info:/); # ...
         return if ($search_term =~ /^http:/); # ...
         return if ($search_term =~ /^music\/image/);   # Unnecessary Froogle hits
-        return if ($search_term =~ /^mail_candygram/); # Spammy Yahoo! mail hits
 
         $search_terms{$record->{"host"}}->{$search_term}++;
+
+        # Count the number of terms in the query, treating quoted strings as a single term
+        $num_terms += ($search_term =~ s/\".*?\"//g);
+        $search_term =~ s/^\s+//;
+        $search_term =~ s/\s+$//;
+        $num_terms += ($search_term =~ s/\s+//g);
+        $num_terms++ if ($search_term);
+        $num_queries++;
 
         return;
 }
@@ -144,14 +153,17 @@ sub write_output_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSEARCH TERMS SUMMARY\n\n";
-        print OUTFILE "Generated: " . localtime() . "\n\n\n";
+        print OUTFILE "Generated: " . localtime() . "\n";
 
         if ((keys %search_terms) == 0) {
-                print OUTFILE "*** No search terms found\n";
+                print OUTFILE "\n\n*** No search terms found\n";
                 close(OUTFILE);
 
                 return;
         }
+
+        print OUTFILE "Num of queries: $num_queries\n";
+        print OUTFILE "Avg terms per query: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
         
         foreach $hostname (sort keys %search_terms) {
                 print OUTFILE "$hostname\n";

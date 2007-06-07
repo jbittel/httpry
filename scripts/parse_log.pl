@@ -48,7 +48,7 @@ my $PLUGIN_DIR = "plugins";
 my %nameof    = (); # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins   = (); # List of plugin files in directory
-my @ignore    = ("sample_plugin.pm", "db_dump.pm");
+my @ignore    = ("sample_plugin", "db_dump", "hostnames");
                     # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments
@@ -102,7 +102,7 @@ sub init_plugins {
         # Load up each plugin, unless specifically exempted
         PLUGIN: foreach $plugin (@plugins) {
                 foreach (@ignore) {
-                        next PLUGIN if $_ eq $plugin;
+                        next PLUGIN if $plugin =~ /^$_/;
                 }
                 print "Loading $plugin_dir/$plugin...\n" if $VERBOSE;
                 require "$plugin_dir/$plugin";
