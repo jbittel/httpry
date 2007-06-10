@@ -4,14 +4,12 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  Copyright (c) 2005-2007, Jason Bittel <jason.bittel@gmail.edu>. All rights reserved.
+  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.edu>
 
 */
 
 #define _BSD_SOURCE 1 /* Needed for Linux/BSD compatibility */
-#define MAX_CONFIG_LEN 512
 #define MAX_TIME_LEN 20
-#define SPACE_CHAR '\x20'
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -28,13 +26,11 @@
 #include <unistd.h>
 #include "config.h"
 #include "error.h"
-#include "httpry.h"
 #include "list.h"
 #include "tcp.h"
 
 /* Function declarations */
-void parse_args(int argc, char** argv);
-void parse_config(char *filename);
+extern int getopt(int,char * const *,const char *);
 void parse_format_string(char *str);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
 void change_user(char *name, uid_t uid, gid_t gid);
@@ -43,198 +39,36 @@ int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
 void runas_daemon(char *run_dir);
 void handle_signal(int sig);
-char *safe_strdup(char *curr_str);
 char *strip_whitespace(char *str);
-void cleanup_exit(int exit_value);
-void display_version();
-void display_help();
+void cleanup();
+void display_usage();
 
 /* Program flags/options, set by arguments or config file */
-static char *use_binfile = NULL;
-static int   parse_count = -1;
-static int   daemon_mode = 0;
-static char *use_infile  = NULL;
-static char *interface   = NULL;
-static char *capfilter   = NULL;
+static int parse_count = -1;
+static int daemon_mode = 0;
+static char *use_infile = NULL;
+static char *interface = NULL;
+static char *capfilter = NULL;
 static char *use_outfile = NULL;
-static int   set_promisc = 1;
-static char *new_user    = NULL;
-static char *out_format  = NULL;
-static char *run_dir     = NULL;
+static int set_promisc = 1;
+static char *new_user = NULL;
+static char *out_format = NULL;
+static char *run_dir = NULL;
 
-static pcap_t *pcap_hnd         = NULL; /* Opened pcap device handle */
-static pcap_dumper_t *dump_file = NULL;
-static unsigned pkt_parsed      = 0;    /* Count of fully parsed HTTP packets */
-NODE *format_str                = NULL;
+extern char *optarg;
+static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
+static char default_capfilter[] = DEFAULT_CAPFILTER;
+static char default_format[] = DEFAULT_FORMAT;
+static char default_rundir[] = RUN_DIR;
 
-/* Parse command line arguments */
-void parse_args(int argc, char** argv) {
-        int argn = 1;
-
-        /* Look for config file argument and process it first to ensure that the
-           command line arguments always take prescedence over the config file */
-        while ((argn < argc) && (argv[argn][0] == '-')) {
-                if ((strncmp(argv[argn], "-c", 2) == 0) && (argn + 1 < argc)) {
-                        argn++;
-                        parse_config(argv[argn]);
-                        break;
-                }
-
-                argn++;
-        }
-
-        /* Parse the rest of the command line arguments */
-        argn = 1;
-        while ((argn < argc) && (argv[argn][0] == '-')) {
-                if (!strncmp(argv[argn], "-b", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        use_binfile = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-c", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        /* Config file; already parsed above */
-                } else if (!strncmp(argv[argn], "-d", 2)) {
-                        daemon_mode = 1;
-                } else if (!strncmp(argv[argn], "-f", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        use_infile = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-h", 2) || !strncmp(argv[argn], "--help", 6)) {
-                        display_help();
-                } else if (!strncmp(argv[argn], "-i", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        interface = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-l", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        capfilter = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-n", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        parse_count = atoi(argv[argn]);
-                } else if (!strncmp(argv[argn], "-o", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        use_outfile = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-p", 2)) {
-                        set_promisc = 0;
-                } else if (!strncmp(argv[argn], "-r", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        run_dir = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-s", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        out_format = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-u", 2) && (argn + 1 < argc)) {
-                        argn++;
-                        new_user = safe_strdup(argv[argn]);
-                } else if (!strncmp(argv[argn], "-v", 2) || !strncmp(argv[argn], "--version", 9)) {
-                        display_version();
-                } else {
-                        warn("Parameter '%s' unknown or missing required value", argv[argn]);
-                        display_help();
-                }
-
-                argn++;
-        }
-
-        if (argn != argc) {
-                warn("Malformed parameter list...perhaps you want to rethink it?");
-                display_help();
-        }
-
-        return;
-}
-
-/* Read options in from config file */
-void parse_config(char *filename) {
-        FILE *config_file;
-        char buf[MAX_CONFIG_LEN];
-        char *line;
-        char *name;
-        char *value;
-        int line_count = 0;
-        int len;
-
-        if ((config_file = fopen(filename, "r")) == NULL) {
-                log_die("Cannot open config file '%s'", filename);
-        }
-
-        while ((line = fgets(buf, sizeof(buf), config_file))) {
-                line_count++;
-
-                line = strip_whitespace(line);
-
-                /* Skip empty lines and comments */
-                if (!strlen(line)) continue;
-                if (*line == '#') continue;
-
-                /* Parse each line into name/value pairs */
-                name = line;
-                if ((value = strchr(line, '=')) == NULL) {
-                        warn("No separator found in config file at line %d", line_count);
-                        continue;
-                }
-                *value++ = '\0';
-
-                /* Strip inner whitespace from name and value */
-                len = strlen(name);
-                while (len && isspace(*(name + len - 1)))
-                        *(name + (len--) - 1) = '\0';
-                while (isspace(*value)) value++;
-
-                if (!strlen(name)) {
-                        warn("No name found in config file at line %d", line_count);
-                        continue;
-                }
-                if (!strlen(value)) {
-                        warn("No value found in config file at line %d", line_count);
-                        continue;
-                }
-
-                if (!strcmp(name, "daemon_mode")) {
-                        daemon_mode = atoi(value);
-                } else if (!strcmp(name, "input_file")) {
-                        use_infile = safe_strdup(value);
-                } else if (!strcmp(name, "interface")) {
-                        interface = safe_strdup(value);
-                } else if (!strcmp(name, "capture_filter")) {
-                        capfilter = safe_strdup(value);
-                } else if (!strcmp(name, "parse_count")) {
-                        parse_count = atoi(value);
-                } else if (!strcmp(name, "output_file")) {
-                        use_outfile = safe_strdup(value);
-                } else if (!strcmp(name, "promiscuous")) {
-                        set_promisc = atoi(value);
-                } else if (!strcmp(name, "run_dir")) {
-                        run_dir = safe_strdup(value);
-                } else if (!strcmp(name, "user")) {
-                        new_user = safe_strdup(value);
-                } else if (!strcmp(name, "output_format")) {
-                        out_format = safe_strdup(value);
-                } else if (!strcmp(name, "binary_file")) {
-                        use_binfile = safe_strdup(value);
-                } else {
-                        warn("Config file option '%s' at line %d not recognized", name, line_count);
-                        continue;
-                }
-        }
-
-        fclose(config_file);
-
-        return;
-}
-
-/* Parse format string to determine output fields */
+/* Parse format string to configure output fields */
 void parse_format_string(char *str) {
-        char *element = NULL;
+        char *name;
 
-        if (format_str != NULL) free_list(format_str); /* Hey, it could happen */
+        /* TODO: do we want to copy out_format to a temp string so we don't destroy it? */
 
-        format_str = create_node();
-        str = strip_whitespace(str);
-
-        element = strtok(str, ",");
-        while (element != NULL) {
-                if (insert_node(format_str, element) == 0) {
-                        warn("Format element '%s' already provided", element);
-                }
-
-                element = strtok(NULL, ",");
+        for (str = strip_whitespace(str); (name = strtok(str, ",")); str = NULL) {
+                insert_node(name);
         }
 
         return;
@@ -253,29 +87,29 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                 if (!interface) {
                         dev = pcap_lookupdev(errbuf);
                         if (dev == NULL)
-                                log_die("Cannot find a valid capture device: %s", errbuf);
+                                LOG_DIE("Cannot find a valid capture device: %s", errbuf);
                 } else {
                         dev = interface;
                 }
 
                 if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1)
-                        log_die("Cannot find network info for '%s': %s", dev, errbuf);
+                        LOG_DIE("Cannot find network info for '%s': %s", dev, errbuf);
 
                 pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, 0, errbuf);
                 if (pcap_hnd == NULL)
-                        log_die("Cannot start capture on '%s': %s", dev, errbuf);
+                        LOG_DIE("Cannot start capture on '%s': %s", dev, errbuf);
         } else {
                 pcap_hnd = pcap_open_offline(filename, errbuf);
                 if (pcap_hnd == NULL)
-                        log_die("Cannot open capture file: %s", errbuf);
+                        LOG_DIE("Cannot open capture file: %s", errbuf);
         }
 
         /* Compile capture filter and apply to handle */
         if (pcap_compile(pcap_hnd, &filter, capfilter, 0, net) == -1)
-                log_die("Bad capture filter syntax in '%s'", capfilter);
+                LOG_DIE("Bad capture filter syntax in '%s'", capfilter);
 
         if (pcap_setfilter(pcap_hnd, &filter) == -1)
-                log_die("Cannot compile capture filter");
+                LOG_DIE("Cannot compile capture filter");
 
         pcap_freecode(&filter);
 
@@ -285,17 +119,17 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 /* Change process owner to specified username */
 void change_user(char *name, uid_t uid, gid_t gid) {
         if (initgroups(name, gid))
-                log_die("Cannot initialize the group access list");
+                LOG_DIE("Cannot initialize the group access list");
         
         if (setgid(gid))
-                log_die("Cannot set GID");
+                LOG_DIE("Cannot set GID");
         
         if (setuid(uid))
-                log_die("Cannot set UID");
+                LOG_DIE("Cannot set UID");
 
         /* Test to see if we actually made it to the new user */
         if ((getegid() != gid) || (geteuid() != uid))
-                log_die("Cannot change process owner to '%s'", name);
+                LOG_DIE("Cannot change process owner to '%s'", name);
 
         return;
 }
@@ -306,10 +140,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char *data;            /* Editable copy of packet data */
         char *header_line;
         char *req_value;
-        NODE *element;
         char saddr[INET_ADDRSTRLEN];
         char daddr[INET_ADDRSTRLEN];
         char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
+        static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
 
         const struct pkt_eth *eth; /* These structs define the layout of the packet */
         const struct pkt_ip *ip;
@@ -332,7 +166,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         /* Copy packet payload to editable buffer */
         if ((data = malloc(size_data + 1)) == NULL) {
-                log_die("Cannot allocate memory for packet data");
+                LOG_DIE("Cannot allocate memory for packet data");
         }
         strncpy(data, payload, size_data);
         data[size_data] = '\0';
@@ -350,17 +184,15 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                         free(data);
                         return;
                 }
-                if ((element = find_node(format_str, "Direction")) != NULL) {
-                        element->value = ">";
-                }
+
+                insert_value("Direction", ">");
         } else if (strncmp(header_line, HTTP_STRING, 5) == 0) {
                 if (parse_server_response(header_line) == 0) {
                         free(data);
                         return;
                 }
-                if ((element = find_node(format_str, "Direction")) != NULL) {
-                        element->value = "<";
-                }
+
+                insert_value("Direction", "<");
         } else {
                 free(data);
                 return;
@@ -372,39 +204,28 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 *req_value++ = '\0';
                 while (isspace(*req_value)) req_value++; /* Strip leading whitespace */
 
-                if ((element = find_node(format_str, header_line)) == NULL) continue;
-                element->value = req_value;
+                insert_value(header_line, req_value);
         }
 
         /* Grab source/destination IP addresses */
         strncpy(saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
         strncpy(daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
-        if ((element = find_node(format_str, "Source-IP")) != NULL) {
-                element->value = saddr;
-        }
-        if ((element = find_node(format_str, "Dest-IP")) != NULL) {
-                element->value = daddr;
-        }
+        insert_value("Source-IP", saddr);
+        insert_value("Dest-IP", daddr);
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
-        if ((element = find_node(format_str, "Timestamp")) != NULL) {
-                element->value = ts;
-        }
+        insert_value("Timestamp", ts);
 
-        /* Print data to output medium; this print is destructive so
-           NONE of the values in this list can be legally accessed after 
-           this function call */
-        print_list(format_str);
+        print_list();
 
         free(data);
 
-        if (use_binfile) pcap_dump((u_char *) dump_file, header, pkt);
         pkt_parsed++;
         if ((parse_count != -1) && (pkt_parsed >= parse_count)) {
-                info("Reached requested packet count threshold");
-                cleanup_exit(EXIT_SUCCESS);
+                cleanup();
+                exit(EXIT_SUCCESS);
         }
 
         return;
@@ -412,58 +233,36 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
 /* Parse a HTTP client request, bail at first sign of invalid request */
 int parse_client_request(char *header_line) {
-        HTTP_CLIENT client;
-        NODE *element;
+        char *method, *request_uri, *http_version;
 
-        client.method = header_line;
+        method = header_line;
 
-        if ((client.request_uri = strchr(client.method, SPACE_CHAR)) == NULL) {
-                return 0;
-        }
-        *client.request_uri++ = '\0';
-        if ((client.http_version = strchr(client.request_uri, SPACE_CHAR)) == NULL) {
-                return 0;
-        }
-        *client.http_version++ = '\0';
+        if ((request_uri = strchr(method, ' ')) == NULL) return 0;
+        *request_uri++ = '\0';
+        if ((http_version = strchr(request_uri, ' ')) == NULL) return 0;
+        *http_version++ = '\0';
 
-        if ((element = find_node(format_str, "Method")) != NULL) {
-                element->value = client.method;
-        }
-        if ((element = find_node(format_str, "Request-URI")) != NULL) {
-                element->value = client.request_uri;
-        }
-        if ((element = find_node(format_str, "HTTP-Version")) != NULL) {
-                element->value = client.http_version;
-        }
+        insert_value("Method", method);
+        insert_value("Request-URI", request_uri);
+        insert_value("HTTP-Version", http_version);
 
         return 1;
 }
 
 /* Parse a HTTP server response, bail at first sign of invalid response */
 int parse_server_response(char *header_line) {
-        HTTP_SERVER server;
-        NODE *element;
+        char *http_version, *status_code, *reason_phrase;
 
-        server.http_version = header_line;
+        http_version = header_line;
 
-        if ((server.status_code = strchr(server.http_version, SPACE_CHAR)) == NULL) {
-                return 0;
-        }
-        *server.status_code++ = '\0';
-        if ((server.reason_phrase = strchr(server.status_code, SPACE_CHAR)) == NULL) {
-                return 0;
-        }
-        *server.reason_phrase++ = '\0';
+        if ((status_code = strchr(http_version, ' ')) == NULL) return 0;
+        *status_code++ = '\0';
+        if ((reason_phrase = strchr(status_code, ' ')) == NULL) return 0;
+        *reason_phrase++ = '\0';
 
-        if ((element = find_node(format_str, "HTTP-Version")) != NULL) {
-                element->value = server.http_version;
-        }
-        if ((element = find_node(format_str, "Status-Code")) != NULL) {
-                element->value = server.status_code;
-        }
-        if ((element = find_node(format_str, "Reason-Phrase")) != NULL) {
-                element->value = server.reason_phrase;
-        }
+        insert_value("HTTP-Version", http_version);
+        insert_value("Status-Code", status_code);
+        insert_value("Reason-Phrase", reason_phrase);
 
         return 1;
 }
@@ -478,31 +277,31 @@ void runas_daemon(char *run_dir) {
         fflush(NULL);
 
         child_pid = fork();
-        if (child_pid < 0) log_die("Cannot fork child process");
+        if (child_pid < 0) LOG_DIE("Cannot fork child process");
         if (child_pid > 0) exit(0); /* Parent bows out */
 
         /* Configure default output streams */
         dup2(1,2);
         close(0);
         if (freopen(NULL_FILE, "a", stderr) == NULL)
-                log_die("Cannot reopen stderr to '%s'", NULL_FILE);
+                LOG_DIE("Cannot reopen stderr to '%s'", NULL_FILE);
 
         /* Assign new process group for child */
         if (setsid() == -1)
-                log_warn("Cannot assign new session for child process");
+                LOG_WARN("Cannot assign new session for child process");
 
         umask(0); /* Reset file creation mask */
         if (chdir(run_dir) == -1) {
-                log_warn("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
+                LOG_WARN("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
 
                 if (chdir(RUN_DIR) == -1) {
-                        log_die("Cannot change run directory to '%s'", RUN_DIR);
+                        LOG_DIE("Cannot change run directory to '%s'", RUN_DIR);
                 }
         }
 
         /* Write PID into file */
         if ((pid_file = fopen(PID_FILE, "w")) == NULL) {
-                log_warn("Cannot open PID file '%s'", PID_FILE);
+                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
         } else {
                 fprintf(pid_file, "%d", getpid());
                 fclose(pid_file);
@@ -525,27 +324,18 @@ void runas_daemon(char *run_dir) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        log_info("Caught SIGINT, shutting down...");
-                        cleanup_exit(EXIT_SUCCESS);
-                        break;
+                        LOG_WARN("Caught SIGINT, shutting down...");
+                        cleanup();
+
+                        exit(EXIT_SUCCESS);
                 case SIGTERM:
-                        log_info("Caught SIGTERM, shutting down...");
-                        cleanup_exit(EXIT_SUCCESS);
-                        break;
+                        LOG_WARN("Caught SIGTERM, shutting down...");
+                        cleanup();
+
+                        exit(EXIT_SUCCESS);
         }
 
         return;
-}
-
-/* Centralize error checking for string duplication */
-char *safe_strdup(char *curr_str) {
-        char *new_str;
-
-        if ((new_str = strdup(curr_str)) == NULL) {
-                log_die("Cannot duplicate string '%s'", curr_str);
-        }
-
-        return new_str;
 }
 
 /* Strip leading and trailing spaces from parameter string */
@@ -561,50 +351,21 @@ char *strip_whitespace(char *str) {
 }
 
 /* Clean up/flush opened filehandles on exit */
-void cleanup_exit(int exit_value) {
-        struct pcap_stat pkt_stats; /* Store stats from pcap */
-
+void cleanup() {
         fflush(NULL);
-
-        if (dump_file) {
-
-#ifndef OpenBSD
-                pcap_dump_flush(dump_file);
-#endif
-
-                pcap_dump_close(dump_file);
-        }
-
-        if (pcap_hnd && !use_infile) { /* Stats are not calculated when reading from a file */
-                if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
-                        warn("Could not obtain packet capture statistics");
-                } else {
-                        info("Statistics: %d received, %d dropped, %d parsed", pkt_stats.ps_recv, pkt_stats.ps_drop, pkt_parsed);
-                }
-        }
-
+        free_list();
         if (daemon_mode) remove(PID_FILE);
-        if (use_infile) free(use_infile);
-        if (format_str) free_list(format_str);
+        pcap_close(pcap_hnd);
 
-        exit(exit_value);
-}
-
-/* Display program version information */
-void display_version() {
-        info("%s version %s", PROG_NAME, PROG_VER);
-
-        exit(EXIT_SUCCESS);
+        return;
 }
 
 /* Display program help/usage information */
-void display_help() {
-        info("%s version %s", PROG_NAME, PROG_VER);
-        info("Usage: %s [-dhpv] [-b file] [-c file] [-f file] [-i interface]\n"
+void display_usage() {
+        INFO("%s version %s", PROG_NAME, PROG_VER);
+        INFO("Usage: %s [-dhp] [-f file] [-i interface]\n"
              "        [-l filter] [-n count] [-o file] [-r dir ] [-s format] [-u user]", PROG_NAME);
-        info("  -b ... binary packet output file\n"
-             "  -c ... specify config file\n"
-             "  -d ... run as daemon\n"
+        INFO("  -d ... run as daemon\n"
              "  -f ... input file to read from\n"
              "  -h ... print help information\n"
              "  -i ... set interface to listen on\n"
@@ -614,111 +375,89 @@ void display_help() {
              "  -p ... disable promiscuous mode\n"
              "  -r ... set running directory\n"
              "  -s ... specify output format string\n"
-             "  -u ... set process owner\n"
-             "  -v ... display version information\n");
+             "  -u ... set process owner\n");
+
+        INFO("Additional information can be found at:\n"
+             "    http://dumpsterventures.com/jason/httpry\n");
 
         exit(EXIT_SUCCESS);
 }
 
-/* Main, duh */
-int main(int argc, char *argv[]) {
-        char default_capfilter[] = DEFAULT_CAPFILTER;
-        char default_format[] = DEFAULT_FORMAT;
-        char default_rundir[] = RUN_DIR;
+int main(int argc, char **argv) {
         struct passwd *user = NULL;
-        static pcap_t *pcap_hnd = NULL;
+        int opt;
 
         signal(SIGINT, handle_signal);
 
         /* Process command line arguments */
-        parse_args(argc, argv);
-
-        /* Check for valid data from arguments */
-        if ((parse_count != -1) && (parse_count < 1))
-                log_die("Invalid -n value of '%d': must be -1 or greater than 0", parse_count);
-        if ((daemon_mode != 0) && (daemon_mode != 1))
-                log_die("Invalid -d value of '%d': must be 0 or 1", daemon_mode);
-        if ((set_promisc != 0) && (set_promisc != 1))
-                log_die("Invalid -p value of '%d': must be 0 or 1", set_promisc);
+        while ((opt = getopt(argc, argv, "dhpf:i:l:n:o:r:s:u:")) != -1) {
+                switch (opt) {
+                        case 'd': daemon_mode = 1; break;
+                        case 'f': use_infile = optarg; break;
+                        case 'h': display_usage(); break;
+                        case 'i': interface = optarg; break;
+                        case 'l': capfilter = optarg; break;
+                        case 'n': parse_count = atoi(optarg);
+                                  if ((parse_count != -1) && (parse_count < 1))
+                                          LOG_DIE("Invalid -n value");
+                                  break;
+                        case 'o': use_outfile = optarg; break;
+                        case 'p': set_promisc = 0; break;
+                        case 'r': run_dir = optarg; break;
+                        case 's': out_format = optarg; break;
+                        case 'u': new_user = optarg; break;
+                        default: display_usage();
+                }
+        }
 
         /* Test for argument error and warning conditions */
-        if (use_outfile && (strlen(use_outfile) == 1) && (use_outfile[0] == '-')) {
-                free(use_outfile);
-                use_outfile = NULL;
-        }
         if (daemon_mode && !use_outfile)
-                log_die("Daemon mode requires an output file");
+                LOG_DIE("Daemon mode requires an output file");
         if (!daemon_mode && run_dir)
-                log_warn("Run directory only utilized when running in daemon mode");
+                LOG_WARN("Run directory only utilized when running in daemon mode");
 
         /* General program setup */
-        if (!capfilter) capfilter = safe_strdup(default_capfilter);
-        if (!out_format) out_format = safe_strdup(default_format);
-        if (!run_dir) run_dir = safe_strdup(default_rundir);
+        if (!capfilter) capfilter = default_capfilter;
+        if (!out_format) out_format = default_format;
+        if (!run_dir) run_dir = default_rundir;
         parse_format_string(out_format);
         
         /* Get user information if we need to switch from root */
         if (new_user) {
                 if (getuid() != 0)
-                        log_die("You must be root to switch users");
+                        LOG_DIE("You must be root to switch users");
 
                 /* Get user info; die if user doesn't exist */
                 if (!(user = getpwnam(new_user)))
-                        log_die("User '%s' not found in system", new_user);
+                        LOG_DIE("User '%s' not found in system", new_user);
         }
 
-        /* Prepare output file if requested */
+        /* Prepare output file as necessary */
         if (use_outfile) {
                 if (use_outfile[0] != '/')
-                        log_warn("Output file path is not absolute and may become inaccessible");
+                        LOG_WARN("Output file path is not absolute and may become inaccessible");
 
                 if (freopen(use_outfile, "a", stdout) == NULL)
-                        log_die("Cannot reopen output stream to '%s'", use_outfile);
+                        LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
 
         	if (new_user) {
                         if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
-                                log_warn("Cannot change ownership of output file");
+                                LOG_WARN("Cannot change ownership of output file");
         	}
 
-                /* Print header line describing active output fields */
-                print_names(format_str);
+                print_header_line();
         }
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
-        /* Open binary pcap output file for writing */
-        if (use_binfile) {
-                if (use_binfile[0] != '/')
-                        log_warn("Binary dump file path is not absolute and may become inaccessible");
-
-                if ((dump_file = pcap_dump_open(pcap_hnd, use_binfile)) == NULL)
-                        log_die("Cannot open binary dump file '%s'", use_binfile);
-
-                if (new_user) {
-                        if (chown(use_binfile, user->pw_uid, user->pw_gid) < 0)
-                                log_warn("Cannot change ownership of binary dump file");
-        	}
-        }
-
         if (daemon_mode) runas_daemon(run_dir);
         if (new_user) change_user(new_user, user->pw_uid, user->pw_gid);
 
-        /* Clean up allocated memory before main loop */
-        if (use_binfile) free(use_binfile);
-        if (interface)   free(interface);
-        if (capfilter)   free(capfilter);
-        if (use_outfile) free(use_outfile);
-        if (run_dir)     free(run_dir);
-        if (new_user)    free(new_user);
-        if (out_format)  free(out_format);
-
         /* Main packet capture loop */ 
         if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0)
-                log_die("Cannot read packets from interface");
+                LOG_DIE("Cannot read packets from interface");
 
-        pcap_close(pcap_hnd);
-
-        cleanup_exit(EXIT_SUCCESS);
+        cleanup();
 
         return EXIT_SUCCESS;
 }

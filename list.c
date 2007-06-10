@@ -4,109 +4,83 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  Copyright (c) 2005-2007, Jason Bittel <jason.bittel@gmail.com>. All rights reserved.
-
-  Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are
-  met:
-
-  1. Redistributions of source code must retain the above copyright notice,
-     this list of conditions and the following disclaimer.
-
-  2. Redistributions in binary form must reproduce the above copyright notice,
-     this list of conditions and the following disclaimer in the documentation
-     and/or other materials provided with the distribution.
-
-  3. Neither the name of the author nor the names of its
-     contributors may be used to endorse or promote products derived from
-     this software without specific prior written permission.
-
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-  POSSIBILITY OF SUCH DAMAGE.
+  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
 
 */
 
-#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "error.h"
 #include "list.h"
 
-/* Create a new node for insertion into an existing list */
-NODE *create_node() {
-        NODE *list;
+typedef struct node NODE;
+struct node {
+        char *name;
+        char *value;
+        NODE *next;
+};
 
-        if ((list = (NODE *) malloc(sizeof(NODE))) == NULL) {
-                log_die("Cannot allocate memory for new node");
-        }
+static NODE *output_fields = NULL;
 
-        list->name = NULL;
-        list->value = NULL;
-        list->next = NULL;
+/* Insert a new node onto the tail of the output format list */
+void insert_node(char *str) {
+        NODE **node = &output_fields;
 
-        return list;
-}
+        /* Go to end of list, checking for existing node on the way */
+        while (*node) {
+                if (strcmp(str, (*node)->name) == 0) {
+                        WARN("Format element '%s' already provided", (*node)->name);
 
-/* Check to see if a node with the given name exists in the list */
-NODE *find_node(NODE *list, char *str) {
-        while (list->next != NULL) {
-                if (strcmp(str, list->name) == 0) {
-                        return list;
+                        return;
                 }
 
-                list = list->next;
+                node = &(*node)->next;
         }
 
-        return NULL;
+        /* Create a new node and append it to the list */
+        if (((*node) = (NODE *) malloc(sizeof(NODE))) == NULL) {
+                LOG_DIE("Cannot allocate memory for new node");
+        }
+
+        if (((*node)->name = malloc(strlen(str) + 1)) == NULL) {
+                LOG_DIE("Cannot allocate memory for node name");
+        }
+        
+        strcpy((*node)->name, str);
+        (*node)->value = NULL;
+        (*node)->next = NULL;
+
+        return;
 }
 
-/* Update node at the end of list and append a new tail */
-int insert_node(NODE *list, char *str) {
-        NODE *tail;
+/* If the node exists, update its value field */
+void insert_value(char *str, char *value) {
+        NODE *node = output_fields;
 
-        if (find_node(list, str) != NULL) {
-                return 0; /* A node with that name already exists */
+        while (node) {
+                if (strcmp(str, node->name) == 0) {
+                        node->value = value;
+
+                        return;
+                }
+
+                node = node->next;
         }
 
-        /* Find tail of list */
-        while (list->next != NULL) {
-                list = list->next;
-        }
-
-        /* Create new list tail */
-        tail = create_node();
-
-        /* Populate node with new data */
-        if ((list->name = malloc(strlen(str) + 1)) == NULL) {
-                log_die("Cannot allocate memory for node name");
-        }
-        strncpy(list->name, str, strlen(str));
-        list->name[strlen(str)] = '\0';
-        list->value = NULL;
-        list->next = tail;
-
-        return 1;
+        return;
 }
 
 /* Print a list of all output field names contained in the format string */
-void print_names(NODE *list) {
-        printf("# Fields: ");
-        while (list->next != NULL) {
-                printf("%s", list->name);
+void print_header_line() {
+        NODE *node = output_fields;
 
-                list = list->next;
-                if (list->next != NULL)
-                        printf(",");
+        printf("# Fields: ");
+        while (node) {
+                printf("%s", node->name);
+                if (node->next != NULL) printf(",");
+
+                node = node->next;
         }
         printf("\n");
 
@@ -115,46 +89,39 @@ void print_names(NODE *list) {
 
 /* Destructively print each node value in the list; once printed, each
    existing value is assigned to NULL to clear it for the next packet */
-void print_list(NODE *list) {
-        while (list->next != NULL) {
-                if (list->value != NULL) {
-                        printf("%s\t", list->value);
-                        list->value = NULL;
+void print_list() {
+        NODE *node = output_fields;
+
+        while (node) {
+                if (node->value) {
+                        printf("%s\t", node->value);
+                        node->value = NULL;
                 } else {
                         printf("-\t");
                 }
 
-                list = list->next;
+                node = node->next;
         }
         printf("\n");
 
         return;
 }
 
-/* Free all allocated memory for linked list */
-void free_list(NODE *list) {
-        NODE *prev;
-        NODE *curr;
+/* Free all allocated memory for linked list; only
+   called at program termination */
+void free_list() {
+        NODE *prev, *curr;
 
-        prev = list;
-        if (prev->next == NULL) { /* Empty list */
-                free(prev);
+        if (!output_fields) return;
 
-                return;
-        }
-
-        curr = prev->next;
-        while (curr->next != NULL) {
-                free(prev->name);
-                free(prev);
-
+        curr = output_fields;
+        while (curr) {
                 prev = curr;
                 curr = curr->next;
-        }
 
-        free(prev->name);
-        free(prev);
-        free(curr);
+                free(prev->name);
+                free(prev);
+        }
 
         return;
 }

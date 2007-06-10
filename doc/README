@@ -7,39 +7,32 @@
                    | |          __/ |
                    |_|         |___/
 
-        -||-  HTTPry 0.0.9  -||-
+        -||-  httpry 0.1.0  -||-
 
   HTTP logging and information display tool
     Jason Bittel <jason.bittel@gmail.com>
 
 
- "He who is not sage and wise, humane and just, cannot
-  use secret agents. And he who is not delicate and subtle
-  cannot get the truth out of them."
-                                        -- Sun Tsu
 
-
-----------------------
-I. ABOUT
-----------------------
+--{ ABOUT }--
 
 httpry is a tool designed for displaying and logging HTTP traffic. It is not
-intended to perform analysis itself, but instead to capture, parse and/or log
-the traffic for later analysis. It can be run in real-time displaying the
-traffic as it is parsed, or as a daemon process that logs to an output file. It
-is written to be as lightweight and flexible as possible, so that it can be
-easily adaptable to different applications.
+intended to perform analysis itself, but instead to capture, parse and/or
+log the traffic for later analysis. It can be run in real-time displaying
+the traffic as it is parsed, or as a daemon process that logs to an output
+file. It is written to be as lightweight and flexible as possible, so that
+it can be easily adaptable to different applications.
 
-The first question I asked myself when researching this project was "has this
-already been done?" From the perspective I was approaching the problem, I couldn't
-find a pre-existing solution. Certainly there are several existing tools that can
-be combined to provide similar output, but none of those combinations seemed
-to have the precise blend of features and performance I was looking for. If you
-find a tool or set of tools that you feel is superior to httpry, let me know as
-I'd like to take a look at it.
+The first question I asked myself when researching this project was "has
+this already been done?" From the perspective I was approaching the problem,
+I couldn't find a pre-existing solution. Certainly there are several existing
+tools that can be combined to provide similar output, but none of those
+combinations seemed to have the precise blend of features and performance I
+was looking for. If you find a tool or set of tools that you feel is superior
+to httpry, let me know as I'd like to take a look at it.
 
-"How is this tool useful?" you may ask next. Well, here's a few ideas that have
-occurred to me:
+"How is this tool useful?" you may ask next. Well, here's a few ideas that
+have occurred to me:
 
  - See what users on your network are requesting online
  - Check for proper server configuration (or improper, as the case may be)
@@ -54,68 +47,53 @@ what I've imagined. One might also note that, merely capturing and logging the
 data is only the first step; the ability to effectively process the resulting
 logs is what makes the information truly useful. To that end I've included
 several Perl scripts that are post-processors for the log files. They are
-relatively generic examples for various aspects of parsing and analyzing the
-log files. Hopefully they will be of use for developing your own log parsing
-toolset.
+relatively generic examples for various aspects of parsing and analyzing
+the log files. Hopefully they will be of use for developing your own log
+parsing toolset.
 
 
-----------------------
-II. INSTALLATION
-----------------------
+--{ INSTALLATION }--
 
 I was hoping you'd ask! Installing httpry is as simple as:
 
- $ make
- # make install
+ $ make # make install
 
-These commands will compile the latest version of the code and then install it
-appropriately in /usr/sbin. Along with httpry itself, there are several Perl
-scripts included. These tools may either be useful as-is, or as a starting point
-for your own log parsing tools. Additionally, there is an included rc.httpry
-file for automatically starting the program under Linux. This file was written
-for Slackware Linux; your distro may handle things differently. Finally, if you
-ever tire of httpry, simply run:
+These commands will compile the latest version of the code and then install
+it appropriately in /usr/sbin. Along with httpry itself, there are several
+Perl scripts included. These tools may either be useful as-is, or as a
+starting point for your own log parsing tools. Additionally, there is
+an included rc.httpry file for automatically starting the program under
+Linux. This file was written for Slackware Linux; your distro may handle
+things differently. Finally, if you ever tire of httpry, simply run:
 
  # make uninstall
 
-from your installation directory, or manually delete the executable and man
-page.
+from your installation directory, or manually delete the executable and
+man page.
 
 
-----------------------
-III. USAGE
-----------------------
+--{ USAGE }--
 
-Running the program with the -h switch will print out an abbreviated description
-of the available options. However, that switch is meant for quick reference and
-not complete documentation of program behavior. This section describes these
-options in greater detail.
+Running the program with the -h switch will print out an abbreviated
+description of the available options. However, that switch is meant for
+quick reference and not complete documentation of program behavior. This
+section describes these options in greater detail.
 
-httpry [-dhpv] [-b file] [-c count] [-f file] [-i interface] [-l filter]
-       [-n count] [-o file] [-r dir] [-s string] [-u user]
-
--b <file> :
-Dumps a binary packet capture output file to the specified location. Note that
-these are packets that pass both the pcap filter and are successfully parsed as
-HTTP packets.
-
--c <file> :
-Provides a configuration file to read settings from at initialisation. These
-settings can be overridden by command line arguments. See the included example
-configuration file for the available options and proper syntax.
+httpry [-dhp] [-f file] [-i interface] [-l filter] [-n count]
+       [-o file] [-r dir] [-s format] [-u user]
 
 -d :
-Runs the program as a daemon process. All program status output will be
-sent to the syslog. A pid file is created for the process in /var/run/httpry.pid
-by default. Requires -oT or -oX.
+Runs the program as a daemon process. All program status output
+will be sent to the syslog. A pid file is created for the process in
+/var/run/httpry.pid by default. Requires an output file.
 
 -f <file> :
-Provide an input capture file to read from instead of performing a
-live capture. The program expects a valid capture file as input. Note that this
-does not require the program to be run as root, as no access to the NIC is
-required.
+Provide an input capture file to read from instead of performing
+a live capture. The program expects a valid capture file as input. Note
+that this does not require the program to be run as root, as no access to
+the NIC is required.
 
--h or --help:
+-h :
 Displays a brief description of these options, after which the program
 terminates.
 
@@ -130,66 +108,39 @@ that follows the tcpdump format. Useful for capturing traffic on non-standard
 ports or to/from specific hosts.
 
 -n <count> :
-Specifies a number of HTTP packets to parse, following which the
-program will terminate.
+Specifies a number of HTTP packets to parse, following which
+the program will terminate.
 
 -o <file> :
-Specifies an output file for writing parsed packet data in tab-delimited text
-format. You can use '-' for the filename to force printing to STDOUT, however
-errors and other informational messages will still print to STDERR. Note that
-if the program is running as a daemon, its base directory may change so an
-absolute path to the output file should be specified.
+Specifies an output file for writing parsed packet data.
 
 -p :
-Disables promiscuous mode on the NIC. Under most circumstances this should
-not be required.
+Causes the program to not put the NIC in promiscuous mode. Note that
+the NIC could already be in that mode for another reason.
 
 -r <dir> :
-Allows a running directory to be specified when operating in daemon mode. By
-default this is set to '/', which should be adequate for most uses.
+Allows a running directory to be specified when operating in
+daemon mode. By default this is set to '/', which should be fine for most uses.
 
 -s <string> :
-Specifies a comma-delimited string that defines the HTTP fields to output. See
-the included documentation for the allowed options to use in this string.
+Specifies a comma-delimited string that defines the HTTP fields
+to output. See the included documentation for the allowed options to use in
+this string.
 
 -u <user> :
-Allows an alternate user to take ownership of the process. This is
-particularly useful when running in daemon mode. Note that you still need root
-privileges in order to run the program; it will switch to the alternate
+Allows an alternate user to take ownership of the process. This
+is particularly useful when running in daemon mode. Note that you still need
+root privileges in order to run the program; it will switch to the alternate
 credentials once initialization is complete.
 
--v or --version:
-Displays the program name and version number, after which the program
-terminates.
 
+--{ CREDITS/THANKS }--
 
-----------------------
-IV. FUTURE IDEAS
-----------------------
-
-These are ideas that have occurred to me while working on this project as
-potential ways to improve or extend the code. I'm still not convinced all of
-them are necessarily good ideas, but they are a source of inspiration and
-consideration as I continue improving the project.
-
-* Internal packet queue to help with burst traffic
-* Parent/worker threaded design
-* HTTP client/server session tracking
-* Find alternative to using pcap_loop() for processing packets
-* API to utilize data for real-time visualization applications
-* Regexp filtering for packet contents
-
-
-----------------------
-V. CREDITS/THANKS
-----------------------
-
-Thanks:
    Dug Song:                            whose tool /urlsnarf/ gave me some
    (http://monkey.org/~dugsong/dsniff/) great insights into how to properly
                                         parse HTTP packet contents
 
    Michal Zalewski:                       for the excellent program /p0f/ which
    (http://lcamtuf.coredump.cx/p0f.shtml) gave me inspiration for this project
-                                          and an idea for the direction I'd like
-                                          this code to eventually take
+                                          and an idea for the direction I'd
+                                          like this code to eventually take
