@@ -57,6 +57,7 @@ static char *run_dir = NULL;
 
 extern char *optarg;
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
+static char *buf = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
 static char default_rundir[] = RUN_DIR;
@@ -137,20 +138,18 @@ void change_user(char *name, uid_t uid, gid_t gid) {
 /* Process each packet that passes the capture filter */
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
-        char *data;            /* Editable copy of packet data */
-        char *header_line;
-        char *req_value;
-        char saddr[INET_ADDRSTRLEN];
-        char daddr[INET_ADDRSTRLEN];
-        char ts[MAX_TIME_LEN]; /* Pcap packet timestamp */
+        char *header_line, *req_value;
+        char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN];
+        char ts[MAX_TIME_LEN];
+        int is_request = 0, is_response = 0;
         static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
 
-        const struct pkt_eth *eth; /* These structs define the layout of the packet */
+        const struct pkt_eth *eth;
         const struct pkt_ip *ip;
         const struct pkt_tcp *tcp;
-        const char *payload;
+        const char *data;
 
-        int size_eth = sizeof(struct pkt_eth); /* Calculate size of packet components */
+        int size_eth = sizeof(struct pkt_eth);
         int size_ip = sizeof(struct pkt_ip);
         int size_data;
 
@@ -158,51 +157,43 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         eth = (struct pkt_eth *)(pkt);
         ip = (struct pkt_ip *)(pkt + size_eth);
         tcp = (struct pkt_tcp *)(pkt + size_eth + size_ip);
-        payload = (u_char *)(pkt + size_eth + size_ip + (tcp->th_off * 4));
+        data = (u_char *)(pkt + size_eth + size_ip + (tcp->th_off * 4));
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
         if (ip->ip_p != 0x6) return; /* Not TCP */
         if (size_data <= 0) return; /* No data to parse */
+        if (size_data > BUFSIZ) size_data = BUFSIZ;
 
-        /* Copy packet payload to editable buffer */
-        if ((data = malloc(size_data + 1)) == NULL) {
-                LOG_DIE("Cannot allocate memory for packet data");
+        /* Check if we appear to have a valid request or response */
+        if (strncmp(data, GET_STRING, 4) == 0 ||
+            strncmp(data, HEAD_STRING, 5) == 0) {
+                is_request = 1;
+        } else if (strncmp(data, HTTP_STRING, 5) == 0) {
+                is_response = 1;
+        } else {
+                return;
         }
-        strncpy(data, payload, size_data);
-        data[size_data] = '\0';
+
+        /* Copy packet data to editable buffer */
+        strncpy(buf, data, size_data);
+        buf[size_data] = '\0';
 
         /* Parse valid header line, bail if malformed */
-        if ((header_line = strtok(data, DELIM)) == NULL) {
-                free(data);
-                return;
-        }
+        if ((header_line = strtok(buf, DELIM)) == NULL) return;
 
-        /* Ensure we have a valid client request or server response */
-        if (strncmp(header_line, GET_STRING, 4) == 0 ||
-            strncmp(header_line, HEAD_STRING, 5) == 0) {
-                if (parse_client_request(header_line) == 0) {
-                        free(data);
-                        return;
-                }
-
+        if (is_request) {
+                if (parse_client_request(header_line) == 0) return;
                 insert_value("Direction", ">");
-        } else if (strncmp(header_line, HTTP_STRING, 5) == 0) {
-                if (parse_server_response(header_line) == 0) {
-                        free(data);
-                        return;
-                }
-
+        } else if (is_response) {
+                if (parse_server_response(header_line) == 0) return;
                 insert_value("Direction", "<");
-        } else {
-                free(data);
-                return;
         }
 
         /* Iterate through each HTTP request/response header line */
         while ((header_line = strtok(NULL, DELIM)) != NULL) {
                 if ((req_value = strchr(header_line, ':')) == NULL) continue;
                 *req_value++ = '\0';
-                while (isspace(*req_value)) req_value++; /* Strip leading whitespace */
+                while (isspace(*req_value)) req_value++;
 
                 insert_value(header_line, req_value);
         }
@@ -219,8 +210,6 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         insert_value("Timestamp", ts);
 
         print_list();
-
-        free(data);
 
         pkt_parsed++;
         if ((parse_count != -1) && (pkt_parsed >= parse_count)) {
@@ -294,9 +283,8 @@ void runas_daemon(char *run_dir) {
         if (chdir(run_dir) == -1) {
                 LOG_WARN("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
 
-                if (chdir(RUN_DIR) == -1) {
+                if (chdir(RUN_DIR) == -1)
                         LOG_DIE("Cannot change run directory to '%s'", RUN_DIR);
-                }
         }
 
         /* Write PID into file */
@@ -353,9 +341,12 @@ char *strip_whitespace(char *str) {
 /* Clean up/flush opened filehandles on exit */
 void cleanup() {
         fflush(NULL);
+
         free_list();
+        if (buf) free(buf);
+
         if (daemon_mode) remove(PID_FILE);
-        pcap_close(pcap_hnd);
+        if (pcap_hnd) pcap_close(pcap_hnd);
 
         return;
 }
@@ -363,19 +354,20 @@ void cleanup() {
 /* Display program help/usage information */
 void display_usage() {
         INFO("%s version %s", PROG_NAME, PROG_VER);
-        INFO("Usage: %s [-dhp] [-f file] [-i interface]\n"
-             "        [-l filter] [-n count] [-o file] [-r dir ] [-s format] [-u user]", PROG_NAME);
-        INFO("  -d ... run as daemon\n"
-             "  -f ... input file to read from\n"
-             "  -h ... print help information\n"
-             "  -i ... set interface to listen on\n"
-             "  -l ... pcap style capture filter\n"
-             "  -n ... number of HTTP packets to parse\n"
-             "  -o ... specify output file\n"
-             "  -p ... disable promiscuous mode\n"
-             "  -r ... set running directory\n"
-             "  -s ... specify output format string\n"
-             "  -u ... set process owner\n");
+        INFO("Usage: %s [-dhp] [-f file] [-i device] [-l filter] [-n count]\n"
+             "       [-o file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
+
+        INFO("  -d          run as daemon\n"
+             "  -f file     input file to read from\n"
+             "  -h          print help information\n"
+             "  -i device   set interface to listen on\n"
+             "  -l filter   pcap style capture filter\n"
+             "  -n count    number of HTTP packets to parse\n"
+             "  -o file     specify output file\n"
+             "  -p          disable promiscuous mode\n"
+             "  -r dir      set running directory\n"
+             "  -s string   specify output format string\n"
+             "  -u user     set process owner\n");
 
         INFO("Additional information can be found at:\n"
              "    http://dumpsterventures.com/jason/httpry\n");
@@ -453,7 +445,9 @@ int main(int argc, char **argv) {
         if (daemon_mode) runas_daemon(run_dir);
         if (new_user) change_user(new_user, user->pw_uid, user->pw_gid);
 
-        /* Main packet capture loop */ 
+        if ((buf = malloc(BUFSIZ + 1)) == NULL)
+                LOG_DIE("Cannot allocate memory for packet buffer");
+
         if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0)
                 LOG_DIE("Cannot read packets from interface");
 
