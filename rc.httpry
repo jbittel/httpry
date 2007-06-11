@@ -1,30 +1,32 @@
 #!/bin/sh
 
 #
-# This is a start script written and tested under Slackware Linux. If you
-# are running the program under a different system and write your own
-# init script, please send it to me and I'll include it in the package.
+# ----------------------------------------------------
+#  httpry - HTTP logging and information retrieval tool
+#  ----------------------------------------------------
+#
+#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.edu>
 #
 
-# This script assumes you are storing all your configuration in a httpry
-# config file and running the program in daemon mode.
+# Start/stop/restart httpry as a daemon process. This script
+# was written for use under Slackware Linux, but should be
+# easily modifiable for a different system.
 
-# !!! Change these values to reflect your particular setup !!!
+# You will need to add an output file here for httpry to write
+# to while in daemon mode. If there are any additional arguments
+# that need to be passed to httpry, add them to httpry_args.
+output_file=""
+httpry_args=""
 
-config_file="" # Path to httpry config file
-
-if [ ! -r ${config_file} ] ; then
-        echo "Error: Config file does not exist or is unreadable" >&2
-        exit 1
-fi
-
-case $1 in
+case ${1} in
 start)
         if [ -r /var/run/httpry.pid ] ; then
-                echo "httpry already running with PID `cat /var/run/httpry.pid`"
+                if ps acx | grep httpry 1> /dev/null 2> /dev/null ; then
+                        echo "Error: httpry already running with PID `cat /var/run/httpry.pid`"
+                fi
         else
                 echo "Starting httpry..."
-                httpry -d -c ${config_file}
+                eval httpry -d -o ${output_file} ${httpry_args}
         fi
         ;;
 stop)
@@ -34,19 +36,13 @@ stop)
         else
                 killall httpry
         fi
-
-        sleep 1
-
-        if [ -r /var/run/httpry.pid ] ; then
-                rm -f /var/run/httpry.pid
-        fi
         ;;
 restart)
-        $0 stop
+        ${0} stop
         sleep 1
-        $0 start
+        ${0} start
         ;;
 *)
-        echo "Usage: $0 [start|stop|restart]"
+        echo "Usage: ${0} [start|stop|restart]"
         ;;
 esac

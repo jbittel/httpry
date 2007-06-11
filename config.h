@@ -11,23 +11,19 @@
 #define PROG_NAME "httpry"
 #define PROG_VER "0.1.0"
 
-/* Directory to switch to when running in daemon mode
-   *** Can be overridden with -r */
-#define RUN_DIR "/"
-
 /* Location to store the PID file when running in daemon mode */
 #define PID_FILE "/var/run/httpry.pid"
 
 /* Where to send unnecessary output */
 #define NULL_FILE "/dev/null"
 
-/* Default packet capture filter; must be standard Pcap format
+/* Default packet capture filter; must be a standard BPF style filter
    *** Can be overridden with -l */
-#define DEFAULT_CAPFILTER "tcp port 80 or 8080"
+#define DEFAULT_CAPFILTER "tcp port 80 or 8080 and tcp[13] = 24"
 
-/* Default output format string
+/* Default output format string; see doc/format-string for more info
    *** Can be overridden with -s */
-#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* HTTP specific constants; should never change! */
 #define DELIM "\r\n"

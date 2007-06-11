@@ -82,7 +82,3 @@ own solutions. If one of these tools does what you need it to, great! However,
 they are more designed as starting points for your own processing code. The
 parse_log.pl script allows you to write your own plugins and for most tasks
 will work just fine. For more complex tasks you'll want to write custom code.
-
-If you write scripts of your own and think they would be useful to other
-people, feel free to send them to me and I'll review them for release with
-the project.

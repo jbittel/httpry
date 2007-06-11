@@ -32,7 +32,7 @@
 /* Function declarations */
 extern int getopt(int,char * const *,const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
-void runas_daemon(char *run_dir);
+void runas_daemon();
 void change_user(char *name, uid_t uid, gid_t gid);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
@@ -51,14 +51,12 @@ static char *use_outfile = NULL;
 static int set_promisc = 1;
 static char *new_user = NULL;
 static char *out_format = NULL;
-static char *run_dir = NULL;
 
 extern char *optarg;
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static char *buf = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
-static char default_rundir[] = RUN_DIR;
 
 /* Find and prepare ethernet device for capturing */
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter) {
@@ -103,7 +101,7 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 }
 
 /* Run program as a daemon process */
-void runas_daemon(char *run_dir) {
+void runas_daemon() {
         int child_pid;
         FILE *pid_file;
 
@@ -126,22 +124,16 @@ void runas_daemon(char *run_dir) {
                 LOG_WARN("Cannot assign new session for child process");
 
         umask(0); /* Reset file creation mask */
-        if (chdir(run_dir) == -1) {
-                LOG_WARN("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
+        if (chdir("/") == -1)
+                LOG_DIE("Cannot change run directory to '/'");
 
-                if (chdir(RUN_DIR) == -1)
-                        LOG_DIE("Cannot change run directory to '%s'", RUN_DIR);
-        }
-
-        /* Write PID into file */
-        if ((pid_file = fopen(PID_FILE, "w")) == NULL) {
-                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
-        } else {
+        if ((pid_file = fopen(PID_FILE, "w"))) {
                 fprintf(pid_file, "%d", getpid());
                 fclose(pid_file);
+        } else {
+                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
         }
 
-        /* Configure daemon signal handling */
         signal(SIGCHLD, SIG_IGN);
         signal(SIGTSTP, SIG_IGN);
         signal(SIGTTOU, SIG_IGN);
@@ -198,7 +190,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
         if (ip->ip_p != 0x6) return; /* Not TCP */
-        if (size_data <= 0) return; /* No data to parse */
+        if (size_data <= 0) return;
         if (size_data > BUFSIZ) size_data = BUFSIZ;
 
         /* Check if we appear to have a valid request or response */
@@ -215,7 +207,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         strncpy(buf, data, size_data);
         buf[size_data] = '\0';
 
-        /* Parse valid header line, bail if malformed */
+        /* Parse header line, bail if malformed */
         if ((header_line = strtok(buf, DELIM)) == NULL) return;
 
         if (is_request) {
@@ -226,7 +218,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 insert_value("Direction", "<");
         }
 
-        /* Iterate through each HTTP request/response header line */
+        /* Iterate through HTTP header lines */
         while ((header_line = strtok(NULL, DELIM)) != NULL) {
                 if ((req_value = strchr(header_line, ':')) == NULL) continue;
                 *req_value++ = '\0';
@@ -257,7 +249,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         return;
 }
 
-/* Parse a HTTP client request, bail at first sign of invalid request */
+/* Parse a HTTP client request, bail at first sign of an invalid request */
 int parse_client_request(char *header_line) {
         char *method, *request_uri, *http_version;
 
@@ -275,7 +267,7 @@ int parse_client_request(char *header_line) {
         return 1;
 }
 
-/* Parse a HTTP server response, bail at first sign of invalid response */
+/* Parse a HTTP server response, bail at first sign of an invalid response */
 int parse_server_response(char *header_line) {
         char *http_version, *status_code, *reason_phrase;
 
@@ -311,7 +303,7 @@ void handle_signal(int sig) {
         return;
 }
 
-/* Clean up/flush opened filehandles on exit */
+/* Do our best to exit gracefully */
 void cleanup() {
         fflush(NULL);
 
@@ -328,7 +320,7 @@ void cleanup() {
 void display_usage() {
         INFO("%s version %s", PROG_NAME, PROG_VER);
         INFO("Usage: %s [-dhp] [-f file] [-i device] [-l filter] [-n count]\n"
-             "       [-o file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
+             "              [-o file] [-s format] [-u user]\n", PROG_NAME);
 
         INFO("  -d           run as daemon\n"
              "  -f file      input file to read from\n"
@@ -338,7 +330,6 @@ void display_usage() {
              "  -n count     number of HTTP packets to parse\n"
              "  -o file      specify output file\n"
              "  -p           disable promiscuous mode\n"
-             "  -r dir       set running directory\n"
              "  -s string    specify output format string\n"
              "  -u user      set process owner\n");
 
@@ -355,7 +346,7 @@ int main(int argc, char **argv) {
         signal(SIGINT, handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "dhpf:i:l:n:o:r:s:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "dhpf:i:l:n:o:s:u:")) != -1) {
                 switch (opt) {
                         case 'd': daemon_mode = 1; break;
                         case 'f': use_infile = optarg; break;
@@ -367,7 +358,6 @@ int main(int argc, char **argv) {
                                   break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
-                        case 'r': run_dir = optarg; break;
                         case 's': out_format = optarg; break;
                         case 'u': new_user = optarg; break;
                         default: display_usage();
@@ -377,12 +367,9 @@ int main(int argc, char **argv) {
         /* Test for argument error and warning conditions */
         if (daemon_mode && !use_outfile)
                 LOG_DIE("Daemon mode requires an output file");
-        if (!daemon_mode && run_dir)
-                LOG_WARN("Run directory only utilized when running in daemon mode");
 
         if (!capfilter) capfilter = default_capfilter;
         if (!out_format) out_format = default_format;
-        if (!run_dir) run_dir = default_rundir;
         parse_format_string(out_format);
 
         /* Get user information if we need to switch from root */
@@ -397,9 +384,6 @@ int main(int argc, char **argv) {
 
         /* Prepare output file as necessary */
         if (use_outfile) {
-                if (use_outfile[0] != '/')
-                        LOG_WARN("Output file path is not absolute and may become inaccessible");
-
                 if (freopen(use_outfile, "a", stdout) == NULL)
                         LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
 
@@ -413,7 +397,7 @@ int main(int argc, char **argv) {
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
-        if (daemon_mode) runas_daemon(run_dir);
+        if (daemon_mode) runas_daemon();
         if (new_user) change_user(new_user, user->pw_uid, user->pw_gid);
 
         if ((buf = malloc(BUFSIZ + 1)) == NULL)

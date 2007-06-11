@@ -4,6 +4,12 @@ updated significantly between releases as well. It only lists significant
 changes and updates to the core httpry program.
 
 
+version 0.1.0
+   = Chg: removed -c, -r, and -b options
+   = Chg: tweaked default capture filter
+   - Fix: eliminated some minor memory leaks on shutdown
+   = Chg: rewrote output format handling code
+
 version 0.0.9
    + Add: parsing of both client requests and server responses
    = Chg: default capture filter less restrictive

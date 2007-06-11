@@ -21,15 +21,9 @@ intended to perform analysis itself, but instead to capture, parse and/or
 log the traffic for later analysis. It can be run in real-time displaying
 the traffic as it is parsed, or as a daemon process that logs to an output
 file. It is written to be as lightweight and flexible as possible, so that
-it can be easily adaptable to different applications.
-
-The first question I asked myself when researching this project was "has
-this already been done?" From the perspective I was approaching the problem,
-I couldn't find a pre-existing solution. Certainly there are several existing
-tools that can be combined to provide similar output, but none of those
-combinations seemed to have the precise blend of features and performance I
-was looking for. If you find a tool or set of tools that you feel is superior
-to httpry, let me know as I'd like to take a look at it.
+it can be easily adaptable to different applications. Currently it does not
+display the raw HTTP data transferred, but instead focuses on parsing and
+displaying the request/response line along with associated header fields.
 
 "How is this tool useful?" you may ask next. Well, here's a few ideas that
 have occurred to me:
@@ -42,33 +36,26 @@ have occurred to me:
  - Simple curiosity
  - It's just plain fun to watch in realtime
 
-Of course, I hope that others will find additional uses for the tool beyond
-what I've imagined. One might also note that, merely capturing and logging the
-data is only the first step; the ability to effectively process the resulting
-logs is what makes the information truly useful. To that end I've included
-several Perl scripts that are post-processors for the log files. They are
-relatively generic examples for various aspects of parsing and analyzing
-the log files. Hopefully they will be of use for developing your own log
-parsing toolset.
+In addition to the core program, there are several Perl scripts included
+for processing httpry log files. They should be useful for a number of
+generic situations, and can also serve as a useful starting point for your
+own log parsing toolset. More information about them can be found in the
+doc/perl-tools file.
 
 
 --{ INSTALLATION }--
 
-I was hoping you'd ask! Installing httpry is as simple as:
+Simply run these commands in the base httpry directory:
 
- $ make # make install
+ $ make
+ # make install
 
-These commands will compile the latest version of the code and then install
-it appropriately in /usr/sbin. Along with httpry itself, there are several
-Perl scripts included. These tools may either be useful as-is, or as a
-starting point for your own log parsing tools. Additionally, there is
-an included rc.httpry file for automatically starting the program under
-Linux. This file was written for Slackware Linux; your distro may handle
-things differently. Finally, if you ever tire of httpry, simply run:
+which will compile the program and copy the binary and man page to their
+appropriate locations. If you every need to uninstall the program run:
 
  # make uninstall
 
-from your installation directory, or manually delete the executable and
+from the installation directory, or manually delete the executable and
 man page.
 
 
@@ -80,61 +67,53 @@ quick reference and not complete documentation of program behavior. This
 section describes these options in greater detail.
 
 httpry [-dhp] [-f file] [-i interface] [-l filter] [-n count]
-       [-o file] [-r dir] [-s format] [-u user]
+       [-o file] [-s format] [-u user]
 
--d :
-Runs the program as a daemon process. All program status output
+-d
+Run the program as a daemon process. All program status output
 will be sent to the syslog. A pid file is created for the process in
 /var/run/httpry.pid by default. Requires an output file.
 
--f <file> :
+-f file
 Provide an input capture file to read from instead of performing
-a live capture. The program expects a valid capture file as input. Note
-that this does not require the program to be run as root, as no access to
-the NIC is required.
+a live capture. This option does not require root priviledges.
 
--h :
-Displays a brief description of these options, after which the program
-terminates.
+-h
+Display a brief description of these options.
 
--i <interface> :
-Specifies an ethernet interface for the program to listen on.
-This is optional; by default the program will poll the system for a list of
-interfaces and select the first one that it finds.
+-i device
+Specify an ethernet interface for the program to listen on. This is optional;
+by default the program will poll the system for a list of interfaces and
+select the first one that it finds.
 
--l <filter> :
-Allows the default capture filter to be overridden by a filter
-that follows the tcpdump format. Useful for capturing traffic on non-standard
-ports or to/from specific hosts.
+-l filter
+Specify a BPF style capture filter. This is useful for narrowing the traffic
+further than the default capture filter (or perhaps even broadning the filter
+depending on the situation).
 
--n <count> :
-Specifies a number of HTTP packets to parse, following which
-the program will terminate.
+-n count
+Parse this many HTTP packets and then exit. Defaults to 0, which means loop
+forever.
 
--o <file> :
-Specifies an output file for writing parsed packet data.
+-o file
+Specify an output file for writing parsed packet data.
 
 -p :
-Causes the program to not put the NIC in promiscuous mode. Note that
-the NIC could already be in that mode for another reason.
+Do not put the NIC in promiscuous mode on startup. Note that the NIC could
+already be in that mode for another reason.
 
--r <dir> :
-Allows a running directory to be specified when operating in
-daemon mode. By default this is set to '/', which should be fine for most uses.
+-s string
+Specify a comma-delimited string that defines the parsed HTTP data to output.
+See the doc/format-string file for further information about the options and
+syntax.
 
--s <string> :
-Specifies a comma-delimited string that defines the HTTP fields
-to output. See the included documentation for the allowed options to use in
-this string.
-
--u <user> :
-Allows an alternate user to take ownership of the process. This
-is particularly useful when running in daemon mode. Note that you still need
-root privileges in order to run the program; it will switch to the alternate
-credentials once initialization is complete.
+-u user
+Specify an alternate user to take ownership of the process and any output
+files. Note that you still need root privileges if you are performing a live
+capture; it will switch to the new user after initialization.
 
 
---{ CREDITS/THANKS }--
+--{ THANKS }--
 
    Dug Song:                            whose tool /urlsnarf/ gave me some
    (http://monkey.org/~dugsong/dsniff/) great insights into how to properly
