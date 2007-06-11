@@ -3,8 +3,8 @@ CFLAGS	= -Wall -O3 -funroll-loops -ansi
 LIBS	= -lpcap -I/usr/include/pcap -I/usr/local/include/pcap
 PROG	= httpry
 
-$(PROG): $(PROG).c list.c
-	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c list.c $(LIBS)
+$(PROG): $(PROG).c format.c
+	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c format.c $(LIBS)
 
 all:
 	$(PROG)

@@ -26,25 +26,23 @@
 #include <unistd.h>
 #include "config.h"
 #include "error.h"
-#include "list.h"
+#include "format.h"
 #include "tcp.h"
 
 /* Function declarations */
 extern int getopt(int,char * const *,const char *);
-void parse_format_string(char *str);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
+void runas_daemon(char *run_dir);
 void change_user(char *name, uid_t uid, gid_t gid);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
-void runas_daemon(char *run_dir);
 void handle_signal(int sig);
-char *strip_whitespace(char *str);
 void cleanup();
 void display_usage();
 
 /* Program flags/options, set by arguments or config file */
-static int parse_count = -1;
+static int parse_count = 0;
 static int daemon_mode = 0;
 static char *use_infile = NULL;
 static char *interface = NULL;
@@ -61,19 +59,6 @@ static char *buf = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
 static char default_rundir[] = RUN_DIR;
-
-/* Parse format string to configure output fields */
-void parse_format_string(char *str) {
-        char *name;
-
-        /* TODO: do we want to copy out_format to a temp string so we don't destroy it? */
-
-        for (str = strip_whitespace(str); (name = strtok(str, ",")); str = NULL) {
-                insert_node(name);
-        }
-
-        return;
-}
 
 /* Find and prepare ethernet device for capturing */
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter) {
@@ -115,6 +100,58 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
         pcap_freecode(&filter);
 
         return pcap_hnd;
+}
+
+/* Run program as a daemon process */
+void runas_daemon(char *run_dir) {
+        int child_pid;
+        FILE *pid_file;
+
+        if (getppid() == 1) return; /* We're already a daemon */
+
+        fflush(NULL);
+
+        child_pid = fork();
+        if (child_pid < 0) LOG_DIE("Cannot fork child process");
+        if (child_pid > 0) exit(0); /* Parent bows out */
+
+        /* Configure default output streams */
+        dup2(1,2);
+        close(0);
+        if (freopen(NULL_FILE, "a", stderr) == NULL)
+                LOG_DIE("Cannot reopen stderr to '%s'", NULL_FILE);
+
+        /* Assign new process group for child */
+        if (setsid() == -1)
+                LOG_WARN("Cannot assign new session for child process");
+
+        umask(0); /* Reset file creation mask */
+        if (chdir(run_dir) == -1) {
+                LOG_WARN("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
+
+                if (chdir(RUN_DIR) == -1)
+                        LOG_DIE("Cannot change run directory to '%s'", RUN_DIR);
+        }
+
+        /* Write PID into file */
+        if ((pid_file = fopen(PID_FILE, "w")) == NULL) {
+                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
+        } else {
+                fprintf(pid_file, "%d", getpid());
+                fclose(pid_file);
+        }
+
+        /* Configure daemon signal handling */
+        signal(SIGCHLD, SIG_IGN);
+        signal(SIGTSTP, SIG_IGN);
+        signal(SIGTTOU, SIG_IGN);
+        signal(SIGTTIN, SIG_IGN);
+        signal(SIGHUP, SIG_IGN);
+        signal(SIGTERM, handle_signal);
+
+        fflush(NULL);
+
+        return;
 }
 
 /* Change process owner to specified username */
@@ -209,10 +246,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
         insert_value("Timestamp", ts);
 
-        print_list();
+        print_values();
 
         pkt_parsed++;
-        if ((parse_count != -1) && (pkt_parsed >= parse_count)) {
+        if (parse_count && (pkt_parsed >= parse_count)) {
                 cleanup();
                 exit(EXIT_SUCCESS);
         }
@@ -256,58 +293,6 @@ int parse_server_response(char *header_line) {
         return 1;
 }
 
-/* Run program as a daemon process */
-void runas_daemon(char *run_dir) {
-        int child_pid;
-        FILE *pid_file;
-
-        if (getppid() == 1) return; /* We're already a daemon */
-
-        fflush(NULL);
-
-        child_pid = fork();
-        if (child_pid < 0) LOG_DIE("Cannot fork child process");
-        if (child_pid > 0) exit(0); /* Parent bows out */
-
-        /* Configure default output streams */
-        dup2(1,2);
-        close(0);
-        if (freopen(NULL_FILE, "a", stderr) == NULL)
-                LOG_DIE("Cannot reopen stderr to '%s'", NULL_FILE);
-
-        /* Assign new process group for child */
-        if (setsid() == -1)
-                LOG_WARN("Cannot assign new session for child process");
-
-        umask(0); /* Reset file creation mask */
-        if (chdir(run_dir) == -1) {
-                LOG_WARN("Cannot change run directory to '%s', defaulting to '%s'", run_dir, RUN_DIR);
-
-                if (chdir(RUN_DIR) == -1)
-                        LOG_DIE("Cannot change run directory to '%s'", RUN_DIR);
-        }
-
-        /* Write PID into file */
-        if ((pid_file = fopen(PID_FILE, "w")) == NULL) {
-                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
-        } else {
-                fprintf(pid_file, "%d", getpid());
-                fclose(pid_file);
-        }
-
-        /* Configure daemon signal handling */
-        signal(SIGCHLD, SIG_IGN);
-        signal(SIGTSTP, SIG_IGN);
-        signal(SIGTTOU, SIG_IGN);
-        signal(SIGTTIN, SIG_IGN);
-        signal(SIGHUP, SIG_IGN);
-        signal(SIGTERM, handle_signal);
-
-        fflush(NULL);
-
-        return;
-}
-
 /* Perform clean shutdown if proper signal received */
 void handle_signal(int sig) {
         switch (sig) {
@@ -326,23 +311,11 @@ void handle_signal(int sig) {
         return;
 }
 
-/* Strip leading and trailing spaces from parameter string */
-char *strip_whitespace(char *str) {
-        int len;
-
-        while (isspace(*str)) str++;
-        len = strlen(str);
-        while (len && isspace(*(str + len - 1)))
-                *(str + (len--) - 1) = '\0';
-
-        return str;
-}
-
 /* Clean up/flush opened filehandles on exit */
 void cleanup() {
         fflush(NULL);
 
-        free_list();
+        free_format();
         if (buf) free(buf);
 
         if (daemon_mode) remove(PID_FILE);
@@ -357,17 +330,17 @@ void display_usage() {
         INFO("Usage: %s [-dhp] [-f file] [-i device] [-l filter] [-n count]\n"
              "       [-o file] [-r dir ] [-s format] [-u user]\n", PROG_NAME);
 
-        INFO("  -d          run as daemon\n"
-             "  -f file     input file to read from\n"
-             "  -h          print help information\n"
-             "  -i device   set interface to listen on\n"
-             "  -l filter   pcap style capture filter\n"
-             "  -n count    number of HTTP packets to parse\n"
-             "  -o file     specify output file\n"
-             "  -p          disable promiscuous mode\n"
-             "  -r dir      set running directory\n"
-             "  -s string   specify output format string\n"
-             "  -u user     set process owner\n");
+        INFO("  -d           run as daemon\n"
+             "  -f file      input file to read from\n"
+             "  -h           print help information\n"
+             "  -i device    set interface to listen on\n"
+             "  -l filter    pcap style capture filter\n"
+             "  -n count     number of HTTP packets to parse\n"
+             "  -o file      specify output file\n"
+             "  -p           disable promiscuous mode\n"
+             "  -r dir       set running directory\n"
+             "  -s string    specify output format string\n"
+             "  -u user      set process owner\n");
 
         INFO("Additional information can be found at:\n"
              "    http://dumpsterventures.com/jason/httpry\n");
@@ -390,8 +363,7 @@ int main(int argc, char **argv) {
                         case 'i': interface = optarg; break;
                         case 'l': capfilter = optarg; break;
                         case 'n': parse_count = atoi(optarg);
-                                  if ((parse_count != -1) && (parse_count < 1))
-                                          LOG_DIE("Invalid -n value");
+                                  if (parse_count < 0) LOG_DIE("Invalid -n value");
                                   break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
@@ -408,12 +380,11 @@ int main(int argc, char **argv) {
         if (!daemon_mode && run_dir)
                 LOG_WARN("Run directory only utilized when running in daemon mode");
 
-        /* General program setup */
         if (!capfilter) capfilter = default_capfilter;
         if (!out_format) out_format = default_format;
         if (!run_dir) run_dir = default_rundir;
         parse_format_string(out_format);
-        
+
         /* Get user information if we need to switch from root */
         if (new_user) {
                 if (getuid() != 0)
