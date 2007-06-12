@@ -1,13 +1,13 @@
-      _     _   _
-     | |   | | | |
-     | |__ | |_| |_ _ __  _ __ _   _
-     | '_ \| __| __| '_ \| '__| | | |
-     | | | | |_| |_| |_) | |  | |_| |
-     |_| |_|\__|\__| .__/|_|   \__, |
-                   | |          __/ |
-                   |_|         |___/
+       _     _   _
+      | |   | | | |
+      | |__ | |_| |_ _ __  _ __ _   _
+      | '_ \| __| __| '_ \| '__| | | |
+      | | | | |_| |_| |_) | |  | |_| |
+      |_| |_|\__|\__| .__/|_|   \__, |
+                    | |          __/ |
+                    |_|         |___/
 
-        -||-  httpry 0.1.0  -||-
+         -||-  httpry 0.1.0  -||-
 
   HTTP logging and information display tool
     Jason Bittel <jason.bittel@gmail.com>
@@ -66,17 +66,18 @@ description of the available options. However, that switch is meant for
 quick reference and not complete documentation of program behavior. This
 section describes these options in greater detail.
 
-httpry [-dhp] [-f file] [-i interface] [-l filter] [-n count]
-       [-o file] [-s format] [-u user]
+httpry [-dhp] [-f filter] [-i device] [-n count]
+       [-o file] [-r file] [-s format] [-u user]
 
 -d
 Run the program as a daemon process. All program status output
 will be sent to the syslog. A pid file is created for the process in
 /var/run/httpry.pid by default. Requires an output file.
 
--f file
-Provide an input capture file to read from instead of performing
-a live capture. This option does not require root priviledges.
+-f filter
+Specify a libpcap style capture filter. This is useful for narrowing
+the traffic further than the default capture filter (or perhaps even
+broadening the filter depending on the situation).
 
 -h
 Display a brief description of these options.
@@ -86,11 +87,6 @@ Specify an ethernet interface for the program to listen on. This is optional;
 by default the program will poll the system for a list of interfaces and
 select the first one that it finds.
 
--l filter
-Specify a BPF style capture filter. This is useful for narrowing the traffic
-further than the default capture filter (or perhaps even broadning the filter
-depending on the situation).
-
 -n count
 Parse this many HTTP packets and then exit. Defaults to 0, which means loop
 forever.
@@ -98,9 +94,13 @@ forever.
 -o file
 Specify an output file for writing parsed packet data.
 
--p :
+-p
 Do not put the NIC in promiscuous mode on startup. Note that the NIC could
 already be in that mode for another reason.
+
+-r file
+Provide an input capture file to read from instead of performing
+a live capture. This option does not require root priviledges.
 
 -s string
 Specify a comma-delimited string that defines the parsed HTTP data to output.
@@ -111,15 +111,3 @@ syntax.
 Specify an alternate user to take ownership of the process and any output
 files. Note that you still need root privileges if you are performing a live
 capture; it will switch to the new user after initialization.
-
-
---{ THANKS }--
-
-   Dug Song:                            whose tool /urlsnarf/ gave me some
-   (http://monkey.org/~dugsong/dsniff/) great insights into how to properly
-                                        parse HTTP packet contents
-
-   Michal Zalewski:                       for the excellent program /p0f/ which
-   (http://lcamtuf.coredump.cx/p0f.shtml) gave me inspiration for this project
-                                          and an idea for the direction I'd
-                                          like this code to eventually take

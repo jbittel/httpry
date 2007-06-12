@@ -131,7 +131,7 @@ void runas_daemon() {
                 fprintf(pid_file, "%d", getpid());
                 fclose(pid_file);
         } else {
-                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
+                LOG_WARN("Cannot access PID file '%s'", PID_FILE);
         }
 
         signal(SIGCHLD, SIG_IGN);
@@ -183,10 +183,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         int size_data;
 
         /* Position pointers within packet stream */
-        eth = (struct pkt_eth *)(pkt);
-        ip = (struct pkt_ip *)(pkt + size_eth);
-        tcp = (struct pkt_tcp *)(pkt + size_eth + size_ip);
-        data = (u_char *)(pkt + size_eth + size_ip + (tcp->th_off * 4));
+        eth = (struct pkt_eth *) (pkt);
+        ip = (struct pkt_ip *) (pkt + size_eth);
+        tcp = (struct pkt_tcp *) (pkt + size_eth + size_ip);
+        data = (u_char *) (pkt + size_eth + size_ip + (tcp->th_off * 4));
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
         if (ip->ip_p != 0x6) return; /* Not TCP */
@@ -208,7 +208,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         buf[size_data] = '\0';
 
         /* Parse header line, bail if malformed */
-        if ((header_line = strtok(buf, DELIM)) == NULL) return;
+        if ((header_line = strtok(buf, LINE_DELIM)) == NULL) return;
 
         if (is_request) {
                 if (parse_client_request(header_line) == 0) return;
@@ -219,7 +219,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         }
 
         /* Iterate through HTTP header lines */
-        while ((header_line = strtok(NULL, DELIM)) != NULL) {
+        while ((header_line = strtok(NULL, LINE_DELIM)) != NULL) {
                 if ((req_value = strchr(header_line, ':')) == NULL) continue;
                 *req_value++ = '\0';
                 while (isspace(*req_value)) req_value++;
@@ -319,17 +319,17 @@ void cleanup() {
 /* Display program help/usage information */
 void display_usage() {
         INFO("%s version %s", PROG_NAME, PROG_VER);
-        INFO("Usage: %s [-dhp] [-f file] [-i device] [-l filter] [-n count]\n"
-             "              [-o file] [-s format] [-u user]\n", PROG_NAME);
+        INFO("Usage: %s [-dhp] [-f filter] [-i device] [-n count]\n"
+             "              [-o file] [-r file] [-s format] [-u user]\n", PROG_NAME);
 
         INFO("  -d           run as daemon\n"
-             "  -f file      input file to read from\n"
+             "  -f filter    libpcap style capture filter\n"
              "  -h           print help information\n"
              "  -i device    set interface to listen on\n"
-             "  -l filter    pcap style capture filter\n"
              "  -n count     number of HTTP packets to parse\n"
              "  -o file      specify output file\n"
              "  -p           disable promiscuous mode\n"
+             "  -r file      input file to read from\n"
              "  -s string    specify output format string\n"
              "  -u user      set process owner\n");
 
@@ -346,18 +346,18 @@ int main(int argc, char **argv) {
         signal(SIGINT, handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "dhpf:i:l:n:o:s:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "dhpf:i:n:o:r:s:u:")) != -1) {
                 switch (opt) {
                         case 'd': daemon_mode = 1; break;
-                        case 'f': use_infile = optarg; break;
+                        case 'f': capfilter = optarg; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
-                        case 'l': capfilter = optarg; break;
                         case 'n': parse_count = atoi(optarg);
                                   if (parse_count < 0) LOG_DIE("Invalid -n value");
                                   break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
+                        case 'r': use_infile = optarg; break;
                         case 's': out_format = optarg; break;
                         case 'u': new_user = optarg; break;
                         default: display_usage();

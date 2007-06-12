@@ -17,16 +17,16 @@
 /* Where to send unnecessary output */
 #define NULL_FILE "/dev/null"
 
-/* Default packet capture filter; must be a standard BPF style filter
+/* Default packet capture filter; must be a standard libpcap style filter
    *** Can be overridden with -l */
-#define DEFAULT_CAPFILTER "tcp port 80 or 8080 and tcp[13] = 24"
+#define DEFAULT_CAPFILTER "tcp port 80 or 8080"
 
 /* Default output format string; see doc/format-string for more info
    *** Can be overridden with -s */
 #define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* HTTP specific constants; should never change! */
-#define DELIM "\r\n"
+#define LINE_DELIM "\r\n"
 #define GET_STRING "GET "
 #define HEAD_STRING "HEAD "
 #define HTTP_STRING "HTTP/"

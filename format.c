@@ -61,7 +61,7 @@ char *strip_whitespace(char *str) {
         return str;
 }
 
-/* Insert a new node onto the tail of the output format list */
+/* Insert a new node at the end of the output format list */
 void insert_node(char *name) {
         NODE **node = &output_fields;
 
