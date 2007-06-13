@@ -1,15 +1,17 @@
 #!/bin/sh
 
 #
+#  ----------------------------------------------------
+#  httpry - HTTP logging and information retrieval tool
+#  ----------------------------------------------------
+#
+#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.edu>
+#
+
 # An example shell script for orchestrating some of the included tools.
 # This script stops the httpry daemon, moves the log file to a
 # different directory, restarts httpry and then processes the new log
 # file.
-#
-# Some error checking is performed, but is intentionally not extensive
-# so as to not obfuscate the code. A production environment would
-# probably want to augment this script.
-#
 
 # !!! Change these values to reflect your particular setup !!!
 

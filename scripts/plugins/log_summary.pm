@@ -1,38 +1,16 @@
 #!/usr/bin/perl -w
 
 #
-# Copyright (c) 2005-2007, Jason Bittel <jason.bittel@gmail.com>. All rights reserved.
+#  ----------------------------------------------------
+#  httpry - HTTP logging and information retrieval tool
+#  ----------------------------------------------------
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the author nor the names of its
-#    contributors may be used to endorse or promote products derived from
-#    this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
+#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.edu>
 #
 
 package log_summary;
 
+use warnings;
 use File::Basename;
 use MIME::Lite;
 
@@ -54,7 +32,6 @@ my $ext_cnt        = 0;
 my $srv_responses  = 0;
 my $start_time;
 my $end_time;
-
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -147,12 +124,12 @@ sub write_output_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nLOG SUMMARY\n\n";
-        print OUTFILE "Generated:       " . localtime() . "\n";
-        print OUTFILE "Total lines:     " . $total_line_cnt . "\n";
-        print OUTFILE "Client count:    " . keys(%top_talkers) . "\n";
-        print OUTFILE "Server count:    " . keys(%top_hosts) . "\n";
-        print OUTFILE "Extension count: " . keys(%filetypes) . "\n" if ($filetype);
-        print OUTFILE "Total run time:  " . sprintf("%.1f", $end_time - $start_time) . " secs\n";
+        print OUTFILE "Generated:         " . localtime() . "\n";
+        print OUTFILE "Total lines:       " . $total_line_cnt . "\n";
+        print OUTFILE "Client count:      " . keys(%top_talkers) . "\n";
+        print OUTFILE "Server count:      " . keys(%top_hosts) . "\n";
+        print OUTFILE "Unique extensions: " . keys(%filetypes) . "\n" if ($filetype);
+        print OUTFILE "Total run time:    " . sprintf("%.1f", $end_time - $start_time) . " secs\n";
 
         if ((keys %top_hosts) > 0) {
                 print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";
