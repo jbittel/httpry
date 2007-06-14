@@ -30,7 +30,7 @@
 #include "tcp.h"
 
 /* Function declarations */
-extern int getopt(int,char * const *,const char *);
+int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
 void runas_daemon();
 void change_user(char *name, uid_t uid, gid_t gid);
@@ -168,8 +168,7 @@ void change_user(char *name, uid_t uid, gid_t gid) {
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
         char *header_line, *req_value;
-        char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN];
-        char ts[MAX_TIME_LEN];
+        char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN], ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
         static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
 

@@ -25,16 +25,16 @@ it can be easily adaptable to different applications. Currently it does not
 display the raw HTTP data transferred, but instead focuses on parsing and
 displaying the request/response line along with associated header fields.
 
-"How is this tool useful?" you may ask next. Well, here's a few ideas that
-have occurred to me:
+"How is this tool useful?" you may ask. Well, here's a few ideas that have
+occurred to me:
 
- - See what users on your network are requesting online
- - Check for proper server configuration (or improper, as the case may be)
- - Research patterns in HTTP usage
- - Watch for dangerous downloaded files
- - Verify the enforcement of HTTP policy on your network
- - Simple curiosity
- - It's just plain fun to watch in realtime
+ > See what users on your network are requesting online
+ > Check for proper server configuration (or improper, as the case may be)
+ > Research patterns in HTTP usage
+ > Watch for dangerous downloaded files
+ > Verify the enforcement of HTTP policy on your network
+ > Simple curiosity
+ > It's just plain fun to watch in realtime on a busy link
 
 In addition to the core program, there are several Perl scripts included
 for processing httpry log files. They should be useful for a number of
@@ -100,7 +100,7 @@ already be in that mode for another reason.
 
 -r file
 Provide an input capture file to read from instead of performing
-a live capture. This option does not require root priviledges.
+a live capture. This option does not require root privileges.
 
 -s string
 Specify a comma-delimited string that defines the parsed HTTP data to output.

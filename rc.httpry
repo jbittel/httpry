@@ -18,29 +18,42 @@
 output_file=""
 httpry_args=""
 
-case ${1} in
-start)
+httpry_start() {
         if [ -r /var/run/httpry.pid ] ; then
-                if ps acx | grep httpry 1> /dev/null 2> /dev/null ; then
+                # TODO: why doesn't this test work correctly on Hubble?
+                if ps acx | grep -q httpry ; then
                         echo "Error: httpry already running with PID `cat /var/run/httpry.pid`"
+                        exit 1
+                else
+                        rm -f /var/run/httpry.pid
                 fi
-        else
-                echo "Starting httpry..."
-                eval httpry -d -o ${output_file} ${httpry_args}
         fi
-        ;;
-stop)
+
+        echo "Starting httpry..."
+        eval httpry -d -o ${output_file} ${httpry_args}
+}
+
+httpry_stop() {
         echo "Stopping httpry..."
         if [ -r /var/run/httpry.pid ] ; then
                 kill `cat /var/run/httpry.pid`
+                rm -f /var/run/httpry.pid
         else
                 killall httpry
         fi
+}
+
+case ${1} in
+start)
+        httpry_start
+        ;;
+stop)
+        httpry_stop
         ;;
 restart)
-        ${0} stop
+        httpry_stop
         sleep 1
-        ${0} start
+        httpry_start
         ;;
 *)
         echo "Usage: ${0} [start|stop|restart]"

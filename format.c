@@ -147,8 +147,8 @@ void print_values() {
         return;
 }
 
-/* Free all allocated memory for format structure; only
-   called at program termination */
+/* Free all allocated memory for format structure; only called at
+   program termination */
 void free_format() {
         NODE *prev, *curr;
 
