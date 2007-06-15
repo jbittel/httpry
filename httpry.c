@@ -309,6 +309,8 @@ void cleanup() {
         free_format();
         if (buf) free(buf);
 
+        /* Note that this won't get removed if we've switched to a
+           user that doesn't have permission to delete the file */
         if (daemon_mode) remove(PID_FILE);
         if (pcap_hnd) pcap_close(pcap_hnd);
 

@@ -17,16 +17,16 @@ use Cwd;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $VERBOSE    = 0;
+my $VERBOSE = 0;
 my $PLUGIN_DIR = "plugins";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %nameof    = (); # Stores human readable plugin names
+my %nameof = ();    # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
-my @plugins   = (); # List of plugin files in directory
-my @ignore    = ("sample_plugin", "db_dump", "hostnames");
+my @plugins = ();   # List of plugin files in directory
+my @ignore = ("sample_plugin", "db_dump", "hostnames");
                     # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments
@@ -54,22 +54,22 @@ sub init_plugins {
 
         # If a custom plugin directory, assume the user knows what they're doing;
         # otherwise, search the current dir and script base dir for a plugin folder
-        unless ($custom_plugin_dir) {
-                if (-d $plugin_dir) {
+        if ($custom_plugin_dir) {
+                unless (-d $plugin_dir) {
+                        die "Error: '$plugin_dir' is not a valid directory\n";
+                }
+        } else {
+                if (-d "./".$plugin_dir) {
                         $plugin_dir = "./" . $plugin_dir;
                 } elsif (-d dirname($0).'/'.basename($plugin_dir)) {
-                        $plugin_dir = dirname($0).'/'.$plugin_dir;
+                        $plugin_dir = dirname($0).'/'.basename($plugin_dir);
                 } else {
-                        die "Error: Could not find a valid plugins directory\n";
+                        die "Error: Cannot find a '$plugin_dir' directory\n";
                 }
         }
 
-        unless (-d $plugin_dir) {
-                die "Error: '$plugin_dir' is not a valid directory\n";
-        }
-
         # Extract all plugins from specified directory
-        opendir PLUGINS, $plugin_dir or die "Error: Cannot access directory $plugin_dir: $!\n";
+        opendir PLUGINS, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
                 @plugins = grep { /\.pm$/ } readdir(PLUGINS);
         closedir PLUGINS;
 
@@ -206,7 +206,7 @@ sub get_arguments {
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
-        $plugin_dir  = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
+        $plugin_dir = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
         $custom_plugin_dir = 1 if ($opts{p});
 
         # Strip trailing slash from plugin directory path
@@ -223,7 +223,7 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 Usage: $0 [-h] [-p dir] file1 [file2 ...]
-  -h ... print this help information and exit
-  -p ... load plugins from specified directory
+  -h   print this help information and exit
+  -p   load plugins from specified directory
 USAGE
 }

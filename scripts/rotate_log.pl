@@ -17,7 +17,7 @@ use Cwd;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $TAR  = "tar";
+my $TAR = "tar";
 my $GZIP = "gzip";
 
 # -----------------------------------------------------------------------------
@@ -179,12 +179,12 @@ sub get_arguments {
         &print_usage() if ($opts{h});
 
         # Copy command line arguments to internal variables
-        $compress    = 1 if ($opts{c});
-        $del_text    = 1 if ($opts{t});
-        $input_file  = 0 unless ($input_file  = $opts{i});
+        $compress = 1 if ($opts{c});
+        $del_text = 1 if ($opts{t});
+        $input_file = 0 unless ($input_file = $opts{i});
         $purge_limit = 0 unless ($purge_limit = $opts{p});
-        $purge_size  = 0 unless ($purge_size  = $opts{m});
-        $output_dir  = 0 unless ($output_dir  = $opts{d});
+        $purge_size = 0 unless ($purge_size = $opts{m});
+        $output_dir = 0 unless ($output_dir = $opts{d});
 
         if (!$output_dir) {
                 print "Error: No output directory provided\n";
@@ -199,12 +199,12 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [-ct] [-d dir] [-i file] [-m size(MB)] [-p count]
-  -c ... compress old log files
-  -d ... set directory to move log to
-  -i ... input log file to process
-  -m ... purge old log files that exceed this size threshold
-  -p ... purge old log files that exceed this count threshold
-  -t ... delete all text files in target directory
+Usage: $0 [-ct] [-d dir] [-i file] [-m size] [-p count]
+  -c   compress old log files
+  -d   set directory to move log to
+  -i   input log file to process
+  -m   purge old log files that exceed this size threshold (in MB)
+  -p   purge old log files that exceed this count threshold
+  -t   delete all text files in target directory
 USAGE
 }

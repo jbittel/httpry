@@ -19,15 +19,15 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $PATTERN      = "\t";
-my $SENDMAIL     = "/usr/lib/sendmail -i -t";
+my $PATTERN = "\t";
+my $SENDMAIL = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
 my $TAGGED_LIMIT = 15;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %opts        = ();
+my %opts = ();
 my @input_files = ();
 my $tagged_detail;
 my $all_detail;
@@ -40,24 +40,24 @@ my $start_time; # Start tick for timing code
 my $end_time;   # End tick for timing code
 
 # Counter variables
-my $file_cnt               = 0;
-my $size_cnt               = 0;
-my $total_line_cnt         = 0;
-my $flow_cnt               = 0;
-my $flow_line_cnt          = 0;
-my $flow_min_len           = 999999;
-my $flow_max_len           = 0;
-my $tagged_flows_cnt       = 0;
+my $file_cnt = 0;
+my $size_cnt = 0;
+my $total_line_cnt = 0;
+my $flow_cnt = 0;
+my $flow_line_cnt = 0;
+my $flow_min_len = 999999;
+my $flow_max_len = 0;
+my $tagged_flows_cnt = 0;
 my $total_tagged_lines_cnt = 0;
-my $max_concurrent         = 0;
+my $max_concurrent = 0;
 
 # Data structures
-my %flow_info       = (); # Holds metadata about each flow
+my %flow_info = ();       # Holds metadata about each flow
 my %flow_data_lines = (); # Holds actual log file lines for each flow
-my %tagged_flows    = (); # Ip/flow/hostname information for tagged flows
-my %output_flows    = (); # Pruned and cleaned tagged flows for display
-my %history         = (); # Holds history of content checks to avoid matching
-my @hitlist         = ();
+my %tagged_flows = ();    # Ip/flow/hostname information for tagged flows
+my %output_flows = ();    # Pruned and cleaned tagged flows for display
+my %history = ();         # Holds history of content checks to avoid matching
+my @hitlist = ();
 
 # -----------------------------------------------------------------------------
 # Main Program
@@ -422,11 +422,11 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 Usage: $0 [-h] [-a dir] [-e email] [-l file] [-o file] [-t dir] file1 [file2 ...]
-  -a ... directory for all detail records (implicit enable)
-  -e ... email recipient for output file
-  -h ... print this help information and exit
-  -l ... hitlist file for content checks (implicit enable)
-  -o ... output file for summary and content check data
-  -t ... directory for tagged detail records (implicit enable)
+  -a   directory for all detail records (implicit enable)
+  -e   email recipient for output file
+  -h   print this help information and exit
+  -l   hitlist file for content checks (implicit enable)
+  -o   output file for summary and content check data
+  -t   directory for tagged detail records (implicit enable)
 USAGE
 }

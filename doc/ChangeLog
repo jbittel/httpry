@@ -13,6 +13,8 @@ version 0.1.0
    = Chg: significantly improved efficiency of packet parsing
    = Chg: improved data segmentation within the program
    = Chg: significant code refactoring
+   - Fix: command line arguments can now be clustered again (i.e.: -dp)
+   - Fix: output format string now correctly handles spaces between words
 
 version 0.0.9
    + Add: parsing of both client requests and server responses

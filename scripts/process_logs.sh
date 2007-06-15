@@ -20,7 +20,7 @@ logs_dir=""                        # Change this to where you want to store your
 log_fn="out.log"                   # Default file name for active log file
 parse_fn="`date +%-m-%-d-%Y`.log"  # Default date format used by rotate_log.pl
 
-# Generalized error sub; useful if you want to add file logging or somesuch
+# Generalized error sub; useful if you want to add additional error handling
 die() {
         if [ -n "${1}" ] ; then
                 echo "Error: ${1}" >&2
@@ -32,9 +32,11 @@ die() {
 if [ ! -d "${tools_dir}" ] ; then
         die "Tools directory is not set or is invalid"
 fi
+
 if [ ! -d "${logs_dir}" ] ; then
         die "Log file directory is not set or is invalid"
 fi
+
 if [ ! -r "${logs_dir}/${log_fn}" ] ; then
         die "Log file does not exist or is unreadable"
 fi
@@ -42,7 +44,7 @@ fi
 # Stop the httpry service if it is running
 /etc/rc.d/rc.httpry stop
 
-# Compress/move/purge log files
+# Move log file into folder and clean up old logs as necessary
 perl ${tools_dir}/rotate_log.pl -ct -i ${logs_dir}/${log_fn} -d ${logs_dir}
 
 # Restart the httpry service
@@ -59,3 +61,5 @@ else
                 die "Parse file is not set"
         fi
 fi
+
+exit 0
