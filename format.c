@@ -30,9 +30,10 @@ static NODE *output_fields = NULL;
 /* Parse format string to configure output fields */
 void parse_format_string(char *str) {
         char *name, *tmp, *i;
+        int num_nodes = 0;
 
         if (strlen(str) == 0)
-                LOG_WARN("Empty format string provided");
+                LOG_DIE("Empty format string provided");
 
         /* Make a temporary copy of the string so we don't destroy it */
         if ((tmp = malloc(strlen(str) + 1)) == NULL)
@@ -42,9 +43,13 @@ void parse_format_string(char *str) {
         for (i = tmp; (name = strtok(i, ",")); i = NULL) {
                 name = strip_whitespace(name);
                 insert_node(name);
+                num_nodes++;
         }
 
         free(tmp);
+
+        if (num_nodes == 0)
+                LOG_DIE("No valid fields found in format string");
 
         return;
 }

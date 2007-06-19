@@ -9,9 +9,8 @@
 
          -||-  httpry 0.1.0  -||-
 
-  HTTP logging and information display tool
+ HTTP logging and information retrieval tool
     Jason Bittel <jason.bittel@gmail.com>
-
 
 
 --{ ABOUT }--
@@ -33,8 +32,8 @@ occurred to me:
  > Research patterns in HTTP usage
  > Watch for dangerous downloaded files
  > Verify the enforcement of HTTP policy on your network
- > Simple curiosity
- > It's just plain fun to watch in realtime on a busy link
+ > Extract HTTP statistics out of saved capture files
+ > It's just plain fun to watch in realtime
 
 In addition to the core program, there are several Perl scripts included
 for processing httpry log files. They should be useful for a number of
