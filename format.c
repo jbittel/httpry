@@ -17,6 +17,7 @@
 
 char *strip_whitespace(char *str);
 void insert_node(char *str);
+int strcmp_name(const char *s1, const char *s2);
 
 typedef struct node NODE;
 struct node {
@@ -31,6 +32,7 @@ static NODE *output_fields = NULL;
 void parse_format_string(char *str) {
         char *name, *tmp, *i;
         int num_nodes = 0;
+        unsigned char *c;
 
         if (strlen(str) == 0)
                 LOG_DIE("Empty format string provided");
@@ -41,7 +43,12 @@ void parse_format_string(char *str) {
         strcpy(tmp, str);
 
         for (i = tmp; (name = strtok(i, ",")); i = NULL) {
+                /* Normalize input field text */
                 name = strip_whitespace(name);
+                for (c = name; *c != '\0'; c++) {
+                        *c = tolower(*c);
+                }
+
                 insert_node(name);
                 num_nodes++;
         }
@@ -54,25 +61,13 @@ void parse_format_string(char *str) {
         return;
 }
 
-/* Strip leading and trailing spaces from parameter string */
-char *strip_whitespace(char *str) {
-        int len;
-
-        while (isspace(*str)) str++;
-        len = strlen(str);
-        while (len && isspace(*(str + len - 1)))
-                *(str + (len--) - 1) = '\0';
-
-        return str;
-}
-
 /* Insert a new node at the end of the output format list */
 void insert_node(char *name) {
         NODE **node = &output_fields;
 
         /* Traverse the list while checking for an existing node */
         while (*node) {
-                if (strcmp(name, (*node)->name) == 0) {
+                if (strcmp_name(name, (*node)->name) == 0) {
                         WARN("Format element '%s' already provided", name);
 
                         return;
@@ -100,7 +95,7 @@ void insert_value(char *name, char *value) {
         NODE *node = output_fields;
 
         while (node) {
-                if (strcmp(name, node->name) == 0) {
+                if (strcmp_name(name, node->name) == 0) {
                         node->value = value;
 
                         return;
@@ -167,4 +162,38 @@ void free_format() {
         }
 
         return;
+}
+
+/* Strip leading and trailing spaces from parameter string, modifying
+   the string in place and returning a pointer to the (potentially)
+   new starting point */
+char *strip_whitespace(char *str) {
+        int len;
+
+        while (isspace(*str)) str++;
+        len = strlen(str);
+        while (len && isspace(*(str + len - 1)))
+                *(str + (len--) - 1) = '\0';
+
+        return str;
+}
+
+/* Function originated as strcasecmp() from the GNU C library; modified
+   from its original format since we know s2 will always be lowercase */
+
+/* Compare s1 and s2, ignoring case of s1, returning less than, equal
+   to or greater than zero if s1 is lexiographically less than, equal
+   to or greater than s2.  */
+int strcmp_name(const char *s1, const char *s2) {
+        unsigned char c1, c2;
+
+        if (s1 == s2) return 0;
+
+        do {
+                c1 = tolower(*s1++);
+                c2 = *s2++;
+                if (c1 == '\0') break;
+        } while (c1 == c2);
+
+        return c1 - c2;
 }

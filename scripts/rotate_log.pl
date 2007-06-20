@@ -206,5 +206,6 @@ Usage: $0 [-ct] [-d dir] [-i file] [-m size] [-p count]
   -m   purge old log files that exceed this size threshold (in MB)
   -p   purge old log files that exceed this count threshold
   -t   delete all text files in target directory
+
 USAGE
 }

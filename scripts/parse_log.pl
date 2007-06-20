@@ -26,7 +26,7 @@ my $PLUGIN_DIR = "plugins";
 my %nameof = ();    # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins = ();   # List of plugin files in directory
-my @ignore = ("sample_plugin", "db_dump", "hostnames");
+my @ignore = ("db_dump", "hostnames", "sample_plugin", "xml_output", "client_flows", "find_proxies", "search_terms");
                     # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments
@@ -134,9 +134,8 @@ sub process_logfiles {
         my $curr_line; # Current line in input file
         my $plugin;
         my @fields;
-        my @headers;
+        my @header = ();
         my %record;
-        my $i;
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
@@ -144,27 +143,26 @@ sub process_logfiles {
                         next;
                 }
 
-                foreach $curr_line (<INFILE>) {
+                while ($curr_line = <INFILE>) {
                         chomp $curr_line;
-                        $curr_line =~ tr/\x80-\xFF//d; # Strip non-printable chars
                         next if $curr_line eq "";
 
                         # Default header format:
                         # Fields: Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase
                         if ($curr_line =~ /^#/) {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
-                                @headers = split(/\,/, $1);
+                                @header = map lc, split(/\,/, $1);
                                 %record = ();
                         }
 
-                        if (scalar(@headers) == 0) {
+                        if (scalar(@header) == 0) {
                                 die "Error: No field description line found; cannot proceed\n";
                         }
                         @fields = split(/\t/, $curr_line);
-                        next if (scalar(@fields) != scalar(@headers)); # Malformed fields count
+                        next if (scalar(@fields) != scalar(@header)); # Malformed fields count
 
-                        for ($i = 0; $i < scalar @fields; $i++) {
-                                $record{lc($headers[$i])} = $fields[$i];
+                        foreach (0..$#fields) {
+                                $record{$header[$_]} = $fields[$_];
                         }
 
                         foreach $plugin (@callbacks) {
@@ -225,5 +223,6 @@ sub print_usage {
 Usage: $0 [-h] [-p dir] file1 [file2 ...]
   -h   print this help information and exit
   -p   load plugins from specified directory
+
 USAGE
 }

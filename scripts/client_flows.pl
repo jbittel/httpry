@@ -428,5 +428,6 @@ Usage: $0 [-h] [-a dir] [-e email] [-l file] [-o file] [-t dir] file1 [file2 ...
   -l   hitlist file for content checks (implicit enable)
   -o   output file for summary and content check data
   -t   directory for tagged detail records (implicit enable)
+
 USAGE
 }

@@ -1,65 +1,63 @@
-One feature that httpry allows is for the user to specify the output format
-string that the program prints. This string is a comma-delimited list of
-elements with *no* spaces between elements and capitalization is important.
-Duplicate entries will be skipped and the parser will whine at you, so don't
-do it. Note that for the purposes of this document client request headers,
-server response headers and entity headers are all simply referred to as
-headers. Internally, httpry does not distinguish among them and they can all
-be used in the format string.
+The -s switch allows the user to provide a format string that tells httpry
+which fields to print from each HTTP packet. This string is a comma-
+delimited list of elements, examples of which are provided below. These
+examples are all shown with no spaces and initial caps for consistency,
+although in practice the format strings can have spaces between elements
+and are not case sensitive. Duplicate field names will be ignored.
 
-The default format that is used if none is specified consists of:
+How about an example. The default format string consists of:
 
-        Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,
-                HTTP-Version,Status-Code,Reason-Phrase
+   Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,
+      HTTP-Version,Status-Code,Reason-Phrase
 
-This prints the data contained in either the client request header or the
-server response header depending on the data. The full log file string will
-look something like this for both a request and a response (a '-' character
-represents no data for that field):
+The output string string will look something like this for both a request
+and a response (a '-' character represents no data for that field):
 
-        06/05/2006 15:32:31 192.168.0.15 66.102.7.104 > GET www.google.com
-                / HTTP/1.1 - -
-        06/05/2006 15:32:31 66.102.7.104 192.168.0.15 < - - - HTTP/1.1 200 OK
+   06/05/2006 15:32:31 192.168.0.15 66.102.7.104 > GET www.google.com /
+      HTTP/1.1 - -
+   06/05/2006 15:32:31 66.102.7.104 192.168.0.15 < - - - HTTP/1.1 200 OK
 
-There are nine special (i.e. outside the body of the HTTP request) fields that
-can be specified in the request line:
+Also note that in these two example lines the fields are space delimited for
+readability, but the real output from httpry is tab delimited. There are
+nine special field (i.e. outside the body of the HTTP request) that can be
+specified in the format string:
 
-        Timestamp               Request-URI
-        Source-IP               HTTP-Version
-        Dest-IP                 Status-Code
-        Direction               Reason-Phrase
-        Method
+   Timestamp        Request-URI
+   Source-IP        HTTP-Version
+   Dest-IP          Status-Code
+   Direction        Reason-Phrase
+   Method
 
 Most of these are fields from the header line of each request or response.
 The Direction field will print a chevron with '>' indicating a client request
 and '<' indicating a server response.
 
-The program can parse any header field that you require, even custom headers
-not included in the HTTP standard. For reference, here is a list of the
-standard RFC2616 headers:
+The program can parse any header field found in the packet, even custom
+headers not included in the HTTP standard. For reference, here is a list of
+the standard RFC2616 headers:
 
-        Accept                  If-None-Match
-        Accept-Charset          If-Range
-        Accept-Encoding         If-Unmodified-Since
-        Accept-Language         Max-Forwards
-        Authorization           Proxy-Authorization
-        Expect                  Range
-        From                    Referer
-        Host                    TE
-        If-Match                User-Agent
-        If-Modified-Since
+   Accept                  If-None-Match
+   Accept-Charset          If-Range
+   Accept-Encoding         If-Unmodified-Since
+   Accept-Language         Max-Forwards
+   Authorization           Proxy-Authorization
+   Expect                  Range
+   From                    Referer
+   Host                    TE
+   If-Match                User-Agent
+   If-Modified-Since
 
 Of course there are other request header fields, but this provides a starting
-point. Here are some example format strings:
+point. Here are some example custom format strings:
 
-        Host,User-Agent
-        Referer,Request-URI,HTTP-Version
-        If-Modified-Since,Method
-        Host,Request-URI,Method,If-Modified-Since,Referer,User-Agent
-        Status-Code,Reason-Phrase,My-Custom-Header-Field
-        ...etc...
+   Host,User-Agent
+   Referer,Request-URI,HTTP-Version
+   If-Modified-Since,Method
+   Host,Request-URI,Method,If-Modified-Since,Referer,User-Agent
+   Status-Code,Reason-Phrase,My-Custom-Header-Field
+   ...etc...
 
 There is no limit on the length of the format string. This provides a
 relatively flexible method for specifying the output string, while still
-supporting custom fields. Additionally, the input ordering is maintained so
-you can configure the position of the fields in the output string.
+supporting custom fields. The input order is maintained so you can specify
+the position of the fields in the output string.

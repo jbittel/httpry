@@ -23,7 +23,7 @@
 
 /* Default output format string; see doc/format-string for more info
    *** Can be overridden with -s */
-#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* HTTP specific constants; should never change! */
 #define LINE_DELIM "\r\n"
