@@ -393,6 +393,7 @@ int main(int argc, char **argv) {
                                 LOG_WARN("Cannot change ownership of output file");
         	}
 
+                printf("# %s version %s\n", PROG_NAME, PROG_VER);
                 print_header_line();
         }
 
