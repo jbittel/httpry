@@ -26,7 +26,7 @@ my $PLUGIN_DIR = "plugins";
 my %nameof = ();    # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins = ();   # List of plugin files in directory
-my @ignore = ("db_dump", "hostnames", "sample_plugin", "xml_output", "client_flows", "find_proxies", "search_terms");
+my @ignore = ("db_dump", "sample_plugin", "xml_output");
                     # List of plugins to be ignored on initialization (comma-delimited)
 
 # Command line arguments

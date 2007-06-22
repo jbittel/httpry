@@ -123,7 +123,7 @@ void runas_daemon() {
         if (setsid() == -1)
                 LOG_WARN("Cannot assign new session for child process");
 
-        umask(0); /* Reset file creation mask */
+        umask(022); /* Reset file creation mask */
         if (chdir("/") == -1)
                 LOG_DIE("Cannot change run directory to '/'");
 
@@ -203,7 +203,6 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         if (ip->ip_p != 0x6) return; /* Not TCP */
         if (size_data <= 0) return;
-        if (size_data > BUFSIZ) size_data = BUFSIZ;
 
         /* Check if we appear to have a valid request or response */
         if (strncmp(data, GET_STRING, 4) == 0 ||
@@ -216,6 +215,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         }
 
         /* Copy packet data to editable buffer */
+        if (size_data > BUFSIZ) size_data = BUFSIZ;
         strncpy(buf, data, size_data);
         buf[size_data] = '\0';
 
