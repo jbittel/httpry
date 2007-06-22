@@ -33,7 +33,7 @@
 int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
 void runas_daemon();
-void change_user(char *name, uid_t uid, gid_t gid);
+void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
@@ -147,19 +147,32 @@ void runas_daemon() {
 }
 
 /* Change process owner to specified username */
-void change_user(char *name, uid_t uid, gid_t gid) {
-        if (initgroups(name, gid))
+void change_user(char *name) {
+        struct passwd *user = NULL;
+
+        if (getuid() != 0)
+                LOG_DIE("You must be root to switch users");
+
+        if (!(user = getpwnam(name)))
+                LOG_DIE("User '%s' not found in system", name);
+
+        if (initgroups(name, user->pw_gid))
                 LOG_DIE("Cannot initialize the group access list");
         
-        if (setgid(gid))
+        if (setgid(user->pw_gid))
                 LOG_DIE("Cannot set GID");
         
-        if (setuid(uid))
+        if (setuid(user->pw_uid))
                 LOG_DIE("Cannot set UID");
 
         /* Test to see if we actually made it to the new user */
-        if ((getegid() != gid) || (geteuid() != uid))
+        if ((getegid() != user->pw_gid) || (geteuid() != user->pw_uid))
                 LOG_DIE("Cannot change process owner to '%s'", name);
+
+        if (use_outfile) {
+                if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
+                        LOG_WARN("Cannot change ownership of output file");
+        }
 
         return;
 }
@@ -341,7 +354,6 @@ void display_usage() {
 }
 
 int main(int argc, char **argv) {
-        struct passwd *user = NULL;
         int opt;
 
         signal(SIGINT, handle_signal);
@@ -373,26 +385,11 @@ int main(int argc, char **argv) {
         if (!out_format) out_format = default_format;
         parse_format_string(out_format);
 
-        /* Get user information if we need to switch from root */
-        if (new_user) {
-                if (getuid() != 0)
-                        LOG_DIE("You must be root to switch users");
-
-                /* Get user info; die if user doesn't exist */
-                if (!(user = getpwnam(new_user)))
-                        LOG_DIE("User '%s' not found in system", new_user);
-        }
-
         /* Prepare output file as necessary */
         if (use_outfile) {
                 if (freopen(use_outfile, "a", stdout) == NULL)
                         LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
-
-        	if (new_user) {
-                        if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
-                                LOG_WARN("Cannot change ownership of output file");
-        	}
-
+        	
                 printf("# %s version %s\n", PROG_NAME, PROG_VER);
                 print_header_line();
         }
@@ -400,7 +397,7 @@ int main(int argc, char **argv) {
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
         if (daemon_mode) runas_daemon();
-        if (new_user) change_user(new_user, user->pw_uid, user->pw_gid);
+        if (new_user) change_user(new_user);
 
         if ((buf = malloc(BUFSIZ + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for packet buffer");

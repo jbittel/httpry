@@ -86,7 +86,7 @@ sub parse_flows {
                 $file_cnt++;
                 $size_cnt += int((stat(INFILE))[7] / 1000000);
 
-                foreach $curr_line (<INFILE>) {
+                while ($curr_line = <INFILE>) {
                         chomp $curr_line;
                         next if $curr_line eq "";
                         $total_line_cnt++;

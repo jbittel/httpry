@@ -124,12 +124,12 @@ sub write_output_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nLOG SUMMARY\n\n";
-        print OUTFILE "Generated:         " . localtime() . "\n";
-        print OUTFILE "Total lines:       " . $total_line_cnt . "\n";
-        print OUTFILE "Client count:      " . keys(%top_talkers) . "\n";
-        print OUTFILE "Server count:      " . keys(%top_hosts) . "\n";
-        print OUTFILE "Unique extensions: " . keys(%filetypes) . "\n" if ($filetype);
-        print OUTFILE "Total run time:    " . sprintf("%.1f", $end_time - $start_time) . " secs\n";
+        print OUTFILE "Generated:        " . localtime() . "\n";
+        print OUTFILE "Total lines:      " . $total_line_cnt . "\n";
+        print OUTFILE "Client count:     " . keys(%top_talkers) . "\n";
+        print OUTFILE "Server count:     " . keys(%top_hosts) . "\n";
+        print OUTFILE "Unique filetypes: " . keys(%filetypes) . "\n" if ($filetype);
+        print OUTFILE "Total run time:   " . sprintf("%.1f", $end_time - $start_time) . " secs\n";
 
         if ((keys %top_hosts) > 0) {
                 print OUTFILE "\n\nTOP $summary_cap VISITED HOSTS\n\n";

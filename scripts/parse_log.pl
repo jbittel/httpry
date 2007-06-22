@@ -145,6 +145,7 @@ sub process_logfiles {
 
                 while ($curr_line = <INFILE>) {
                         chomp $curr_line;
+                        $curr_line =~ s/[^[:print:]\t]//g; # Strip unprintable characters
                         next if $curr_line eq "";
 
                         # Default header format:
