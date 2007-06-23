@@ -1,67 +1,66 @@
-This is the high level list of changes between releases of httpry. Note that
+This is the high level list of changes for each httpry release. Note that
 this changelog does not refer to the included Perl scripts, which are often
 updated significantly between releases as well. It only lists significant
 changes and updates to the core httpry program.
 
 
 version 0.1.0
-   = Chg: removed -c, -r, and -b options
-   = Chg: changed option -f to -r and -l to -f
-   = Chg: tweaked default capture filter
-   - Fix: eliminated some minor memory leaks on shutdown
-   = Chg: rewrote output format handling code
-   = Chg: significantly improved efficiency of packet parsing
-   = Chg: improved data segmentation within the program
-   = Chg: significant code refactoring
-   - Fix: command line arguments can now be clustered again (i.e.: -dp)
-   = Chg: format string can have internal whitespace and is case insensitive
+   * massive code rewrite/refactoring
+   * rewrote output format handling code
+   * removed config file option
+   * removed writing binary dump file
+   * removed option to specify run directory in daemon mode
+   * changed option letter -f to -r and -l to -f
+   * hugely improved the efficiency of packet parsing
+   * tweaked default capture filter
+   * eliminated some minor memory leaks on shutdown
+   * reduced data coupling within the program
+   * removed custom argument parser to make it more functional and consistent
+   * format string can now have internal whitespace and is now case insensitive
 
 version 0.0.9
-   + Add: parsing of both client requests and server responses
-   = Chg: default capture filter less restrictive
-   - Fix: command line arguments now *always* take precedence
-   = Chg: wrote custom command line argument parser
-   - Fix: removed chance to test against invalid data on exit
-   = Chg: all output fields are now selectable
-   = Chg: config file options are now all lowercase
-   + Add: output files are now chown'd to process owner
-   = Chg: -n switch now counts parsed packets, not total packets
-   + Add: additional sanity checking for output file paths
-   = Chg: added necessary compile directives for OpenBSD
-   + Add: '-' can be specified for the filename to force STDOUT
+   * added parsing of both client requests and server responses
+   * default capture filter now less restrictive
+   * command line arguments now *always* take precedence over config options
+   * wrote custom command line argument parser
+   * removed chance to test against invalid data on exit
+   * all major packet fields are now availble for output
+   * config file options now all lowercase
+   * output files are now chown'd to process owner
+   * -n switch now counts parsed packets, not total packets seen
+   * additional sanity checking for output file paths
+   * added necessary compile directives for OpenBSD
+   * '-' can be specified for the filename to force STDOUT
 
 version 0.0.8
-   - Fix: crash on exit when reading from an input file
-   - Fix: handle whitespace properly in config file lines
-   + Add: allow user to specify set of HTTP fields to parse
-   = Chg: removed extended options switch (-x)
-   + Add: configurable output data format (-s)
-   = Chg: parsed HTTP header fields stored in dynamic list
-   = Chg: error/log/warn macros encapsulated in header file
-   = Chg: moved TCP data fields to separate header file
+   * crash on exit when reading from an input file
+   * handle whitespace properly in config file lines
+   * allow user to specify fields to output
+   * removed extended options switch (-x)
+   * configurable output data format (-s)
+   * parsed HTTP header fields stored in dynamic list
+   * error/log/warn macros encapsulated in header file
+   * moved TCP data fields to separate header file
 
 version 0.0.7
-   + Add: option to read settings from a config file (-c)
-   = Chg: changed packet count switch from -c to -n
-   - Fix: fixed bug in packet count check
-   = Chg: cleaned up initialization routines in main()
-   + Add: added config.h for setting compile time program defaults
-   + Add: option to display extended packet information (-x)
-   + Add: option to dump binary capture output file (-b)
-   + Add: basic packet capture/parsing stats at program termination
-   = Chg: program now compiles cleanly as strict ANSI C
+   * option to read settings from a config file (-c)
+   * changed packet count switch from -c to -n
+   * fixed bug in packet count check
+   * cleaned up initialization logic in main()
+   * added config.h for setting compile time program defaults
+   * option to display extended packet information (-x)
+   * option to dump binary capture output file (-b)
+   * basic packet capture/parsing stats at program termination
+   * program now compiles cleanly as strict ANSI C
 
-version 0.0.6 (initial "official" release)
-   + Add: ability to change process owner (-u)
-   + Add: additional error checking when entering daemon mode
-   = Chg: completely reworked output data handling
-   = Chg: removed stdout suppression (-s) option
-   = Chg: daemon mode (-d) now requires output file (-o)
-   = Chg: error/log/warn message printing pushed into function macros
-   - Fix: standardized error and status message strings
-   + Add: ability to specify running directory (-r)
-   - Fix: fixed an incorrect array initialisation
-   = Chg: split version and help information into two commands (-v and -h)
-
-
-All previous releases were internal pre-release builds
+version 0.0.6
+   * ability to change process owner (-u)
+   * added additional error checking when entering daemon mode
+   * completely reworked output data handling
+   * removed stdout suppression (-s) option
+   * daemon mode (-d) now requires output file (-o)
+   * error/log/warn message printing pushed into function macros
+   * standardized error and status message strings
+   * ability to specify running directory (-r)
+   * fixed an incorrect array initialisation
+   * split version and help information into two commands (-v and -h)

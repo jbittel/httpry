@@ -1,84 +1,76 @@
-Along with the core httpry program a number of Perl scripts are also included.
-There is a central Perl script (parse_log.pl) that handles all of the core
-log parsing duties, and a set of Perl plugins (plugins/*.pm) that perform
-assorted processing duties. It is also very straightforward to write your own
-plugins to extend the processing abilities.
+A number of Perl scripts are included with the project to provide a log
+parsing framework. There is a central Perl script (parse_log.pl) that handles
+all of the core log parsing duties, and a set of Perl plugins (plugins/*.pm)
+that perform assorted processing duties. It is straightforward to add your
+own plugins to extend the processing abilities.
 
-IMPORTANT! The parse script has an array at the top of the file that allows
-plugins in the appropriate plugin directory to be ignored. By default, this
-array is populated with plugins that either provide no output, or that generate
-errors by default (such as trying to access a database). Be sure to check this
-array if you are having problems activating a plugin.
+*** IMPORTANT! ***
+parse_log.pl has an array at the top of the file that
+contains plugins to ignore. By default, this array is populated with plugins
+that either provide no output, or that generate errors by default (such as
+trying to access a database). Make sure this array does not contain a plugin
+you are trying to use. Additionally, any input log file needs to be a valid
+httpry log file, including the field specifier at the top of the file.
 
-The parse script is expecting a valid httpry log file, including the field
-specifier at the start. Note that this field specifier can change between log
-files, and even within the same log file. The parse script will note the
-difference and update its internal data structures accordingly. The plugins
-should check to ensure that each data line has all of the information
-required.
-
-The following Perl modules are required to run all the included plugins:
+The following Perl modules must be installed to run all included plugins:
         MIME::Lite
         DBI
 
-A summary of the scripts:
-
- ./scripts/parse_log.pl
-        Core script for plugins. Processes input log files and delivers the data
-        to each initialized plugin. Plugins are activated by simply having a .pm
-        extension and being placed in the plugin directory (default is
-        ./plugins). If a plugins directory is specified (-p), that is used. If
-        no directory is specified, the script first searches the current directory
-        for a plugin directory followed by the base directory of the script. The
-        first directory found is used. If no directory is found, the script
-        exist. To ignore a plugin, either remove it from the plugin directory or
-        add it to the @ignore array within the script.
-
- ./scripts/plugins/client_flows.pm
-        Checks for specified content in the input file according to a list of
-        keywords. To properly analyze content, it breaks the input file into
-        distinct flows which are time delimited blocks of traffic for each
-        client IP. Also outputs some basic flow statistics. Because of the
-        nature of its task, all server responses are discarded.
-
- ./scripts/plugins/db_dump.pm
-        Dumps log file data into a previously configured database. Useful for
-        more extensive data mining or a user-friendly web interface. Use the
-        included db_dump.mysql to initialize the required database table.
-
- ./scripts/plugins/find_proxies.pm
-        Performs some basic tests looking for proxy usage. Most tests are
-        rudimentary and quite a lot of noise is generated.
-
- ./scripts/plugins/log_summary.pm
-        Provides extensive information regarding the input file(s), visited
-        hosts, top talkers and requested file extensions.
-
- ./scripts/plugins/sample_plugin.pm
-        A simple plugin with no functionality designed as an easy way to see how
-        the plugins are structured and to provide a framework for writing new
-        plugins.
-
- ./scripts/plugins/search_terms.pm
-        Outputs a raw dump of all entered search terms for a number of the major
-        search services. The output is grouped by domain name.
-
- ./scripts/plugins/xml_format.pm
-        Outputs the input log file in XML format. If the output file already
-        exists, a new flow is appended.
+A summary of the available functionality:
 
  ./scripts/rotate_log.pl
-        Moves an active log file into a specified directory. Also offers options
-        for deleting text files, compressing the log files and/or purging old
-        log files according to number or total size.
+        Moves an active log file into a specified directory. Also offers
+        options for deleting text files, compressing the log files and/or
+        purging old log files according to number or total size.
 
  ./scripts/client_flows.pl
-        A standalone version of the client_flows.pm plugin. Included mostly for
-        historical reasons, should be considered depricated, and may disappear
-        without warning.
+        A standalone version of the client_flows.pm plugin. Included mostly
+        for historical reasons, should be considered depricated, and may
+        disappear without warning.
 
-These tools are not necessarily designed to be drop-in replacements for your
-own solutions. If one of these tools does what you need it to, great! However,
-they are more designed as starting points for your own processing code. The
-parse_log.pl script allows you to write your own plugins and for most tasks
-will work just fine. For more complex tasks you'll want to write custom code.
+ ./scripts/parse_log.pl
+        Core script for plugins. Processes log files and delivers data to each
+        initialized plugin. Plugins are utilized by having a .pm extension
+        and being placed in the plugin directory (default is ./plugins). If
+        a plugins directory is specified (-p), that is used instead. If
+        no directory is specified, the script first searches the current
+        directory for a plugin directory followed by the base directory of
+        the script. The first directory found is used. If no directory is
+        found, the script complains and exits. To ignore a plugin, either
+        remove it from the plugin directory or add it to the @ignore array
+        in parse_log.pl.
+
+ ./scripts/plugins/client_flows.pm
+        Breaks the input file into client flows which are time delimited
+        blocks of traffic for each client IP. It is also able to search for
+        specified content in the Host and Request-URI fields and flag flows
+        accordingly. Because of the nature of its task, all server responses
+        are discarded.
+
+ ./scripts/plugins/db_dump.pm
+        Dumps log file data into a previously prepared database. Useful
+        for more extensive data mining or adding a more user-friendly web
+        interface. Use the included db_dump.mysql to initialize the required
+        database table.
+
+ ./scripts/plugins/find_proxies.pm
+        Performs some basic tests looking for proxy usage. The tests are
+        currently rudimentary and quite a lot of noise is generated.
+
+ ./scripts/plugins/log_summary.pm
+        Provides extensive information regarding the input file(s) including
+        visited hosts, top talkers and file extensions, along with other
+        minor data.
+
+ ./scripts/plugins/sample_plugin.pm
+        An example plugin with no functionality designed as an easy way to
+        see how the plugins are structured and to provide a base for writing
+        new plugins.
+
+ ./scripts/plugins/search_terms.pm
+        Outputs a raw dump of all entered search terms for a number of the
+        major search services. It also calculates the average length of
+        extracted search queries.
+
+ ./scripts/plugins/xml_format.pm
+        Outputs the input log file in XML format.
