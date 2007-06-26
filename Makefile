@@ -1,5 +1,7 @@
 CC	= gcc
-CFLAGS	= -Wall -O3 -funroll-loops -ansi
+# For testing we enable -g and disable these optimizations:
+# -O3 -funroll-loops
+CFLAGS	= -Wall -ansi -g
 LIBS	= -lpcap -I/usr/include/pcap -I/usr/local/include/pcap
 PROG	= httpry
 

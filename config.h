@@ -9,7 +9,7 @@
 */
 
 #define PROG_NAME "httpry"
-#define PROG_VER "0.1.0"
+#define PROG_VER "0.1.1"
 
 /* Location to store the PID file when running in daemon mode */
 #define PID_FILE "/var/run/httpry.pid"

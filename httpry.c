@@ -52,7 +52,6 @@ static int set_promisc = 1;
 static char *new_user = NULL;
 static char *out_format = NULL;
 
-extern char *optarg;
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static char *buf = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
@@ -355,6 +354,7 @@ void display_usage() {
 
 int main(int argc, char **argv) {
         int opt;
+        extern char *optarg;
 
         signal(SIGINT, handle_signal);
 

@@ -19,3 +19,15 @@
 #define DIE(x...) { fprintf(stderr, "Error: " x); fprintf(stderr, "\n"); raise(SIGINT); }
 #define LOG_WARN(x...) { LOG(x); WARN(x); }
 #define LOG_DIE(x...) { LOG(x); DIE(x); }
+
+/* Additional tools for testing and debugging */
+#define DEBUG
+
+#ifdef DEBUG
+#define ASSERT(x)                                                           \
+        if (!(x)) {                                                         \
+                fprintf(stderr, "Assertion failed: file \"%s\", line %d\n", \
+                                __FILE__, __LINE__);                        \
+                exit(1);                                                    \
+        }
+#endif
