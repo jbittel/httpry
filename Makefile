@@ -1,9 +1,8 @@
-CC	= gcc
-# For testing we enable -g and disable these optimizations:
-# -O3 -funroll-loops
-CFLAGS	= -Wall -ansi -g
-LIBS	= -lpcap -I/usr/include/pcap -I/usr/local/include/pcap
-PROG	= httpry
+CC		= gcc
+CFLAGS  	= -Wall -O3 -funroll-loops -ansi
+DEBUGFLAGS	= -Wall -g -DDEBUG -ansi
+LIBS		= -lpcap -I/usr/include/pcap -I/usr/local/include/pcap
+PROG		= httpry
 
 $(PROG): $(PROG).c format.c
 	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c format.c $(LIBS)
@@ -11,12 +10,15 @@ $(PROG): $(PROG).c format.c
 all:
 	$(PROG)
 
+debug: $(PROG).c format.c
+	$(CC) $(DEBUGFLAGS) -o $(PROG) $(PROG).c format.c $(LIBS)
+
 install: $(PROG)
 	@echo "--------------------------------------------------"
 	@echo " Installing $(PROG) into /usr/sbin/"
 	@echo ""
 	@echo " You will need to move the Perl scripts and other"
-	@echo " tools to a location of your choosing manually."
+	@echo " tools to a location of your choosing manually"
 	@echo "--------------------------------------------------"
 	cp -f $(PROG) /usr/sbin/
 	cp -f $(PROG).1 /usr/man/man1/ || cp -f $(PROG).1 /usr/local/man/man1/

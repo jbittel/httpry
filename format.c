@@ -111,7 +111,9 @@ void insert_value(char *name, char *value) {
 void print_header_line() {
         NODE *node = output_fields;
 
-        if (!output_fields) return;
+#ifdef DEBUG
+        ASSERT(output_fields);
+#endif
 
         printf("# Fields: ");
         while (node) {
@@ -130,7 +132,9 @@ void print_header_line() {
 void print_values() {
         NODE *node = output_fields;
 
-        if (!output_fields) return;
+#ifdef DEBUG
+        ASSERT(output_fields);
+#endif
 
         while (node) {
                 if (node->value) {
@@ -187,7 +191,9 @@ char *strip_whitespace(char *str) {
 int strcmp_name(const char *s1, const char *s2) {
         unsigned char c1, c2;
 
-        if (s1 == s2) return 0;
+#ifdef DEBUG
+        ASSERT(s1 != s2);
+#endif
 
         do {
                 c1 = tolower(*s1++);

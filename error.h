@@ -20,14 +20,14 @@
 #define LOG_WARN(x...) { LOG(x); WARN(x); }
 #define LOG_DIE(x...) { LOG(x); DIE(x); }
 
-/* Additional tools for testing and debugging */
-#define DEBUG
-
+/* Assert macro for testing and debugging */
 #ifdef DEBUG
-#define ASSERT(x)                                                           \
-        if (!(x)) {                                                         \
-                fprintf(stderr, "Assertion failed: file \"%s\", line %d\n", \
-                                __FILE__, __LINE__);                        \
-                exit(1);                                                    \
+#define ASSERT(x)                                                    \
+        if (!(x)) {                                                  \
+                fflush(NULL);                                        \
+                fprintf(stderr, "\nAssertion failed: %s, line %d\n", \
+                                __FILE__, __LINE__);                 \
+                fflush(stderr);                                      \
+                exit(1);                                             \
         }
 #endif
