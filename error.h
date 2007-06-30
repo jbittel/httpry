@@ -20,7 +20,8 @@
 #define LOG_WARN(x...) { LOG(x); WARN(x); }
 #define LOG_DIE(x...) { LOG(x); DIE(x); }
 
-/* Assert macro for testing and debugging */
+/* Assert macro for testing and debugging; use 'make debug'
+   to compile the program with debugging features enabled */
 #ifdef DEBUG
 #define ASSERT(x)                                                    \
         if (!(x)) {                                                  \

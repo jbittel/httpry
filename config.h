@@ -18,7 +18,7 @@
 #define NULL_FILE "/dev/null"
 
 /* Default packet capture filter; must be a standard libpcap style filter
-   *** Can be overridden with -l */
+   *** Can be overridden with -f */
 #define DEFAULT_CAPFILTER "tcp port 80 or 8080"
 
 /* Default output format string; see doc/format-string for more info

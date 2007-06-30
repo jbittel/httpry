@@ -79,10 +79,12 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                         LOG_DIE("Cannot find network info for '%s': %s", dev, errbuf);
 
                 pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, 0, errbuf);
+
                 if (pcap_hnd == NULL)
                         LOG_DIE("Cannot start capture on '%s': %s", dev, errbuf);
         } else {
                 pcap_hnd = pcap_open_offline(filename, errbuf);
+
                 if (pcap_hnd == NULL)
                         LOG_DIE("Cannot open capture file: %s", errbuf);
         }
@@ -389,10 +391,12 @@ int main(int argc, char **argv) {
         if (use_outfile) {
                 if (freopen(use_outfile, "a", stdout) == NULL)
                         LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
-        	
+
                 printf("# %s version %s\n", PROG_NAME, PROG_VER);
                 print_header_line();
         }
+
+        print_header_line();
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
