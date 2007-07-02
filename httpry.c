@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
         if ((buf = malloc(BUFSIZ + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for packet buffer");
 
-        if (pcap_loop(pcap_hnd, -1, parse_http_packet, NULL) < 0)
+        if (pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL) < 0)
                 LOG_DIE("Cannot read packets from interface");
 
         cleanup();

@@ -29,7 +29,7 @@
 #include "format.h"
 
 char *strip_whitespace(char *str);
-void insert_node(char *str);
+int insert_node(char *str);
 int strcmp_name(const char *s1, const char *s2);
 
 typedef struct node NODE;
@@ -68,21 +68,19 @@ void parse_format_string(char *str) {
                 }
 
                 if (strlen(name) == 0) continue;
-
-                insert_node(name);
-                num_nodes++;
+                if (insert_node(name) == 1) num_nodes++;
         }
 
         free(tmp);
 
         if (num_nodes == 0)
-                LOG_DIE("No valid fields found in format string");
+                LOG_DIE("No valid names found in format string");
 
         return;
 }
 
 /* Insert a new node at the end of the output format list */
-void insert_node(char *name) {
+int insert_node(char *name) {
         NODE **node = &output_fields;
 
 #ifdef DEBUG
@@ -93,9 +91,9 @@ void insert_node(char *name) {
         /* Traverse the list while checking for an existing node */
         while (*node) {
                 if (strcmp_name(name, (*node)->name) == 0) {
-                        WARN("Format element '%s' already provided", name);
+                        WARN("Format name '%s' already provided", name);
 
-                        return;
+                        return 0;
                 }
 
                 node = &(*node)->next;
@@ -112,7 +110,7 @@ void insert_node(char *name) {
         (*node)->value = NULL;
         (*node)->next = NULL;
 
-        return;
+        return 1;
 }
 
 /* If the node exists, update its value field */
@@ -123,8 +121,10 @@ void insert_value(char *name, char *value) {
         ASSERT(output_fields);
         ASSERT(name);
         ASSERT(value);
-        ASSERT(strlen(value) > 0);
 #endif
+
+        /* Abort if string is empty */
+        if (strlen(value) == 0) return;
 
         while (node) {
                 if (strcmp_name(name, node->name) == 0) {
