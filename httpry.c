@@ -396,8 +396,6 @@ int main(int argc, char **argv) {
                 print_header_line();
         }
 
-        print_header_line();
-
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
         if (daemon_mode) runas_daemon();
