@@ -44,12 +44,12 @@ static NODE *output_fields = NULL;
 
 /* Parse format string to configure output fields */
 void parse_format_string(char *str) {
-        char *name, *tmp, *i;
+        char *name, *tmp, *i, *c;
         int num_nodes = 0;
-        unsigned char *c;
 
 #ifdef DEBUG
         ASSERT(str);
+        ASSERT(strlen(str) > 0);
 #endif
 
         if (strlen(str) == 0)
@@ -120,6 +120,7 @@ void insert_value(char *name, char *value) {
 #ifdef DEBUG
         ASSERT(output_fields);
         ASSERT(name);
+        ASSERT(strlen(name) > 0);
         ASSERT(value);
 #endif
 
@@ -210,6 +211,7 @@ char *strip_whitespace(char *str) {
 
 #ifdef DEBUG
         ASSERT(str);
+        ASSERT(strlen(str) > 0);
 #endif
 
         while (isspace(*str)) str++;

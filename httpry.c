@@ -151,6 +151,11 @@ void runas_daemon() {
 void change_user(char *name) {
         struct passwd *user = NULL;
 
+#ifdef DEBUG
+        ASSERT(name);
+        ASSERT(strlen(name) > 0);
+#endif
+
         if (getuid() != 0)
                 LOG_DIE("You must be root to switch users");
 
@@ -199,7 +204,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         eth = (struct pkt_eth *) (pkt);
         ip = (struct pkt_ip *) (pkt + size_eth);
         tcp = (struct pkt_tcp *) (pkt + size_eth + size_ip);
-        data = (u_char *) (pkt + size_eth + size_ip + (tcp->th_off * 4));
+        data = (char *) (pkt + size_eth + size_ip + (tcp->th_off * 4));
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
         if (ip->ip_p != 0x6) return; /* Not TCP */
