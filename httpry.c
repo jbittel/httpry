@@ -54,6 +54,8 @@ static char *out_format = NULL;
 
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static char *buf = NULL;
+static unsigned num_parsed = 0; /* Count of fully parsed HTTP packets */
+static unsigned start_time = 0; /* Start tick for statistics calculations */
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
 
@@ -189,7 +191,6 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char *header_line, *req_value;
         char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN], ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
-        static unsigned pkt_parsed = 0; /* Count of fully parsed HTTP packets */
 
         const struct pkt_eth *eth;
         const struct pkt_ip *ip;
@@ -230,10 +231,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         if (is_request) {
                 if (parse_client_request(header_line) == 0) return;
-                insert_value("Direction", ">");
+                insert_value("direction", ">");
         } else if (is_response) {
                 if (parse_server_response(header_line) == 0) return;
-                insert_value("Direction", "<");
+                insert_value("direction", "<");
         }
 
         /* Iterate through HTTP header lines */
@@ -248,18 +249,18 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         /* Grab source/destination IP addresses */
         strncpy(saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
         strncpy(daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
-        insert_value("Source-IP", saddr);
-        insert_value("Dest-IP", daddr);
+        insert_value("source-ip", saddr);
+        insert_value("dest-ip", daddr);
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
-        insert_value("Timestamp", ts);
+        insert_value("timestamp", ts);
 
         print_values();
 
-        pkt_parsed++;
-        if (parse_count && (pkt_parsed >= parse_count)) {
+        num_parsed++;
+        if (parse_count && (num_parsed >= parse_count)) {
                 cleanup();
                 exit(EXIT_SUCCESS);
         }
@@ -278,9 +279,9 @@ int parse_client_request(char *header_line) {
         if ((http_version = strchr(request_uri, ' ')) == NULL) return 0;
         *http_version++ = '\0';
 
-        insert_value("Method", method);
-        insert_value("Request-URI", request_uri);
-        insert_value("HTTP-Version", http_version);
+        insert_value("method", method);
+        insert_value("request-uri", request_uri);
+        insert_value("http-version", http_version);
 
         return 1;
 }
@@ -296,9 +297,9 @@ int parse_server_response(char *header_line) {
         if ((reason_phrase = strchr(status_code, ' ')) == NULL) return 0;
         *reason_phrase++ = '\0';
 
-        insert_value("HTTP-Version", http_version);
-        insert_value("Status-Code", status_code);
-        insert_value("Reason-Phrase", reason_phrase);
+        insert_value("http-version", http_version);
+        insert_value("status-code", status_code);
+        insert_value("reason-phrase", reason_phrase);
 
         return 1;
 }
@@ -309,20 +310,42 @@ void handle_signal(int sig) {
                 case SIGINT:
                         LOG_WARN("Caught SIGINT, shutting down...");
                         cleanup();
-
-                        exit(EXIT_SUCCESS);
+                        break;
                 case SIGTERM:
                         LOG_WARN("Caught SIGTERM, shutting down...");
                         cleanup();
-
-                        exit(EXIT_SUCCESS);
+                        break;
         }
+
+        exit(sig);
 
         return;
 }
 
-/* Do our best to exit gracefully */
+/* Perform end of run tasks and prepare to exit gracefully */
 void cleanup() {
+        struct pcap_stat pkt_stats;
+        float run_time;
+
+        if (pcap_hnd && !use_infile) {
+                if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
+                        WARN("Could not obtain packet capture statistics");
+                } else {
+                        run_time = (float)(time(0) - start_time);
+
+#ifdef DEBUG
+        ASSERT(run_time > 0);
+#endif
+
+                        LOG_PRINT("%d packets received, %d packets dropped, %d http packets parsed", \
+                             pkt_stats.ps_recv, pkt_stats.ps_drop, num_parsed);
+                        LOG_PRINT("%0.1f packets/min, %0.1f http packets/min", \
+                             ((pkt_stats.ps_recv * 60) / run_time), ((num_parsed * 60) / run_time));
+                }
+        } else if (pcap_hnd) {
+                INFO("%d http packets parsed", num_parsed);
+        }
+
         fflush(NULL);
 
         free_format();
@@ -409,6 +432,7 @@ int main(int argc, char **argv) {
         if ((buf = malloc(BUFSIZ + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for packet buffer");
 
+        start_time = time(0);
         if (pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL) < 0)
                 LOG_DIE("Cannot read packets from interface");
 

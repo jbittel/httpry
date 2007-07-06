@@ -4,6 +4,11 @@ updated significantly between releases as well. It only lists significant
 changes and updates to the core httpry program.
 
 
+version 0.1.1
+   * fixed some minor format string parsing bugs
+   * added a debug Makefile target for compiling a testing version of the program
+   * added packet capture and processing statistics
+
 version 0.1.0
    * massive code rewrite/refactoring
    * rewrote output format handling code
