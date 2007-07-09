@@ -6,7 +6,7 @@ changes and updates to the core httpry program.
 
 version 0.1.1
    * fixed some minor format string parsing bugs
-   * added a debug Makefile target for compiling a testing version of the program
+   * added debug code to improve testing (use 'make debug' to enable)
    * added packet capture and processing statistics
 
 version 0.1.0

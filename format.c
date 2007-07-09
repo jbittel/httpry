@@ -124,7 +124,6 @@ void insert_value(char *name, char *value) {
         ASSERT(value);
 #endif
 
-        /* Abort if string is empty */
         if (strlen(value) == 0) return;
 
         while (node) {

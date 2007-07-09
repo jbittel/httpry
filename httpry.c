@@ -142,7 +142,7 @@ void runas_daemon() {
         signal(SIGTTOU, SIG_IGN);
         signal(SIGTTIN, SIG_IGN);
         signal(SIGHUP, SIG_IGN);
-        signal(SIGTERM, handle_signal);
+        signal(SIGTERM, &handle_signal);
 
         fflush(NULL);
 
@@ -158,7 +158,7 @@ void change_user(char *name) {
         ASSERT(strlen(name) > 0);
 #endif
 
-        if (getuid() != 0)
+        if (geteuid() != 0)
                 LOG_DIE("You must be root to switch users");
 
         if (!(user = getpwnam(name)))
@@ -166,12 +166,9 @@ void change_user(char *name) {
 
         if (initgroups(name, user->pw_gid))
                 LOG_DIE("Cannot initialize the group access list");
-        
-        if (setgid(user->pw_gid))
-                LOG_DIE("Cannot set GID");
-        
-        if (setuid(user->pw_uid))
-                LOG_DIE("Cannot set UID");
+ 
+        if (setgid(user->pw_gid)) LOG_DIE("Cannot set GID");
+        if (setuid(user->pw_uid)) LOG_DIE("Cannot set UID");
 
         /* Test to see if we actually made it to the new user */
         if ((getegid() != user->pw_gid) || (geteuid() != user->pw_uid))
@@ -327,6 +324,7 @@ void cleanup() {
         struct pcap_stat pkt_stats;
         float run_time;
 
+        /* Print capture/parsing statistics when available */
         if (pcap_hnd && !use_infile) {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
                         WARN("Could not obtain packet capture statistics");
@@ -343,7 +341,7 @@ void cleanup() {
                              ((pkt_stats.ps_recv * 60) / run_time), ((num_parsed * 60) / run_time));
                 }
         } else if (pcap_hnd) {
-                INFO("%d http packets parsed", num_parsed);
+                PRINT("%d http packets parsed", num_parsed);
         }
 
         fflush(NULL);
@@ -361,23 +359,23 @@ void cleanup() {
 
 /* Display program help/usage information */
 void display_usage() {
-        INFO("%s version %s", PROG_NAME, PROG_VER);
-        INFO("Usage: %s [-dhp] [-f filter] [-i device] [-n count]\n"
-             "              [-o file] [-r file] [-s format] [-u user]\n", PROG_NAME);
+        PRINT("%s version %s", PROG_NAME, PROG_VER);
+        PRINT("Usage: %s [-dhp] [-f filter] [-i device] [-n count]\n"
+              "              [-o file] [-r file] [-s format] [-u user]\n", PROG_NAME);
 
-        INFO("  -d           run as daemon\n"
-             "  -f filter    libpcap style capture filter\n"
-             "  -h           print help information\n"
-             "  -i device    set interface to listen on\n"
-             "  -n count     number of HTTP packets to parse\n"
-             "  -o file      specify output file\n"
-             "  -p           disable promiscuous mode\n"
-             "  -r file      input file to read from\n"
-             "  -s string    specify output format string\n"
-             "  -u user      set process owner\n");
+        PRINT("  -d           run as daemon\n"
+              "  -f filter    libpcap style capture filter\n"
+              "  -h           print help information\n"
+              "  -i device    set interface to listen on\n"
+              "  -n count     number of HTTP packets to parse\n"
+              "  -o file      specify output file\n"
+              "  -p           disable promiscuous mode\n"
+              "  -r file      input file to read from\n"
+              "  -s string    specify output format string\n"
+              "  -u user      set process owner\n");
 
-        INFO("Additional information can be found at:\n"
-             "    http://dumpsterventures.com/jason/httpry\n");
+        PRINT("Additional information can be found at:\n"
+              "    http://dumpsterventures.com/jason/httpry\n");
 
         exit(EXIT_SUCCESS);
 }
@@ -386,7 +384,7 @@ int main(int argc, char **argv) {
         int opt;
         extern char *optarg;
 
-        signal(SIGINT, handle_signal);
+        signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
         while ((opt = getopt(argc, argv, "dhpf:i:n:o:r:s:u:")) != -1) {
@@ -430,7 +428,7 @@ int main(int argc, char **argv) {
         if (new_user) change_user(new_user);
 
         if ((buf = malloc(BUFSIZ + 1)) == NULL)
-                LOG_DIE("Cannot allocate memory for packet buffer");
+                LOG_DIE("Cannot allocate memory for packet data buffer");
 
         start_time = time(0);
         if (pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL) < 0)
