@@ -360,18 +360,18 @@ void cleanup() {
 /* Display program help/usage information */
 void display_usage() {
         PRINT("%s version %s", PROG_NAME, PROG_VER);
-        PRINT("Usage: %s [-dhp] [-f filter] [-i device] [-n count]\n"
-              "              [-o file] [-r file] [-s format] [-u user]\n", PROG_NAME);
+        PRINT("Usage: %s [-dhp] [-f filter] [-i device] [-n count] [-o file]\n"
+              "              [-r file] [-s format] [-u user]\n", PROG_NAME);
 
         PRINT("  -d           run as daemon\n"
               "  -f filter    libpcap style capture filter\n"
               "  -h           print help information\n"
               "  -i device    set interface to listen on\n"
               "  -n count     number of HTTP packets to parse\n"
-              "  -o file      specify output file\n"
+              "  -o file      write output log file\n"
               "  -p           disable promiscuous mode\n"
               "  -r file      input file to read from\n"
-              "  -s string    specify output format string\n"
+              "  -s format    specify output format string\n"
               "  -u user      set process owner\n");
 
         PRINT("Additional information can be found at:\n"
