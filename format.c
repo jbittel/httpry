@@ -8,18 +8,19 @@
 
 */
 
-/* Currently the output format string is stored as a linked list
-   with each node containing the field name and associated value.
-   This maintains proper ordering of the fields and is relatively
-   fast inserting/printing for formats of a reasonable length.
+/*
+   Currently the output format string is stored as a binary tree
+   with all of the nodes additionally chained together as a linked
+   list. This allows insert_value() to utilize the more efficient
+   tree structure to find nodes, while print_values() that needs to
+   traverse all nodes in insertion order can do so. Functions that
+   need to traverse the entire tree can use the linked list as well,
+   so as to avoid recursion. The tree structure should help this
+   scale relatively well to longer format strings.
 
-   TODO: it might be beneficial to store the values in a hash and
-   merely use this linked list for printing the entire string. That
-   way insert_value() could be called in O(1) time and output
-   ordering would be maintained. The downsides to this would be the
-   additional complexity, and potentially worse behavior with a
-   bad hash function and/or data (although it probably wouldn't get
-   significantly more expensive than it currently is). */
+   Worst case behavior is that the whole thing behaves as a linked
+   list, which is how this was implemented previously anyway.
+*/
 
 #include <ctype.h>
 #include <string.h>
@@ -34,9 +35,8 @@ int strcmp_name(const char *s1, const char *s2);
 
 typedef struct node NODE;
 struct node {
-        char *name;
-        char *value;
-        NODE *next;
+        char *name, *value;
+        NODE *left, *right, *next;
 };
 
 /* Head of linked list storing name/value pairs */
@@ -79,36 +79,45 @@ void parse_format_string(char *str) {
         return;
 }
 
-/* Insert a new node at the end of the output format list */
+/* Insert a new node into the format tree structure */
 int insert_node(char *name) {
         NODE **node = &output_fields;
+        static NODE *prev = NULL;
+        int cmp;
 
 #ifdef DEBUG
         ASSERT(name);
         ASSERT(strlen(name) > 0);
 #endif
 
-        /* Traverse the list while checking for an existing node */
+        /* Find the insertion point while checking for an existing node */
         while (*node) {
-                if (strcmp_name(name, (*node)->name) == 0) {
+                cmp = strcmp_name(name, (*node)->name);
+                if (cmp > 0) {
+                        node = &(*node)->right;
+                } else if (cmp < 0) {
+                        node = &(*node)->left;
+                } else {
                         WARN("Format name '%s' already provided", name);
 
                         return 0;
                 }
-
-                node = &(*node)->next;
         }
 
-        /* Create a new node and append it to the list */
+        /* No node found so create a new one */
         if (((*node) = (NODE *) malloc(sizeof(NODE))) == NULL)
                 LOG_DIE("Cannot allocate memory for new node");
 
-        if (((*node)->name = malloc(strlen(name) + 1)) == NULL)
+        if (((*node)->name = (char *) malloc(strlen(name) + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for node name");
         
         strcpy((*node)->name, name);
         (*node)->value = NULL;
-        (*node)->next = NULL;
+        (*node)->left = (*node)->right = (*node)->next = NULL;
+
+        /* Update the linked list pointers within the tree */
+        if (prev) prev->next = (*node);
+        prev = (*node);
 
         return 1;
 }
@@ -116,6 +125,7 @@ int insert_node(char *name) {
 /* If the node exists, update its value field */
 void insert_value(char *name, char *value) {
         NODE *node = output_fields;
+        int cmp;
 
 #ifdef DEBUG
         ASSERT(output_fields);
@@ -127,19 +137,22 @@ void insert_value(char *name, char *value) {
         if (strlen(value) == 0) return;
 
         while (node) {
-                if (strcmp_name(name, node->name) == 0) {
+                cmp = strcmp_name(name, node->name);
+                if (cmp > 0) {
+                        node = node->right;
+                } else if (cmp < 0) {
+                        node = node->left;
+                } else {
                         node->value = value;
 
                         return;
                 }
-
-                node = node->next;
         }
 
         return;
 }
 
-/* Print a list of all output field names contained in the format string */
+/* Print a list of all field names contained in the format structure */
 void print_header_line() {
         NODE *node = output_fields;
 
@@ -159,8 +172,8 @@ void print_header_line() {
         return;
 }
 
-/* Destructively print each node value in the list; once printed, each
-   existing value is assigned to NULL to clear it for the next packet */
+/* Destructively print each node value; once printed, each existing
+   value is assigned to NULL to clear it for the next packet */
 void print_values() {
         NODE *node = output_fields;
 

@@ -56,7 +56,7 @@ sub main {
         my $direction;
         my $request_uri;
 
-	print $fh "<packet>";
+	print $fh "<record>";
         foreach my $field (keys %$record) {
                 my $data = $record->{$field};
 
@@ -68,7 +68,7 @@ sub main {
 
                 print $fh "<$field>$data</$field>";
         }
-        print $fh "</packet>\n";
+        print $fh "</record>\n";
 
         return;
 }

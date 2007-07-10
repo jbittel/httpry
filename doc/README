@@ -27,7 +27,7 @@ displaying the request/response line along with associated header fields.
 "How is this tool useful?" you may ask. Well, here's a few ideas that have
 occurred to me:
 
- > See what users on your network are requesting online
+ > See what users on your network are browsing online
  > Check for proper server configuration (or improper, as the case may be)
  > Research patterns in HTTP usage
  > Watch for dangerous downloaded files

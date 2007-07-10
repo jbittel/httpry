@@ -164,20 +164,21 @@ void change_user(char *name) {
         if (!(user = getpwnam(name)))
                 LOG_DIE("User '%s' not found in system", name);
 
+        /* Change ownership of the output file before we drop privs */
+        if (use_outfile) {
+                if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
+                        LOG_WARN("Cannot change ownership of output file");
+        }
+
         if (initgroups(name, user->pw_gid))
                 LOG_DIE("Cannot initialize the group access list");
- 
+
         if (setgid(user->pw_gid)) LOG_DIE("Cannot set GID");
         if (setuid(user->pw_uid)) LOG_DIE("Cannot set UID");
 
         /* Test to see if we actually made it to the new user */
         if ((getegid() != user->pw_gid) || (geteuid() != user->pw_uid))
                 LOG_DIE("Cannot change process owner to '%s'", name);
-
-        if (use_outfile) {
-                if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
-                        LOG_WARN("Cannot change ownership of output file");
-        }
 
         return;
 }
@@ -312,11 +313,12 @@ void handle_signal(int sig) {
                         LOG_WARN("Caught SIGTERM, shutting down...");
                         cleanup();
                         break;
+                default:
+                        LOG_WARN("Ignoring unknown signal '%d'", sig);
+                        return;
         }
 
         exit(sig);
-
-        return;
 }
 
 /* Perform end of run tasks and prepare to exit gracefully */
@@ -329,7 +331,7 @@ void cleanup() {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
                         WARN("Could not obtain packet capture statistics");
                 } else {
-                        run_time = (float)(time(0) - start_time);
+                        run_time = (float) (time(0) - start_time);
 
 #ifdef DEBUG
         ASSERT(run_time > 0);

@@ -8,7 +8,7 @@
 
 */
 
-void parse_format_string(char *name);
+void parse_format_string(char *str);
 void insert_value(char *name, char *value);
 void print_header_line();
 void print_values();

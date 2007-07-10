@@ -1,7 +1,10 @@
 --
 -- MySQL databse creation script for db_dump.pm
 -- 
--- !!! Warning: This script will delete all preexisting data !!!
+-- !!! Warning: This script will delete all pre-existing data !!!
+--
+-- This is a rather rudimentary database structure, but it ought
+-- to at least provide a decent starting point.
 --
 
 --
