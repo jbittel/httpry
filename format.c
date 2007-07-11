@@ -18,8 +18,11 @@
    so as to avoid recursion. The tree structure should help this
    scale relatively well to longer format strings.
 
-   Worst case behavior is that the whole thing behaves as a linked
-   list, which is how this was implemented previously anyway.
+   We could squeeze out a litte more efficiency if we implement this
+   as a balanced binary tree. Right now, worst case behavior means
+   the whole thing behaves as a linked list, which is how it was
+   implemented previously anyway. In the future we should convert
+   this, since a lot of time is spent searching the tree.
 */
 
 #include <ctype.h>

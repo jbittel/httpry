@@ -35,6 +35,7 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 void runas_daemon();
 void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
+char *parse_header_line(char *header_line);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
 void handle_signal(int sig);
@@ -67,8 +68,8 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
         bpf_u_int32 net, mask;
         struct bpf_program filter;
 
-        /* Find interface to use and retrieve capture handle */
         if (!filename) {
+                /* Starting live capture, so find and open network device */
                 if (!interface) {
                         dev = pcap_lookupdev(errbuf);
                         if (dev == NULL)
@@ -85,6 +86,7 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                 if (pcap_hnd == NULL)
                         LOG_DIE("Cannot start capture on '%s': %s", dev, errbuf);
         } else {
+                /* Reading from a saved capture, so open file */
                 pcap_hnd = pcap_open_offline(filename, errbuf);
 
                 if (pcap_hnd == NULL)
@@ -225,7 +227,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         buf[size_data] = '\0';
 
         /* Parse header line, bail if malformed */
-        if ((header_line = strtok(buf, LINE_DELIM)) == NULL) return;
+        if ((header_line = parse_header_line(buf)) == NULL) return;
 
         if (is_request) {
                 if (parse_client_request(header_line) == 0) return;
@@ -236,7 +238,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         }
 
         /* Iterate through HTTP header lines */
-        while ((header_line = strtok(NULL, LINE_DELIM)) != NULL) {
+        while ((header_line = parse_header_line(NULL)) != NULL) {
                 if ((req_value = strchr(header_line, ':')) == NULL) continue;
                 *req_value++ = '\0';
                 while (isspace(*req_value)) req_value++;
@@ -264,6 +266,24 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         }
 
         return;
+}
+
+/* Tokenize a HTTP header into lines; the first call should pass the string
+   to tokenize, all subsequent calls for the same string should pass NULL */
+char *parse_header_line(char *header_line) {
+        static char *pos;
+        char *tmp;
+
+        if (header_line) pos = header_line;
+
+        if ((tmp = strstr(pos, LINE_DELIM)) == NULL) return NULL;
+        if (tmp == pos) return NULL; /* Reached the end of the header */
+
+        *tmp = '\0';
+        header_line = pos;
+        pos = tmp + strlen(LINE_DELIM);
+
+        return header_line;
 }
 
 /* Parse a HTTP client request, bail at first sign of an invalid request */

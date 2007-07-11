@@ -9,7 +9,8 @@ version 0.1.1
    * added debug code with additional sanity checks (use 'make debug' to enable)
    * added packet capture and processing statistics
    * fixed error when changing output file owner after dropping privileges
-   * output format structure is now a hybrid tree/list for efficiency
+   * output format structure is now a hybrid tree/list for improved efficiency
+   * fixed the header parsing loop continuing into the response data
 
 version 0.1.0
    * massive code rewrite/refactoring
