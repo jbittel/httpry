@@ -26,7 +26,7 @@
 #define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
 
 /* HTTP specific constants; should never change! */
-#define LINE_DELIM "\r\n"
+#define HEADER_DELIM "\r\n"
 #define GET_STRING "GET "
 #define HEAD_STRING "HEAD "
 #define HTTP_STRING "HTTP/"

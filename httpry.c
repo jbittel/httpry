@@ -276,12 +276,12 @@ char *parse_header_line(char *header_line) {
 
         if (header_line) pos = header_line;
 
-        if ((tmp = strstr(pos, LINE_DELIM)) == NULL) return NULL;
+        if ((tmp = strstr(pos, HEADER_DELIM)) == NULL) return NULL;
         if (tmp == pos) return NULL; /* Reached the end of the header */
 
         *tmp = '\0';
         header_line = pos;
-        pos = tmp + strlen(LINE_DELIM);
+        pos = tmp + strlen(HEADER_DELIM);
 
         return header_line;
 }
