@@ -11,6 +11,7 @@ version 0.1.1
    * fixed error when changing output file owner after dropping privileges
    * output format structure is now a hybrid tree/list for improved efficiency
    * fixed the header parsing loop continuing into the response data
+   * Added some additional initialization sanity checks
 
 version 0.1.0
    * massive code rewrite/refactoring

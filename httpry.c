@@ -84,21 +84,24 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                 pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, 0, errbuf);
 
                 if (pcap_hnd == NULL)
-                        LOG_DIE("Cannot start capture on '%s': %s", dev, errbuf);
+                        LOG_DIE("Cannot open live capture on '%s': %s", dev, errbuf);
+
+	        if (pcap_datalink(pcap_hnd) != DLT_EN10MB)
+                        LOG_DIE("'%s' is not an ethernet device", dev);
         } else {
                 /* Reading from a saved capture, so open file */
                 pcap_hnd = pcap_open_offline(filename, errbuf);
 
                 if (pcap_hnd == NULL)
-                        LOG_DIE("Cannot open capture file: %s", errbuf);
+                        LOG_DIE("Cannot open saved capture file: %s", errbuf);
         }
 
         /* Compile capture filter and apply to handle */
         if (pcap_compile(pcap_hnd, &filter, capfilter, 0, net) == -1)
-                LOG_DIE("Bad capture filter syntax in '%s'", capfilter);
+                LOG_DIE("Cannot compile capture filter '%s': %s", capfilter, pcap_geterr(pcap_hnd));
 
         if (pcap_setfilter(pcap_hnd, &filter) == -1)
-                LOG_DIE("Cannot compile capture filter");
+                LOG_DIE("Cannot apply capture filter: %s", pcap_geterr(pcap_hnd));
 
         pcap_freecode(&filter);
 
@@ -189,7 +192,8 @@ void change_user(char *name) {
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
         char *header_line, *req_value;
-        char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN], ts[MAX_TIME_LEN];
+        char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN];
+        char ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
 
         const struct pkt_eth *eth;
@@ -208,7 +212,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         data = (char *) (pkt + size_eth + size_ip + (tcp->th_off * 4));
         size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
 
-        if (ip->ip_p != 0x6) return; /* Not TCP */
+        if (ip->ip_p != IPPROTO_TCP) return;
         if (size_data <= 0) return;
 
         /* Check if we appear to have a valid request or response */
@@ -454,7 +458,7 @@ int main(int argc, char **argv) {
 
         start_time = time(0);
         if (pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL) < 0)
-                LOG_DIE("Cannot read packets from interface");
+                LOG_DIE("Cannot read packets from interface: %s", pcap_geterr(pcap_hnd));
 
         cleanup();
 

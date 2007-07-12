@@ -50,7 +50,9 @@ Simply run these commands in the base httpry directory:
  # make install
 
 which will compile the program and copy the binary and man page to their
-appropriate locations. If you every need to uninstall the program run:
+appropriate locations. You can also run the binary from the compilation
+directory if you don't want to install it. If you ever need to uninstall
+the program run:
 
  # make uninstall
 
@@ -75,20 +77,20 @@ will be sent to the syslog. A pid file is created for the process in
 
 -f filter
 Specify a libpcap style capture filter. This is useful for narrowing
-the traffic further than the default capture filter (or perhaps even
+the traffic further than the default capture filter (or perhaps
 broadening the filter depending on the situation).
 
 -h
 Display a brief description of these options.
 
 -i device
-Specify an ethernet interface for the program to listen on. This is optional;
-by default the program will poll the system for a list of interfaces and
-select the first one that it finds.
+Specify an ethernet interface for the program to listen on. If not specified,
+the program will poll the system for a list of interfaces and select the
+first one found.
 
 -n count
-Parse this many HTTP packets and then exit. Defaults to 0, which means loop
-forever.
+Parse this number of HTTP packets and then exit. Defaults to 0, which means
+loop forever.
 
 -o file
 Specify an output file for writing parsed packet data.
@@ -108,5 +110,5 @@ syntax.
 
 -u user
 Specify an alternate user to take ownership of the process and any output
-files. Note that you still need root privileges if you are performing a live
-capture; it will switch to the new user after initialization.
+files. You will need root privileges to do this; it will switch to the new
+user after initialization.

@@ -18,10 +18,10 @@
    so as to avoid recursion. The tree structure should help this
    scale relatively well to longer format strings.
 
-   We could squeeze out a litte more efficiency if we implement this
-   as a balanced binary tree. Right now, worst case behavior means
-   the whole thing behaves as a linked list, which is how it was
-   implemented previously anyway. In the future we should convert
+   TODO: We could squeeze out a litte more efficiency if we implement
+   this as a balanced binary tree. Right now, worst case behavior
+   means the whole thing behaves as a linked list, which is how it
+   was implemented previously anyway. In the future we should convert
    this, since a lot of time is spent searching the tree.
 */
 
@@ -33,7 +33,7 @@
 #include "format.h"
 
 char *strip_whitespace(char *str);
-int insert_node(char *str);
+int insert_name(char *str);
 int strcmp_name(const char *s1, const char *s2);
 
 typedef struct node NODE;
@@ -42,7 +42,7 @@ struct node {
         NODE *left, *right, *next;
 };
 
-/* Head of linked list storing name/value pairs */
+/* Head of tree/list structure storing name/value pairs */
 static NODE *output_fields = NULL;
 
 /* Parse format string to configure output fields */
@@ -71,7 +71,7 @@ void parse_format_string(char *str) {
                 }
 
                 if (strlen(name) == 0) continue;
-                if (insert_node(name) == 1) num_nodes++;
+                if (insert_name(name) == 1) num_nodes++;
         }
 
         free(tmp);
@@ -83,7 +83,7 @@ void parse_format_string(char *str) {
 }
 
 /* Insert a new node into the format tree structure */
-int insert_node(char *name) {
+int insert_name(char *name) {
         NODE **node = &output_fields;
         static NODE *prev = NULL;
         int cmp;
