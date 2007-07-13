@@ -20,9 +20,9 @@ intended to perform analysis itself, but instead to capture, parse and/or
 log the traffic for later analysis. It can be run in real-time displaying
 the traffic as it is parsed, or as a daemon process that logs to an output
 file. It is written to be as lightweight and flexible as possible, so that
-it can be easily adaptable to different applications. Currently it does not
-display the raw HTTP data transferred, but instead focuses on parsing and
-displaying the request/response line along with associated header fields.
+it can be easily adaptable to different applications. It does not display
+the raw HTTP data transferred, but instead focuses on parsing and displaying
+the request/response line along with associated header fields.
 
 "How is this tool useful?" you may ask. Well, here's a few ideas that have
 occurred to me:
@@ -38,8 +38,8 @@ occurred to me:
 In addition to the core program, there are several Perl scripts included
 for processing httpry log files. They should be useful for a number of
 generic situations, and can also serve as a useful starting point for your
-own log parsing toolset. More information about them can be found in the
-doc/perl-tools file.
+own log parsing toolset. More information about these scripts can be found
+in the doc/perl-tools file.
 
 
 --{ INSTALLATION }--

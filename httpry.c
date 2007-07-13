@@ -330,11 +330,11 @@ int parse_server_response(char *header_line) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGINT:
-                        LOG_WARN("Caught SIGINT, shutting down...");
+                        LOG_PRINT("Caught SIGINT, shutting down...");
                         cleanup();
                         break;
                 case SIGTERM:
-                        LOG_WARN("Caught SIGTERM, shutting down...");
+                        LOG_PRINT("Caught SIGTERM, shutting down...");
                         cleanup();
                         break;
                 default:
@@ -353,7 +353,7 @@ void cleanup() {
         /* Print capture/parsing statistics when available */
         if (pcap_hnd && !use_infile) {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
-                        WARN("Could not obtain packet capture statistics");
+                        WARN("Cannot obtain packet capture statistics: %s", pcap_geterr(pcap_hnd));
                 } else {
                         run_time = (float) (time(0) - start_time);
 

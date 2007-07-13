@@ -23,7 +23,7 @@
 
 /* Default output format string; see doc/format-string for more info
    *** Can be overridden with -s */
-#define DEFAULT_FORMAT "Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase"
+#define DEFAULT_FORMAT "timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase"
 
 /* HTTP specific constants; should never change! */
 #define HEADER_DELIM "\r\n"

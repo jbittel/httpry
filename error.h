@@ -30,6 +30,6 @@
                 fprintf(stderr, "\nAssertion failed: %s, line %d\n", \
                                 __FILE__, __LINE__);                 \
                 fflush(stderr);                                      \
-                exit(1);                                             \
+                exit(EXIT_FAILURE);                                  \
         }
 #endif

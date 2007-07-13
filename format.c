@@ -22,7 +22,7 @@
    this as a balanced binary tree. Right now, worst case behavior
    means the whole thing behaves as a linked list, which is how it
    was implemented previously anyway. In the future we should convert
-   this, since a lot of time is spent searching the tree.
+   this, since a _lot_ of time is spent searching the tree.
 */
 
 #include <ctype.h>
