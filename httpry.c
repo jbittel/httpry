@@ -139,7 +139,7 @@ void runas_daemon() {
                 fprintf(pid_file, "%d", getpid());
                 fclose(pid_file);
         } else {
-                LOG_WARN("Cannot access PID file '%s'", PID_FILE);
+                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
         }
 
         signal(SIGCHLD, SIG_IGN);
@@ -172,7 +172,7 @@ void change_user(char *name) {
         /* Change ownership of the output file before we drop privs */
         if (use_outfile) {
                 if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
-                        LOG_WARN("Cannot change ownership of output file");
+                        LOG_WARN("Cannot change ownership of output file '%s'", use_outfile);
         }
 
         if (initgroups(name, user->pw_gid))
