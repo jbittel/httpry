@@ -216,10 +216,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         if (size_data <= 0) return;
 
         /* Check if we appear to have a valid request or response */
-        if (strncmp(data, GET_STRING, 4) == 0 ||
-            strncmp(data, HEAD_STRING, 5) == 0) {
+        if (strncmp(data, GET_STRING, strlen(GET_STRING)) == 0 ||
+            strncmp(data, HEAD_STRING, strlen(HEAD_STRING)) == 0) {
                 is_request = 1;
-        } else if (strncmp(data, HTTP_STRING, 5) == 0) {
+        } else if (strncmp(data, HTTP_STRING, strlen(HTTP_STRING)) == 0) {
                 is_response = 1;
         } else {
                 return;

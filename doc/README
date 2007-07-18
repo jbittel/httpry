@@ -105,8 +105,8 @@ a live capture. This option does not require root privileges.
 
 -s string
 Specify a comma-delimited string that defines the parsed HTTP data to output.
-See the doc/format-string file for further information about the options and
-syntax.
+See the doc/format-string file for further information regarding available
+options and syntax.
 
 -u user
 Specify an alternate user to take ownership of the process and any output
