@@ -105,6 +105,8 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 
         pcap_freecode(&filter);
 
+        if (!filename) LOG_PRINT("Starting capture on %s", dev);
+
         return pcap_hnd;
 }
 
