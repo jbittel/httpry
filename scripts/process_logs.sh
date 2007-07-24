@@ -53,7 +53,8 @@ perl ${tools_dir}/rotate_log.pl -ct -i ${logs_dir}/${log_fn} -d ${logs_dir}
 # Process new log file data; make sure appropriate plugins are
 # enabled/disabled for parse_log.pl
 if [ -r "${logs_dir}/${parse_fn}" ] ; then
-        perl ${tools_dir}/parse_log.pl -p ${tools_dir}/plugins ${logs_dir}/${parse_fn}
+        perl ${tools_dir}/parse_log.pl -p ${tools_dir}/plugins \
+             -i sample_plugin,db_dump,xml_output ${logs_dir}/${parse_fn}
 else
         if [ -n ${parse_fn} ] ; then
                 die "File ${logs_dir}/${parse_fn} does not exist or is unreadable"

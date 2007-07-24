@@ -26,8 +26,8 @@ my $PLUGIN_DIR = "plugins";
 my %nameof = ();    # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins = ();   # List of plugin files in directory
-my @ignore = ("db_dump", "sample_plugin", "xml_output");
-                    # List of plugins to be ignored on initialization (comma-delimited)
+my @allow = ();
+my @ignore = ();
 
 # Command line arguments
 my %opts;
@@ -51,6 +51,7 @@ sub init_plugins {
         my $plugin;
         my $i = 0;
         my $curr_dir;
+        my $file;
 
         # If a custom plugin directory, assume the user knows what they're doing;
         # otherwise, search the current dir and script base dir for a plugin folder
@@ -68,20 +69,23 @@ sub init_plugins {
                 }
         }
 
-        # Extract all plugins from specified directory
-        opendir PLUGINS, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
-                @plugins = grep { /\.pm$/ } readdir(PLUGINS);
-        closedir PLUGINS;
+        # Initialize list of plugins to load
+        opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
+                foreach $file (readdir(PLUGINDIR)) {
+                        next if ($file !~ /\.pm$/);
+                        next if (&ignore_file($file));
+                        next if (!&allow_file($file));
+                        
+                        push(@plugins, $file);
+                }
+        closedir PLUGINDIR;
 
         if (scalar @plugins == 0) {
-                die "Error: No plugins found in specified directory\n";
+                die "Error: No plugins loaded from specified directory\n";
         }
 
-        # Load up each plugin, unless specifically exempted
-        PLUGIN: foreach $plugin (@plugins) {
-                foreach (@ignore) {
-                        next PLUGIN if $plugin =~ /^$_/;
-                }
+        # Load up each plugin
+        foreach $plugin (@plugins) {
                 print "Loading $plugin_dir/$plugin...\n" if $VERBOSE;
                 require "$plugin_dir/$plugin";
         }
@@ -106,6 +110,36 @@ sub init_plugins {
         }
 
         return;
+}
+
+# -----------------------------------------------------------------------------
+# Check if a given filename is on the ignore list
+# -----------------------------------------------------------------------------
+sub ignore_file {
+        my $file = shift;
+
+        return 0 if (!@ignore);
+
+        foreach (@ignore) {
+                return 1 if $file =~ /^$_/;
+        }
+
+        return 0;
+}
+
+# -----------------------------------------------------------------------------
+# Check if a given filename is on the allow list
+# -----------------------------------------------------------------------------
+sub allow_file {
+        my $file = shift;
+
+        return 1 if (!@allow);
+
+        foreach (@allow) {
+                return 1 if $file =~ /^$_/;
+        }
+
+        return 0;
 }
 
 # -----------------------------------------------------------------------------
@@ -149,7 +183,7 @@ sub process_logfiles {
                         next if $curr_line eq "";
 
                         # Default header format:
-                        # Fields: Timestamp,Source-IP,Dest-IP,Direction,Method,Host,Request-URI,HTTP-Version,Status-Code,Reason-Phrase
+                        # Fields: timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase
                         if ($curr_line =~ /^#/) {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map lc, split(/\,/, $1);
@@ -194,7 +228,7 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('hp:', \%opts) or &print_usage();
+        getopts('a:hi:p:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -207,6 +241,8 @@ sub get_arguments {
         @input_files = @ARGV;
         $plugin_dir = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
         $custom_plugin_dir = 1 if ($opts{p});
+        @allow = split /,/, $opts{a} if ($opts{a});
+        @ignore = split /,/, $opts{i} if ($opts{i});
 
         # Strip trailing slash from plugin directory path
         if ($plugin_dir =~ /(.*)\/$/) {
@@ -221,8 +257,10 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [-h] [-p dir] file1 [file2 ...]
+Usage: $0 [-h] [-a list] [-i list] [-p dir] file1 [file2 ...]
+  -a   comma-delimited list of plugins to use (ignoring all others)
   -h   print this help information and exit
+  -i   comma-delimited list of plugins to ignore (using all others)
   -p   load plugins from specified directory
 
 USAGE

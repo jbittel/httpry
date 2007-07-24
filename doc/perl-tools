@@ -5,18 +5,17 @@ that perform assorted processing duties. It is straightforward to add your
 own plugins to extend the processing abilities.
 
 *** IMPORTANT! ***
-parse_log.pl has an array at the top of the file that
-contains plugins to ignore. By default, this array is populated with plugins
-that either provide no output, or that generate errors by default (such as
-trying to access a database). Make sure this array does not contain a plugin
-you are trying to use. Additionally, any input log file needs to be a valid
-httpry log file, including the field specifier at the top of the file.
+By default, the log parser will attempt to use all plugins that it finds in
+the plugin directory. To override this behavior, use the -a and -i switches
+to allow or ignore a comma-delimited list of plugins, respectively.
+Additionally, any input log file needs to be a valid httpry log file,
+including the field specifier at the top of the file.
 
 The following Perl modules must be installed to run all included plugins:
         MIME::Lite
         DBI
 
-A summary of the available functionality:
+A summary of the included Perl scripts:
 
  ./scripts/rotate_log.pl
         Moves an active log file into a specified directory. Also offers
@@ -36,9 +35,10 @@ A summary of the available functionality:
         no directory is specified, the script first searches the current
         directory for a plugin directory followed by the base directory of
         the script. The first directory found is used. If no directory is
-        found, the script complains and exits. To ignore a plugin, either
-        remove it from the plugin directory or add it to the @ignore array
-        in parse_log.pl.
+        found, the script complains and exits. To customize the plugins that
+        are loaded, either add/remove them from the plugin directory or use
+        the -a or -i switch to provide a comma-delimited list of plugins to
+        allow or ignore.
 
  ./scripts/plugins/client_flows.pm
         Breaks the input file into client flows which are time delimited
