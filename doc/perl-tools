@@ -57,15 +57,19 @@ A summary of the included Perl scripts:
         Performs some basic tests looking for proxy usage. The tests are
         currently rather rudimentary and quite a lot of noise is generated.
 
+ ./scripts/plugins/hostnames.pm
+        Outputs a list of unique hostnames found in the log data (rather
+        pointless without 'host' as one of your output fields).
+
  ./scripts/plugins/log_summary.pm
-        Provides extensive information regarding the input file(s) including
+        Provides extensive information regarding the input files including
         visited hosts, top talkers and file extensions, along with other
         assorted data. Useful for a high-level overview of the input files.
 
  ./scripts/plugins/sample_plugin.pm
         An example plugin with no functionality designed as an easy way to
-        see how the plugins are structured and to provide a base for writing
-        new plugins.
+        see how the plugins are structured and to provide a foundation for
+        writing new plugins.
 
  ./scripts/plugins/search_terms.pm
         Outputs a raw dump of all entered search terms for a number of the
@@ -73,4 +77,4 @@ A summary of the included Perl scripts:
         extracted search queries.
 
  ./scripts/plugins/xml_format.pm
-        Outputs the input log file in XML format.
+        Outputs the input log data in XML format.

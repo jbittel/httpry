@@ -26,8 +26,8 @@ my $PLUGIN_DIR = "plugins";
 my %nameof = ();    # Stores human readable plugin names
 my @callbacks = (); # List of initialized plugins
 my @plugins = ();   # List of plugin files in directory
-my @allow = ();
-my @ignore = ();
+my @allow = ();     # User-supplied list of plugins to load
+my @ignore = ();    # User-supplied list of plugins to ignore
 
 # Command line arguments
 my %opts;
@@ -73,8 +73,14 @@ sub init_plugins {
         opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
                 foreach $file (readdir(PLUGINDIR)) {
                         next if ($file !~ /\.pm$/);
-                        next if (&ignore_file($file));
-                        next if (!&allow_file($file));
+
+                        if (@ignore) {
+                                next if (&array_contains(\@ignore, $file));
+                        }
+
+                        if (@allow) {
+                                next if (!&array_contains(\@allow, $file));
+                        }
                         
                         push(@plugins, $file);
                 }
@@ -113,30 +119,14 @@ sub init_plugins {
 }
 
 # -----------------------------------------------------------------------------
-# Check if a given filename is on the ignore list
+# Check if a given element is in the parameter array
 # -----------------------------------------------------------------------------
-sub ignore_file {
-        my $file = shift;
+sub array_contains {
+        my $array = shift;
+        my $element = shift;
 
-        return 0 if (!@ignore);
-
-        foreach (@ignore) {
-                return 1 if $file =~ /^$_/;
-        }
-
-        return 0;
-}
-
-# -----------------------------------------------------------------------------
-# Check if a given filename is on the allow list
-# -----------------------------------------------------------------------------
-sub allow_file {
-        my $file = shift;
-
-        return 1 if (!@allow);
-
-        foreach (@allow) {
-                return 1 if $file =~ /^$_/;
+        foreach (@$array) {
+                return 1 if $element =~ /^$_/;
         }
 
         return 0;
@@ -236,6 +226,10 @@ sub get_arguments {
                 print "Error: No input file(s) provided\n";
                 &print_usage();
         }
+
+        # Currently, specifying both of these at once causes odd precedence
+        # issues, so we'll disallow that behavior
+        die "Error: -a and -i are mutually exclusive\n" if ($opts{a} && $opts{i});
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
