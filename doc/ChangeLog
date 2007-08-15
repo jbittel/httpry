@@ -6,7 +6,7 @@ changes and updates to the core httpry program.
 
 version 0.1.1
    * fixed some minor format string parsing bugs
-   * added debug code with additional sanity checks (use 'make debug' to enable)
+   * added debug code to validate correct behavior (use 'make debug' to enable)
    * added packet capture/processing statistics
    * fixed error when changing output file owner after dropping privileges
    * output format structure is now a hybrid tree/list for improved efficiency
