@@ -47,16 +47,16 @@ the standard RFC2616 headers:
    If-Modified-Since
 
 Of course there are other request header fields, but this provides a starting
-point. Here are some example custom format strings:
+point. Here are some example format strings:
 
-   Host,User-Agent
-   Referer,Request-URI,HTTP-Version
-   If-Modified-Since,Method
-   Host,Request-URI,Method,If-Modified-Since,Referer,User-Agent
-   Status-Code,Reason-Phrase,My-Custom-Header-Field
+   host,user-agent
+   referer,request-uri,http-version
+   if-modified-since,method
+   host,request-uri,method,if-modified-since,referer,user-agent
+   status-code,reason-phrase,my-custom-header-field
    ...etc...
 
 There is no limit on the length of the format string. This provides a
-relatively flexible method for specifying the output string, while still
+reasonably flexible method for specifying the output string, while still
 supporting custom fields. The input order is maintained so you can specify
 the position of the fields in the output string.

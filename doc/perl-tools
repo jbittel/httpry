@@ -1,15 +1,15 @@
 A number of Perl scripts are included with the project to provide a log
 parsing framework. There is a central Perl script (parse_log.pl) that handles
 all of the core log parsing duties, and a set of Perl plugins (plugins/*.pm)
-that perform assorted processing duties. It is straightforward to add your
-own plugins to extend the processing abilities.
+that perform assorted processing duties. It is straightforward to create
+custom plugins to extend the processing abilities.
 
 *** IMPORTANT! ***
 By default, the log parser will attempt to use all plugins that it finds in
 the plugin directory. To override this behavior, use the -a and -i switches
 to allow or ignore a comma-delimited list of plugins, respectively.
 Additionally, any input log file needs to be a valid httpry log file,
-including the field specifier at the top of the file.
+including the field specifier at the start of the file.
 
 The following Perl modules must be installed to run all included plugins:
         MIME::Lite

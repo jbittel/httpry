@@ -292,7 +292,7 @@ char *parse_header_line(char *header_line) {
         return header_line;
 }
 
-/* Parse a HTTP client request, bail at first sign of an invalid request */
+/* Parse a HTTP client request; bail at first sign of an invalid request */
 int parse_client_request(char *header_line) {
         char *method, *request_uri, *http_version;
 
@@ -310,7 +310,7 @@ int parse_client_request(char *header_line) {
         return 1;
 }
 
-/* Parse a HTTP server response, bail at first sign of an invalid response */
+/* Parse a HTTP server response; bail at first sign of an invalid response */
 int parse_server_response(char *header_line) {
         char *http_version, *status_code, *reason_phrase;
 

@@ -23,11 +23,13 @@ my $PLUGIN_DIR = "plugins";
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %nameof = ();    # Stores human readable plugin names
-my @callbacks = (); # List of initialized plugins
-my @plugins = ();   # List of plugin files in directory
-my @allow = ();     # User-supplied list of plugins to load
-my @ignore = ();    # User-supplied list of plugins to ignore
+my %nameof = ();        # Stores human readable plugin names
+my @callbacks = ();     # List of initialized plugins
+my @plugins = ();       # List of plugin files in directory
+my @allow = ();         # List of plugins to load
+my %allow_table = ();   # ...corresponding lookup table
+my @ignore = ();        # List of plugins to ignore
+my %ignore_table = ();  # ...corresponding lookup table
 
 # Command line arguments
 my %opts;
@@ -53,6 +55,9 @@ sub init_plugins {
         my $curr_dir;
         my $file;
 
+        @allow_table{@allow} = () if @allow;
+        @ignore_table{@ignore} = () if @ignore;
+
         # If a custom plugin directory, assume the user knows what they're doing;
         # otherwise, search the current dir and script base dir for a plugin folder
         if ($custom_plugin_dir) {
@@ -73,15 +78,9 @@ sub init_plugins {
         opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
                 foreach $file (readdir(PLUGINDIR)) {
                         next if ($file !~ /\.pm$/);
+                        next if (@ignore && (exists $ignore_table{$file}));
+                        next if (@allow && (not exists $allow_table{$file}));
 
-                        if (@ignore) {
-                                next if (&array_contains(\@ignore, $file));
-                        }
-
-                        if (@allow) {
-                                next if (!&array_contains(\@allow, $file));
-                        }
-                        
                         push(@plugins, $file);
                 }
         closedir PLUGINDIR;
@@ -116,20 +115,6 @@ sub init_plugins {
         }
 
         return;
-}
-
-# -----------------------------------------------------------------------------
-# Check if a given element is in the parameter array
-# -----------------------------------------------------------------------------
-sub array_contains {
-        my $array = shift;
-        my $element = shift;
-
-        foreach (@$array) {
-                return 1 if $element =~ /^$_/;
-        }
-
-        return 0;
 }
 
 # -----------------------------------------------------------------------------
@@ -227,9 +212,9 @@ sub get_arguments {
                 &print_usage();
         }
 
-        # Currently, specifying both of these at once causes odd precedence
-        # issues, so we'll disallow that behavior
-        die "Error: -a and -i are mutually exclusive\n" if ($opts{a} && $opts{i});
+        # Currently, specifying both of these causes precedence confusion,
+        # so we'll disallow that behavior
+        die "Error: -a and -i cannot be combined\n" if ($opts{a} && $opts{i});
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
