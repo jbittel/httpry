@@ -27,21 +27,21 @@ my $TAGGED_LIMIT = 15;
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 # Counter variables
-my $flow_cnt               = 0;
-my $flow_line_cnt          = 0;
-my $flow_min_len           = 999999;
-my $flow_max_len           = 0;
-my $tagged_flows_cnt       = 0;
+my $flow_cnt = 0;
+my $flow_line_cnt = 0;
+my $flow_min_len = 999999;
+my $flow_max_len = 0;
+my $tagged_flows_cnt = 0;
 my $total_tagged_lines_cnt = 0;
-my $max_concurrent         = 0;
+my $max_concurrent = 0;
 
 # Data structures
-my %flow_info       = (); # Holds metadata about each flow
+my %flow_info = ();       # Holds metadata about each flow
 my %flow_data_lines = (); # Holds actual log file lines for each flow
-my %tagged_flows    = (); # Ip/flow/hostname information for tagged flows
-my %output_flows    = (); # Pruned and cleaned tagged flows for display
-my %history         = (); # Holds history of content checks to avoid matching
-my @hitlist         = (); # List of content check keywords
+my %tagged_lines = ();    # IP/flow/hostname information for tagged flows
+my %output_flows = ();    # Pruned and cleaned tagged flows for display
+my %history = ();         # Holds history of content checks to avoid matching
+my @hitlist = ();         # List of content check keywords
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -67,7 +67,7 @@ sub init {
 }
 
 sub main {
-        my $self   = shift;
+        my $self = shift;
         my $record = shift;
         my $curr_line;
         my $decoded_uri;
@@ -95,39 +95,28 @@ sub main {
         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
         &timeout_flows($epochstamp);
-        
-        if (!exists $flow_info{$record->{"source-ip"}}) { # No existing flow so begin a new one
-                $flow_cnt++;
-                $flow_line_cnt++;
 
-                $flow_info{$record->{"source-ip"}}->{"id"} = $flow_cnt;
+        # Begin a new flow if one doesn't exist
+        if (!exists $flow_info{$record->{"source-ip"}}) {
+                $flow_cnt++;
+
                 $flow_info{$record->{"source-ip"}}->{"src_ip"} = $record->{"source-ip"};
                 $flow_info{$record->{"source-ip"}}->{"start_time"} = $record->{"timestamp"};
-                $flow_info{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
-                $flow_info{$record->{"source-ip"}}->{"start_epoch"} = $epochstamp;
-                $flow_info{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
-                $flow_info{$record->{"source-ip"}}->{"length"} = 1;
+                $flow_info{$record->{"source-ip"}}->{"length"} = 0;
                 $flow_info{$record->{"source-ip"}}->{"tagged_lines"} = 0;
+        }
 
-                push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
+        $flow_line_cnt++;
 
-                if ($hitlist_file && &content_check($record->{"host"}, $decoded_uri)) {
-                        $tagged_flows{$record->{"source-ip"}}->{$flow_info{$record->{"source-ip"}}->{"id"}}->{$record->{"host"}}++;
-                        $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
-                }
-        } else { # Existing flow found so update data as necessary
-                $flow_line_cnt++;
+        $flow_info{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
+        $flow_info{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
+        $flow_info{$record->{"source-ip"}}->{"length"}++;
 
-                $flow_info{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
-                $flow_info{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
-                $flow_info{$record->{"source-ip"}}->{"length"}++;
+        push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
 
-                push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
-
-                if ($hitlist_file && &content_check($record->{"host"}, $decoded_uri)) {
-                        $tagged_flows{$record->{"source-ip"}}->{$flow_info{$record->{"source-ip"}}->{"id"}}->{$record->{"host"}}++;
-                        $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
-                }
+        if ($hitlist_file && &content_check($record->{"host"}, $decoded_uri)) {
+                $tagged_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
+                $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
         }
 
         return;
@@ -181,7 +170,7 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub delete_text_files {
         $tagged_dir =~ s/\/$//; # Remove trailing slash
-        $all_dir    =~ s/\/$//; # ...
+        $all_dir =~ s/\/$//;    # ...
 
         if ($tagged_dir) {
                 opendir(DIR, $tagged_dir) or die "Error: Cannot open directory $tagged_dir: $!\n";
@@ -204,8 +193,9 @@ sub delete_text_files {
 }
 
 # -----------------------------------------------------------------------------
-# Search cache for specified content; returns true if match occurs; store
-# results of search in hash so we don't have to match the same text twice
+# Search for specified content in the hostname and URI and return true if
+# match occurs; store results of search in a (rudimentary) cache so we don't
+# have to match the same text twice
 #
 # Potential hash values: -1 unmatched / 1 matched / 0 no match
 # -----------------------------------------------------------------------------
@@ -242,8 +232,9 @@ sub content_check {
 }
 
 # -----------------------------------------------------------------------------
-# Handle end of flow duties: flush to disk and delete hash entries; pass a
-# zero to force all active flows to be flushed
+# Handle end of flow duties: flush to disk and delete hash entries; passing an
+# epochstamp value causes all flows inactive longer than $FLOW_TIMEOUT to be
+# flushed, while passing a zero forces all active flows to be flushed
 # -----------------------------------------------------------------------------
 sub timeout_flows {
         my $epochstamp = shift;
@@ -256,7 +247,7 @@ sub timeout_flows {
                         next unless (($epochstamp - $flow_info{$ip}->{"end_epoch"}) > $FLOW_TIMEOUT);
                 }
 
-                # Set minimum/maximum flow length
+                # Update minimum/maximum flow length as necessary
                 $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
                 $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
 
@@ -269,18 +260,14 @@ sub timeout_flows {
 
                         # Copy data to output hash so we can prune and reformat
                         $flow_str = "[$flow_info{$ip}->{'start_time'}]->[$flow_info{$ip}->{'end_time'}]";
-                        foreach $hostname (keys %{$tagged_flows{$ip}->{$flow_info{$ip}->{"id"}}}) {
-                                $output_flows{$ip}->{$flow_str}->{$hostname} = $tagged_flows{$ip}->{$flow_info{$ip}->{"id"}}->{$hostname};
+                        foreach $hostname (keys %{$tagged_lines{$ip}}) {
+                                $output_flows{$ip}->{$flow_str}->{$hostname} = $tagged_lines{$ip}->{$hostname};
                         }
-                        delete $tagged_flows{$ip};
 
                         &append_host_subfile("$tagged_dir/tagged_$ip.txt", $ip) if $tagged_dir;
-                } else {
-                        # Not an interesting flow, so delete any tagged lines/IPs that exist
-                        delete $tagged_flows{$ip}->{$flow_info{$ip}->{"id"}} if exists $tagged_flows{$ip};
-                        delete $tagged_flows{$ip} if (keys %{$tagged_flows{$ip}} == 0);
                 }
 
+                delete $tagged_lines{$ip};
                 delete $flow_info{$ip};
                 delete $flow_data_lines{$ip};
         }
@@ -289,18 +276,17 @@ sub timeout_flows {
 }
 
 # -----------------------------------------------------------------------------
-# Write detail subfile for specified client ip
+# Write detail subfile for specified client IP
 # -----------------------------------------------------------------------------
 sub append_host_subfile {
         my $path = shift;
-        my $ip   = shift;
+        my $ip = shift;
         my $line;
 
         open(HOSTFILE, ">>$path") or die "Error: Cannot open $path: $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
         foreach $line (@{$flow_data_lines{$ip}}) {
-                $line =~ tr/\x80-\xFF//d; # Strip non-printable chars
                 print HOSTFILE $line, "\n";
         }
         print HOSTFILE '<' x 80 . "\n";

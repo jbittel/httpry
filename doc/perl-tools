@@ -22,11 +22,6 @@ A summary of the included Perl scripts:
         options for deleting text files, compressing the log files and/or
         purging old log files according to number or total size.
 
- ./scripts/client_flows.pl
-        A standalone version of the client_flows.pm plugin. Included mostly
-        for historical reasons, should be considered depricated, and may
-        disappear without warning.
-
  ./scripts/parse_log.pl
         Core script for plugins. Processes log files and delivers data to each
         initialized plugin. Plugins are utilized by having a .pm extension
