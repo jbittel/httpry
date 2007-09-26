@@ -39,7 +39,7 @@ my $max_concurrent = 0;
 my %flow_info = ();       # Holds metadata about each flow
 my %flow_data_lines = (); # Holds actual log file lines for each flow
 my %tagged_lines = ();    # IP/flow/hostname information for tagged flows
-my %output_flows = ();    # Pruned and cleaned tagged flows for display
+my %tagged_flows = ();    # Pruned and cleaned tagged flows for display
 my %history = ();         # Holds history of content checks to avoid matching
 my @hitlist = ();         # List of content check keywords
 
@@ -260,9 +260,7 @@ sub timeout_flows {
 
                         # Copy data to output hash so we can prune and reformat
                         $flow_str = "[$flow_info{$ip}->{'start_time'}]->[$flow_info{$ip}->{'end_time'}]";
-                        foreach $hostname (keys %{$tagged_lines{$ip}}) {
-                                $output_flows{$ip}->{$flow_str}->{$hostname} = $tagged_lines{$ip}->{$hostname};
-                        }
+                        $tagged_flows{$ip}->{$flow_str} = $tagged_lines{$ip};
 
                         &append_host_subfile("$tagged_dir/tagged_$ip.txt", $ip) if $tagged_dir;
                 }
@@ -316,7 +314,7 @@ sub write_summary_file {
         }
 
         if ($hitlist_file) {
-                print OUTFILE "Tagged IPs:     " . (keys %output_flows) . "\n";
+                print OUTFILE "Tagged IPs:     " . (keys %tagged_flows) . "\n";
                 print OUTFILE "Tagged flows:   $tagged_flows_cnt\n";
                 print OUTFILE "Tagged lines:   $total_tagged_lines_cnt\n";
                 print OUTFILE "\n\nCLIENT FLOWS CONTENT CHECKS\n";
@@ -331,14 +329,14 @@ sub write_summary_file {
 
                 foreach $ip (map { inet_ntoa $_ }
                              sort
-                             map { inet_aton $_ } keys %output_flows) {
+                             map { inet_aton $_ } keys %tagged_flows) {
                         print OUTFILE "$ip\n";
 
-                        foreach $flow (sort keys %{$output_flows{$ip}}) {
+                        foreach $flow (sort keys %{$tagged_flows{$ip}}) {
                                 print OUTFILE "\t$flow\n";
 
-                                foreach $hostname (sort keys %{$output_flows{$ip}->{$flow}}) {
-                                        print OUTFILE "\t\t($output_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
+                                foreach $hostname (sort keys %{$tagged_flows{$ip}->{$flow}}) {
+                                        print OUTFILE "\t\t($tagged_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
                                 }
                         }
                         print OUTFILE "\n";
