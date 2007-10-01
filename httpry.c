@@ -4,7 +4,7 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.edu>
+  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
 
 */
 

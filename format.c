@@ -52,7 +52,6 @@ void parse_format_string(char *str) {
 
 #ifdef DEBUG
         ASSERT(str);
-        ASSERT(strlen(str) > 0);
 #endif
 
         if (strlen(str) == 0)

@@ -9,7 +9,7 @@
 */
 
 #define PROG_NAME "httpry"
-#define PROG_VER "0.1.1"
+#define PROG_VER "0.1.2"
 
 /* Default packet capture filter; must be a standard libpcap style filter
    *** Can be overridden with -f */

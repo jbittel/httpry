@@ -5,13 +5,13 @@
 #  httpry - HTTP logging and information retrieval tool
 #  ----------------------------------------------------
 #
-#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.edu>
+#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
 #
 
 # An example shell script for orchestrating some of the included tools.
 # This script stops the httpry daemon, moves the log file to a
 # different directory, restarts httpry and then processes the new log
-# file.
+# file. This script assumes usage of the included rc.httpry file.
 
 # !!! Change these values to reflect your particular setup !!!
 
