@@ -1,75 +1,2113 @@
-This is the high level list of changes for each httpry release. Note that
-this changelog does not refer to the included Perl scripts, which are often
-updated significantly between releases as well. It only lists significant
-changes and updates to the core httpry program.
+2007-10-01 06:23  jbittel <jason.bittel@gmail.com>
 
+	* config.h, format.c, httpry.c, rc.httpry, scripts/parse_log.pl,
+	  scripts/plugins/client_flows.pm, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/hostnames.pm,
+	  scripts/plugins/log_summary.pm, scripts/plugins/sample_plugin.pm,
+	  scripts/plugins/search_terms.pm, scripts/plugins/xml_output.cfg,
+	  scripts/plugins/xml_output.pm, scripts/process_logs.sh,
+	  scripts/rotate_log.pl:
+	  * Bumped program version number
+	  * Fixed incorrect email address caused by search/replace
 
-version 0.1.1
-   * fixed some minor format string parsing bugs
-   * added debug code to validate correct behavior (use 'make debug' to enable)
-   * added packet capture/processing statistics
-   * fixed error when changing output file owner after dropping privileges
-   * output format structure is now a hybrid tree/list for improved efficiency
-   * fixed the header parsing loop continuing into the response data
-   * added some additional sanity checks and more informative error strings
+2007-09-26 05:38  jbittel <jason.bittel@gmail.com>
 
-version 0.1.0
-   * massive code rewrite/refactoring
-   * rewrote output format handling code
-   * removed config file option
-   * removed writing binary dump file
-   * removed option to specify run directory in daemon mode
-   * changed option letter -f to -r and -l to -f
-   * hugely improved the efficiency of packet parsing
-   * tweaked default capture filter
-   * eliminated some minor memory leaks on shutdown
-   * reduced data coupling within the program
-   * removed custom argument parser to make it more functional and consistent
-   * format string can now have internal whitespace and is now case insensitive
+	* scripts/plugins/client_flows.pm:
+	  * Changed an unnecessary loop to
+	  a single assignment in timeout_flows()
+	  * Minor variable refactoring
 
-version 0.0.9
-   * added parsing of both client requests and server responses
-   * default capture filter now less restrictive
-   * command line arguments now *always* take precedence over config options
-   * wrote custom command line argument parser
-   * removed chance to test against invalid data on exit
-   * all major packet fields are now availble for output
-   * config file options now all lowercase
-   * output files are now chown'd to process owner
-   * -n switch now counts parsed packets, not total packets seen
-   * additional sanity checking for output file paths
-   * added necessary compile directives for OpenBSD
-   * '-' can be specified for the filename to force STDOUT
+2007-09-25 20:21  jbittel <jason.bittel@gmail.com>
 
-version 0.0.8
-   * crash on exit when reading from an input file
-   * handle whitespace properly in config file lines
-   * allow user to specify fields to output
-   * removed extended options switch (-x)
-   * configurable output data format (-s)
-   * parsed HTTP header fields stored in dynamic list
-   * error/log/warn macros encapsulated in header file
-   * moved TCP data fields to separate header file
+	* doc/perl-tools, scripts/client_flows.pl,
+	  scripts/plugins/client_flows.cfg,
+	  scripts/plugins/client_flows.pm:
+	  * Improved the readability and
+	  reduced the complexity of client_flows.pm by removing legacy code
+	  * Removed client_flows.pl from SVN
+	  * Updated documentation
 
-version 0.0.7
-   * option to read settings from a config file (-c)
-   * changed packet count switch from -c to -n
-   * fixed bug in packet count check
-   * cleaned up initialization logic in main()
-   * added config.h for setting compile time program defaults
-   * option to display extended packet information (-x)
-   * option to dump binary capture output file (-b)
-   * basic packet capture/parsing stats at program termination
-   * program now compiles cleanly as strict ANSI C
+2007-08-15 22:29  jbittel <jason.bittel@gmail.com>
 
-version 0.0.6
-   * ability to change process owner (-u)
-   * added additional error checking when entering daemon mode
-   * completely reworked output data handling
-   * removed stdout suppression (-s) option
-   * daemon mode (-d) now requires output file (-o)
-   * error/log/warn message printing pushed into function macros
-   * standardized error and status message strings
-   * ability to specify running directory (-r)
-   * fixed an incorrect array initialisation
-   * split version and help information into two commands (-v and -h)
+	* scripts/parse_log.pl:
+	  Removed unnecessary include from
+	  parse_log.pl
+
+2007-08-15 22:23  jbittel <jason.bittel@gmail.com>
+
+	* doc/format-string, doc/perl-tools, httpry.1, httpry.c,
+	  scripts/parse_log.pl:
+	  * Changed allow/ignore options in parse_log
+	  to use lookup tables instead of searching each array
+	  * Updated comments and documentation
+
+2007-08-15 00:31  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog:
+	  Minor documentation tweak
+
+2007-07-25 23:28  jbittel <jason.bittel@gmail.com>
+
+	* doc/perl-tools, scripts/parse_log.pl:
+	  * Condensed array check
+	  functions into a single generic function
+	  * Made -a and -i exclusive to eliminate confusing precedence
+	  issues
+	  * Updated documentation
+
+2007-07-24 00:04  jbittel <jason.bittel@gmail.com>
+
+	* doc/perl-tools, scripts/parse_log.pl, scripts/process_logs.sh:
+	  *
+	  Removed static @ignore array from parse_log.pl
+	  * Added -a and -i switches to parse_log.pl to enable
+	  comma-delimited lists of plugins to allow or ignore, respectively
+	  * Updated documentation
+
+2007-07-21 00:02  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  * Added a LOG_PRINT message to mark the start of a live
+	  capture
+
+2007-07-18 23:06  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, doc/README, httpry.1, httpry.c:
+	  * Changed some
+	  "magic numbers" into strlen calls (should be optimized away at
+	  compile)
+	  * Documentation updates
+
+2007-07-16 05:30  jbittel <jason.bittel@gmail.com>
+
+	* config.h, error.h, httpry.c, test/format-names:
+	  * Added a test
+	  file with the standard list of HTTP header fields
+	  * Tweaked some of the output strings
+
+2007-07-13 23:47  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/ChangeLog, doc/README, doc/format-string, error.h,
+	  format.c, httpry.c:
+	  * Lowercased default and example format
+	  string
+	  * Changed signal informational messages from LOG_WARN to
+	  LOG_PRINT
+	  * Added another call to pcap_geterr within the statistics code
+	  * Minor documentation and comment updates
+
+2007-07-12 23:51  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, doc/README, format.c, httpry.1, httpry.c:
+
+	  Added a check to ensure we've got an ethernet device for live
+	  captures
+	  
+	  Polished output strings for clarity and accuracy
+	  
+	  Added additional pcap error strings where possible to provide
+	  as much info as possible
+	  
+	  Minor refactoring and documentation updates
+
+2007-07-12 07:20  jbittel <jason.bittel@gmail.com>
+
+	* config.h, httpry.c:
+	  Renamed header delimiter constant to be a bit
+	  more clear
+
+2007-07-11 23:51  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, format.c, httpry.c:
+	  * Added a custom header
+	  tokenize function so we actually stop at the end of the header,
+	  and it's more efficient to boot
+	  * Updated documentation and program comments
+
+2007-07-10 23:06  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, doc/README, doc/perl-tools, format.c, format.h,
+	  httpry.c, scripts/plugins/db_dump.mysql,
+	  scripts/plugins/xml_output.cfg, scripts/plugins/xml_output.pm:
+	  *
+	  If changing user, change ownership of output file _before_
+	  dropping privs
+	  * Added a default case to handle_signal() in case it is called
+	  unexpectedly
+	  * Reimplemented the output format data structure as a hybrid
+	  binary tree and linked list
+	  * Minor documentation updates
+
+2007-07-10 07:33  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Tweaked usage text
+
+2007-07-09 23:59  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, error.h, format.c, httpry.c:
+	  * Renamed INFO macro
+	  to PRINT for consistency
+	  * Minor refactoring and cleanups
+
+2007-07-06 23:45  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, error.h, httpry.c:
+	  * Readded packet
+	  capture/parsing statistics, including packet rates
+	  * handle_signal() now exits on the signal received instead of
+	  EXIT_SUCCESS
+	  * Added LOG_PRINT macro
+	  * Documentation updates
+	  * Minor refactoring
+
+2007-07-05 06:10  jbittel <jason.bittel@gmail.com>
+
+	* format.c, httpry.c:
+	  * Fixed some compiler warnings that showed up
+	  with gcc 4.1.2
+	  * Added some additional ASSERT checks
+
+2007-07-02 23:33  jbittel <jason.bittel@gmail.com>
+
+	* format.c, httpry.c:
+	  * Standardized naming conventions on some
+	  output strings
+	  * Added return code to insert_node() so parse_format_string() can
+	  know if the node was successfully inserted
+	  * Now ignore zero length value strings (and remove associated
+	  ASSERT)
+
+2007-07-02 06:00  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Removed call to print_header_line() that was added for
+	  testing purposes
+
+2007-06-30 00:20  jbittel <jason.bittel@gmail.com>
+
+	* config.h, error.h, format.c, httpry.c:
+	  * Added additional ASSERT
+	  verification checks
+	  * Prevent zero length strings from being added as a format string
+	  name
+	  * Improved and extended comments to clarify portions of the
+	  source
+	  * Minor formatting changes
+
+2007-06-26 07:28  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, error.h, format.c:
+	  * Added new debug target to Makefile
+	  for compiling the program in a gdb friendly way
+	  * Define DEBUG in the Makefile, not in error.h
+	  * Added several ASSERT checks to format.c for obvious error
+	  conditions
+
+2007-06-26 00:04  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, config.h, doc/README, error.h, httpry.c:
+	  * Moved
+	  scoping of argument variables within main()
+	  * Added ASSERT macro
+	  * Bumped version number
+	  * Tweaked Makefile to include/exclude testing gcc switches
+
+2007-06-23 05:10  jbittel <jason.bittel@gmail.com>
+
+	* doc/COPYING, doc/ChangeLog, doc/LICENSE, doc/perl-tools:
+	  *
+	  Renamed LICENSE to COPYING
+	  * Updated documentation
+
+2007-06-22 23:57  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, scripts/parse_log.pl:
+	  * Changed daemon mode file
+	  creation mask
+
+2007-06-22 00:00  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, scripts/client_flows.pl, scripts/parse_log.pl,
+	  scripts/plugins/log_summary.pm:
+	  * Changed foreach loop to while
+	  loop in client_flows.pl to reduce memory usage
+	  * Pushed all user switching logic out of main() and into
+	  change_user() where it belongs
+
+2007-06-21 06:46  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Add an additional header line with program name/version
+	  to output file
+
+2007-06-20 23:54  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/ChangeLog, doc/format-string, format.c,
+	  scripts/client_flows.pl, scripts/parse_log.pl,
+	  scripts/process_logs.sh, scripts/rotate_log.pl:
+	  * Changed foreach
+	  loop to while loop in parse_log.pl so entire file isn't buffered
+	  in memory
+	  * Minor optimization tweaks in parse_log.pl
+	  * Changed default output format to include Direction again so it
+	  works with the Perl scripts by default
+	  * Added strcmp_name() to format.c so that output format fields
+	  are case insensitive
+	  * In parse_log.pl, lowercase header fields when parsed, not per
+	  line
+	  * Updated documentation
+
+2007-06-19 00:12  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, format.c, httpry.1, rc.httpry:
+	  * Added additional
+	  error checking to parse_format_string()
+	  * Minor textual tweaks
+
+2007-06-15 23:49  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, httpry.c, scripts/client_flows.pl,
+	  scripts/parse_log.pl, scripts/process_logs.sh,
+	  scripts/rotate_log.pl:
+	  * Updated ChangeLog
+	  * Standardized some code formatting and output text
+	  * Tweaked parse_log.pl initialization code
+
+2007-06-14 23:58  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, doc/LICENSE, doc/README, format.c, httpry.1,
+	  httpry.c, rc.httpry:
+	  * Updated man page
+	  * Changed license from modified BSD to GPLv2
+	  * rc.httpry now removes a stale PID file on startup
+	  * Moved rc.httpry start/stop code into functions
+
+2007-06-13 23:11  jbittel <jason.bittel@gmail.com>
+
+	* scripts/client_flows.pl, scripts/parse_log.pl,
+	  scripts/plugins/client_flows.cfg,
+	  scripts/plugins/client_flows.pm, scripts/plugins/db_dump.cfg,
+	  scripts/plugins/db_dump.pm, scripts/plugins/find_proxies.cfg,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/hostnames.cfg,
+	  scripts/plugins/hostnames.pm, scripts/plugins/log_summary.cfg,
+	  scripts/plugins/log_summary.pm, scripts/plugins/sample_plugin.pm,
+	  scripts/plugins/search_terms.cfg,
+	  scripts/plugins/search_terms.pm, scripts/plugins/xml_output.cfg,
+	  scripts/plugins/xml_output.pm, scripts/process_logs.sh,
+	  scripts/rotate_log.pl:
+	  * Updated boilerplate text across all
+	  files
+	  * Added <packet></packet> tags to xml_output.pm to distinguish
+	  each line
+
+2007-06-12 23:53  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/README, format.c, httpry.c, rc.httpry:
+	  * Renamed -f
+	  to -r and -l to -f
+	  * Backed off changes to capture filter; occasionally data is
+	  appearing outside PSH/ACK packets
+	  * Updated documentation
+
+2007-06-11 22:44  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/ChangeLog, doc/README, doc/perl-tools, httpry.c,
+	  rc.httpry, test/c:
+	  * Added a wrapper shell script for running
+	  callgrind
+	  * Updated README with program changes and rewrote portions for
+	  clarity
+	  * Removed -r option, just use "/" automatically
+	  * Updated the default capture filter to discard packets that
+	  won't ever have data in them
+	  * Removed a now unnecessary warning about a non-absolute output
+	  file path
+	  * Updated rc.httpry accordingly with program changes
+	  * Added proper checking to rc.httpry to see if a process already
+	  exists
+
+2007-06-11 03:42  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/AUTHORS, doc/tested-systems, format.c, format.h,
+	  httpry.c, list.c, list.h, test, test/v:
+	  * Renamed list.* to
+	  format.* to better reflect their purpose
+	  * Moved parse_format_string() to format.c
+	  * Allocate a temp string in parse_format_string() so we don't
+	  modify the parameter string
+	  * Strip whitespace from individual names as they're inserted into
+	  the the list instead of the string as a whole
+	  * Removed list references from function names to make format.c
+	  data structure agnostic
+	  * Reordered functions in httpry.c
+	  * Added a valgrind wrapper shell script for testing
+	  * Changed -n switch to accept 0 as a "loop forever" condition
+	  (default) or any non-zero number of packets to parse
+
+2007-06-10 05:38  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  * Initialize a packet data buffer once instead of
+	  allocating it for each packet
+	  * Moved some tests earlier in parse_http_packet() to reduce calls
+	  to strncpy()
+
+2007-06-10 02:50  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, config.h, doc/README, error.h, httpry.c, httpry.conf,
+	  httpry.h, list.c, list.h, tcp.h:
+	  * Removed config file option
+	  * Removed binary output file option
+	  * Eliminated parse_args() and moved argument handling to getopt()
+	  in main()
+	  * Removed '-' option to force STDOUT
+	  * Pushed output format list data structure into list.c
+	  * Rewrote list management functions for clarity and efficiency
+	  * Moved all format list logic into list.c where it belongs
+	  * Removed display_version() function
+	  * Renamed display_help() to display_usage()
+	  * Rewrote parse_format_string() for clarity
+	  * Replaced find_node() with insert_value() and pushed all related
+	  logic into list.c
+	  * Rewrote free_list() with far less stupid than before
+	  * Fixed minor memory leak on exit when -n was in effect
+	  * Changed all error/warning/informational printing macro names to
+	  uppercase
+	  * Eliminated client request and server response structs
+	  * Removed httpry.h
+	  * Renamed print_names() to print_header_line()
+	  * Partially updated documentation
+	  * Updated usage output text
+
+2007-06-07 21:45  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/search_terms.cfg,
+	  scripts/plugins/search_terms.pm:
+	  * Added average query length
+	  tracking in search_terms.pm
+	  * parse_log.pl now uses pattern matching for the ignore list so
+	  only a portion of the plugin name needs to be specified
+	  * Tweaked list of URLs for matching search strings
+
+2007-05-16 20:43  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  * Rolled all of the pcap setup code into a single
+	  function for simplicity and clarity
+	  * Tweaked code layout and formatting
+
+2007-05-16 16:11  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, scripts/plugins/client_flows.cfg,
+	  scripts/plugins/client_flows.pm, scripts/process_logs.sh:
+	  * Fixed
+	  some incorrect variables in process_logs.sh
+	  * Corrected main() exit code (although it's never reached)
+	  * Minor comment fixes and tweaks
+
+2007-01-30 07:11  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, list.c:
+	  Removed some spurious newlines from error
+	  strings
+
+2007-01-23 23:52  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/hostnames.pm:
+	  * Port numbers are now handled
+	  correctly in hostnames.pm
+	  * hostnames.pm now outputs the correct, formatted hostname
+	  * Improved filtering rules in hostnames.pm
+
+2007-01-23 00:43  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/hostnames.pm:
+	  Added cleanup/discard rules to
+	  hostnames.pm
+
+2007-01-22 06:22  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/hostnames.cfg, scripts/plugins/hostnames.pm:
+	  Added a new hostnames plugin that outputs a newline delimited
+	  list of hostnames
+
+2007-01-21 23:30  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/AUTHORS, doc/LICENSE, doc/README, error.h,
+	  httpry.1, httpry.c, httpry.h, list.c, list.h,
+	  scripts/client_flows.pl, scripts/parse_log.pl,
+	  scripts/plugins/client_flows.pm, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/log_summary.pm,
+	  scripts/plugins/sample_plugin.pm,
+	  scripts/plugins/search_terms.pm, scripts/plugins/xml_output.pm,
+	  scripts/process_logs.sh, scripts/rotate_log.pl, tcp.h:
+	  Updated
+	  copyright dates and email address
+
+2007-01-21 04:39  jbittel <jason.bittel@gmail.com>
+
+	* httpry.1:
+	  Updated release date in man page
+
+2007-01-19 00:10  jbittel <jason.bittel@gmail.com>
+
+	* scripts/client_flows.pl, scripts/plugins/client_flows.pm:
+	  Resolved a bug in client_flows.pm that caused flows to
+	  potentially not time out properly, particularly when very few
+	  client IPs were present in the log file
+
+2007-01-15 16:57  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/search_terms.pm:
+	  Remove unnecessary Yahoo! mail
+	  search term hits in search_terms.pm
+
+2007-01-12 23:53  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/log_summary.pm:
+	  Tweaked output report formatting
+	  in log_summary.pm
+
+2007-01-11 23:16  jbittel <jason.bittel@gmail.com>
+
+	* error.h, httpry.c:
+	  Added trailing newlines to error macro output
+	  strings to reduce redundancy
+
+2007-01-03 16:33  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/client_flows.pm, scripts/plugins/search_terms.pm:
+	  * Fixed a logic inversion in client_flows.pm that caused flows to
+	  not be displayed
+	  * Hex encoded '+' chars are now properly replaced in
+	  search_terms.pm
+
+2007-01-03 04:14  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/search_terms.pm, scripts/rotate_log.pl:
+	  * Added
+	  check to rotate_log.pl to prevent overwriting an existing file
+	  * Minor code and comment cleanup
+
+2006-12-23 04:16  jbittel <jason.bittel@gmail.com>
+
+	* doc/perl-tools, scripts/parse_log.pl,
+	  scripts/plugins/xml_output.cfg, scripts/plugins/xml_output.pm:
+	  *
+	  Removed pointless global variables in parse_log.pl
+	  * Updated documentation
+
+2006-12-21 00:25  jbittel <jason.bittel@gmail.com>
+
+	* config.h, httpry.conf, rc.httpry:
+	  * Improved readability of
+	  sample configuration file
+	  * Tweaked default capture filter
+
+2006-12-20 16:22  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  * Removed explicit root priviledges test for live
+	  capture in main()
+	  * Reorganized program initialization order in main()
+	  * Improved readability of several error and warning strings
+
+2006-12-18 06:19  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Moved packet capture loop into the main() function
+
+2006-12-16 00:35  jbittel <jason.bittel@gmail.com>
+
+	* doc/format-string, httpry.c:
+	  * Tweaked the packet statistics
+	  string format a bit more
+	  * Added a check to prevent memory leakage if
+	  parse_format_string() was called multiple times
+
+2006-12-15 00:11  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Experimenting with a more concise packet summary
+	  statistics line
+
+2006-12-14 06:43  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Removed a couple of unnecessary variables from
+	  process_http_packet(); can't think of a reason this doesn't work
+	  as the list values are always accessed within context of that
+	  function
+
+2006-12-08 21:33  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/client_flows.pm, scripts/plugins/find_proxies.pm:
+	  Removed instances of plugins modifying global record hash data
+
+2006-12-08 06:24  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/client_flows.pm, scripts/plugins/db_dump.pm,
+	  scripts/plugins/log_summary.pm, scripts/plugins/xml_output.pm:
+	  *
+	  Removed some instances of plugins modifying global data
+	  * Cleaned up some text formatting and output strings
+
+2006-12-06 17:24  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/search_terms.pm,
+	  scripts/plugins/xml_output.pm:
+	  * Removed File::Tail scaffolding
+	  from parse_log.pl; reevaluate for future implementation
+	  * xml_output.pm now prints all fields in hash instead of just the
+	  default fields
+	  * Removed some unnecessary/redundant existence tests from plugins
+	  * Fixed an off by one array access error in parse_log.pl
+
+2006-12-05 22:22  jbittel <jason.bittel@gmail.com>
+
+	* scripts/client_flows.pl, scripts/parse_log.pl,
+	  scripts/plugins/client_flows.pm,
+	  scripts/plugins/sample_plugin.pm:
+	  * Fixed divide by zero error in
+	  client_flows.pm when no flows were found
+	  * Refixed flow timeout code in client_flows.pl; didn't quite get
+	  it all first try
+	  * parse_log.pl now quits if it has no field headers
+
+2006-12-04 19:26  jbittel <jason.bittel@gmail.com>
+
+	* doc/perl-tools, scripts/client_flows.pl,
+	  scripts/plugins/client_flows.pm:
+	  * Merged fixes from
+	  client_flows.pm into client_flows.pl
+	  * Updated documentation
+
+2006-12-04 17:10  jbittel <jason.bittel@gmail.com>
+
+	* etc, scripts/parse_log.pl, scripts/plugins/client_flows.pm,
+	  scripts/plugins/db_dump.pm, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/log_summary.pm, scripts/plugins/search_terms.pm,
+	  scripts/plugins/xml_output.css, scripts/plugins/xml_output.pm:
+	  *
+	  Prevent old data leaking through if field headers change mid-flow
+	  in parse_log.pl
+	  * Field count is now correctly checked against header count in
+	  parse_log.pl
+	  * Added checks to each plugin to ensure that necessary hash
+	  elements exist
+	  * Minor directory structure update
+
+2006-12-04 05:22  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, list.c, list.h, scripts/parse_log.pl,
+	  scripts/plugins/client_flows.pm, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/search_terms.pm:
+	  * Comment now printed to output
+	  file to document output fields
+	  * parse_log.pl dynamically builds data hash based on commented
+	  fields
+	  * Fixed path issue with parse_log.pl when a plugin opened a file
+	  within init()
+	  * Moved hex char decoding to plugins that actually want/need it
+
+2006-12-04 04:16  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/ChangeLog, doc/README, doc/perl-tools, httpry.1,
+	  httpry.c, httpry.conf, list.c, list.h, scripts/parse_log.pl,
+	  scripts/plugins/sample_plugin.pm, scripts/plugins/xml_output.cfg,
+	  scripts/plugins/xml_output.pm:
+	  * Removed XML output from httpry
+	  * Removed XML support from parse_log.pl
+	  * Implemented xml_output.pm to handle XML format duties
+	  * Added an additional error check to parse_log.pl
+	  * Replaced a missing 'shift' in sample_plugin.pm
+
+2006-12-01 22:36  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl:
+	  parse_log.pl should default to ignoring
+	  db_dump.pm so the user isn't hit with a DB error right off
+
+2006-12-01 03:44  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/db_dump.cfg:
+	  Turned off db_dump.pm data removal
+	  by default
+
+2006-12-01 03:31  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/db_dump.cfg,
+	  scripts/plugins/db_dump.pm:
+	  Implemented db_dump.pm data removal
+	  according to specified day offset
+
+2006-12-01 02:09  jbittel <jason.bittel@gmail.com>
+
+	* etc, opt, scripts/plugins/client_flows.pm,
+	  scripts/plugins/db_dump.pm, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/search_terms.pm:
+	  * Be a little more clear when no
+	  data is retrieved by each parse script
+	  * Minor directory structure alteration
+
+2006-11-21 01:00  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/rotate_log.pl:
+	  * Use a better
+	  method for getting current directory in Perl scripts
+	  * Added plugin dir search logic so parse_log.pl can be called
+	  from anywhere
+
+2006-11-19 04:13  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/db_dump.cfg, scripts/plugins/db_dump.mysql,
+	  scripts/plugins/db_dump.pm:
+	  * Updated DB schema to include record
+	  insertion time
+	  * db_dump.pm now actually works again
+
+2006-11-09 01:11  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/client_flows.pm, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/log_summary.pm,
+	  scripts/plugins/search_terms.pm:
+	  * Improved formatting of report
+	  headers
+	  * Removed additional unnecessary variables
+
+2006-11-08 22:37  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/db_dump.cfg, scripts/plugins/db_dump.mysql,
+	  scripts/plugins/db_dump.pm:
+	  Updated db_dump.pm to handle both
+	  client and server data; still needs to be tested
+
+2006-11-01 03:07  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/find_proxies.pm:
+	  Improved formatting of
+	  find_proxies.pm output report
+
+2006-10-31 07:17  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/log_summary.pm:
+	  Fixed
+	  compile error in log_summary.pm
+
+2006-10-26 23:01  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/log_summary.pm, scripts/plugins/search_terms.pm:
+	  * Only print runtime to one decimal place in log_summary.pm
+	  * Improved search_terms.pm report formatting
+	  * Added code in log_summary.pm to only print "Top ___" reports if
+	  data exists
+
+2006-10-25 21:28  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/search_terms.pm:
+	  * search_terms.pm now handles
+	  null search terms properly
+	  * parse_log.pl now only decodes hex chars in the URI
+	  * parse_log.pl also now stores a copy of the encoded URI
+	  (primarily for search_terms.pm)
+	  * find_proxies now clusters hits by domain name
+
+2006-10-25 05:01  jbittel <jason.bittel@gmail.com>
+
+	* rc.httpry, scripts/parse_log.pl, scripts/plugins/client_flows.pm,
+	  scripts/plugins/db_dump.cfg, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/log_summary.pm,
+	  scripts/plugins/sample_plugin.pm,
+	  scripts/plugins/search_terms.pm:
+	  * Modified rc.httpry to
+	  explicitly delete the PID file on 'stop'
+	  * parse_log.pl now passes data hash by reference to each
+	  instantiated plugin
+	  * Updated db_dump config file documentation
+
+2006-10-24 20:34  jbittel <jason.bittel@gmail.com>
+
+	* opt, opt/httpry.css, scripts/plugins/client_flows.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/log_summary.pm,
+	  scripts/plugins/search_terms.pm:
+	  * Report formatting changes and
+	  cleanups
+	  * find_proxies.pm now prints number of hits per hostname
+	  * Added httpry.css
+
+2006-10-24 01:36  jbittel <jason.bittel@gmail.com>
+
+	* httpry.conf, rc.httpry, scripts/plugins/client_flows.cfg,
+	  scripts/plugins/client_flows.pm,
+	  scripts/plugins/find_proxies.cfg,
+	  scripts/plugins/search_terms.cfg,
+	  scripts/plugins/search_terms.pm:
+	  * rc.httpry now explicitly
+	  deletes the PID file when stopping
+	  * Refactored some variable names in client_flows.pm for clarity
+	  * Removed quote stripping from search_terms.pm
+	  * Updated documentation
+
+2006-10-21 16:50  jbittel <jason.bittel@gmail.com>
+
+	* doc/perl-tools, scripts/plugins/client_flows.pm:
+	  * Removed an
+	  unnecessary check in client_flows.pm
+	  * Updated documentation
+
+2006-10-21 09:56  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/client_flows.pm:
+	  *
+	  parse_log.pl can now detect and parse both XML and text input
+	  files
+	  * Fixed issue with client_flows.pm where active flows at the end
+	  of the log file were not getting flushed properly
+
+2006-10-21 06:11  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, doc/perl-tools,
+	  scripts/plugins/client_flows.pm, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/log_summary.pm,
+	  scripts/plugins/search_terms.cfg,
+	  scripts/plugins/search_terms.pm:
+	  * search_terms.pm now stores all
+	  domains/names in a hash in the config file
+	  * log_summary.pm now calculates the total wall-clock time taken
+	  * Removed some unused variables from find_proxies.pm
+
+2006-10-19 18:33  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/client_flows.cfg,
+	  scripts/plugins/db_dump.cfg, scripts/plugins/find_proxies.cfg,
+	  scripts/plugins/log_summary.cfg, scripts/plugins/log_summary.pm,
+	  scripts/plugins/search_terms.cfg:
+	  * log_summary.pm now searches
+	  for file extensions within the URI
+	  * Explicit true condition added to the end of all the plugin
+	  config files
+
+2006-10-18 23:18  jbittel <jason.bittel@gmail.com>
+
+	* doc/tested-systems, scripts/parse_log.pl,
+	  scripts/plugins/client_flows.pm, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/log_summary.pm,
+	  scripts/plugins/sample_plugin.pm,
+	  scripts/plugins/search_terms.pm:
+	  * Plugins updated to use new
+	  hash structure passed from parse_log.pl
+	  * Added a field count sanity check to parse_log.pl
+	  * find_proxies.pm now attempts a base64 decode on URIs and then
+	  checks for embedded requests
+	  * Minor refactoring and cleanup
+	  * Added AltaVista support to search_terms.pm
+
+2006-10-18 00:00  jbittel <jason.bittel@gmail.com>
+
+	* doc/tested-systems, scripts/parse_log.pl,
+	  scripts/plugins/find_proxies.pm,
+	  scripts/plugins/sample_plugin.pm:
+	  * parse_log.pl now parses each
+	  line and passes a hash to each plugin
+	  * Began updating find_proxies.pm with new ideas
+	  * Updated tested-systems
+
+2006-10-14 03:27  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/ChangeLog, doc/tested-systems, httpry.1,
+	  httpry.conf:
+	  * All config file options are now commented by
+	  default
+	  * Added proper list.c dependency to Makefile
+	  * Documentation updates
+
+2006-10-10 23:01  jbittel <jason.bittel@gmail.com>
+
+	* rc.httpry, scripts/process_logs.sh:
+	  Fixed inverted logic error in
+	  rc.httpry
+
+2006-10-10 04:04  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, doc/README, doc/perl-tools, doc/tested-systems,
+	  httpry.1, httpry.c:
+	  * A '-' char can now be specified for an
+	  output file to force STDOUT
+	  * Major documentation updates
+
+2006-10-04 23:42  jbittel <jason.bittel@gmail.com>
+
+	* rc.httpry, scripts/process_logs.sh:
+	  Fixed several issues within
+	  the shell scripts; updated comments to be more clear and direct
+
+2006-10-04 08:23  jbittel <jason.bittel@gmail.com>
+
+	* rc.httpry, scripts/process_logs.sh:
+	  Updated shell scripts to
+	  match program changes and to add additional error checking
+
+2006-10-01 23:02  jbittel <jason.bittel@gmail.com>
+
+	* config.h, httpry.c, httpry.conf:
+	  * Removed -x command line switch
+	  * Split -o command line switch into -oT and -oX for text or XML
+	  output, respectively
+	  * Added check for TCP packet to parse_http_packet() to bail
+	  earlier when possible if capture filter is too broad
+	  * Moved XML strings into config.h
+
+2006-09-29 00:15  jbittel <jason.bittel@gmail.com>
+
+	* scripts/plugins/search_terms.pm:
+	  Added EBay support to
+	  search_terms.pm
+
+2006-09-27 00:08  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, httpry.c:
+	  Added test to only print </flow> tag
+	  when packets have actually been parsed
+
+2006-09-26 03:47  jbittel <jason.bittel@gmail.com>
+
+	* doc/tested-systems, tcp.h:
+	  * Updated tested-systems to reflect
+	  successful compilation on OpenBSD
+	  * Changed tested-systems to UNIX line endings
+	  * Minor formatting changes
+
+2006-09-26 03:25  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, tcp.h:
+	  Added compile time directives to allow
+	  successful compilation under OpenBSD (3.8 specifically tested)
+
+2006-09-25 04:52  jbittel <jason.bittel@gmail.com>
+
+	* doc/tested-systems:
+	  Added a file to document tested systems for
+	  each release
+
+2006-09-22 22:40  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl:
+	  Added sample_plugin.pm to the ignore list
+	  within parse_log.pl
+
+2006-09-21 23:44  jbittel <jason.bittel@gmail.com>
+
+	* scripts/parse_log.pl, scripts/plugins/client_flows.cfg,
+	  scripts/plugins/client_flows.pm, scripts/plugins/search_terms.pm:
+	  * Fixed several compile issues with client_flows.pm
+	  * Resolved issue where search_terms.pm would skip lines where the
+	  search term was not followed by a '&'
+	  * Added live.com support to search_terms.pm
+	  * Removed false positives from search_terms.pm when extraneous
+	  argument name ended in the search term name
+	  * Removed false positives from search_terms.pm when domain name
+	  was part of a longer name
+	  * Prune additional unnecessary hits from search_terms.pm results
+
+2006-09-20 21:55  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, doc/perl-tools, scripts/client_flows.pl,
+	  scripts/plugins/client_flows.cfg,
+	  scripts/plugins/client_flows.pm:
+	  * Began switching
+	  client_flows.pl to operate as a plugin instead of a stand-alone
+	  script
+	  * Updated documentation
+
+2006-09-11 05:10  jbittel <jason.bittel@gmail.com>
+
+	* list.c, scripts/parse_log.pl:
+	  Implemented plugin ignoring in
+	  parse_log.pl by means of an internal list
+
+2006-09-08 19:59  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, httpry.c, list.c:
+	  * Added xml output format
+	  parameter
+	  * Added warning for malformed parameters in addition to printing
+	  the help
+	  * Fixed incorrect check to wrong file for absolute file path
+
+2006-09-06 15:27  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/AUTHORS, httpry.c, list.c, list.h,
+	  scripts/client_flows.pl:
+	  * Implemented fully lowercase XML tags
+	  * All XML entities are now properly escaped in output
+	  * Raised client_flows.pl prune limit
+
+2006-09-05 06:18  jbittel <jason.bittel@gmail.com>
+
+	* list.c, list.h:
+	  * Added a field to each list node element to hold
+	  a lowercase copy of the name
+	  * Added a to_lowercase function to list.c
+
+2006-08-28 05:56  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, scripts/client_flows.pl,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/search_terms.pm:
+	  * Fixed erroneous error string when a capture device is not found
+	  * Rewrote search term parsing for clarity and speed in
+	  search_terms.pm
+	  * Removed CGI dependency in search_terms.pm
+	  * Minor code and comment tweaks
+
+2006-08-25 20:45  jbittel <jason.bittel@gmail.com>
+
+	* scripts/client_flows.pl, scripts/parse_log.pl,
+	  scripts/plugins/db_dump.pm, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/log_summary.pm, scripts/plugins/search_terms.pm,
+	  scripts/rotate_log.pl:
+	  Reformatted all error strings to use
+	  consistent capitalization
+
+2006-08-17 04:10  jbittel <jason.bittel@gmail.com>
+
+	* config.h, error.h, httpry.c, httpry.h, list.c, list.h,
+	  scripts/client_flows.pl, scripts/parse_log.pl,
+	  scripts/plugins/db_dump.pm, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/log_summary.pm, scripts/plugins/sample_plugin.pm,
+	  scripts/plugins/search_terms.pm, scripts/rotate_log.pl, tcp.h:
+	  Added full license text to all source code files
+
+2006-08-10 17:05  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, doc/format-string, doc/perl-tools,
+	  httpry.c, rc.httpry:
+	  Minor tweaks and cleanup to comments, text
+	  strings and documentation
+
+2006-08-08 21:52  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Improved text in existing warnings in config file
+	  parser and added explicit warnings about missing name or value
+
+2006-08-08 06:47  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Added additional bounds checking for numeric input
+
+2006-08-04 20:55  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, doc/format-string, doc/perl-tools, httpry.1,
+	  httpry.c, scripts/client_flows.pl, scripts/plugins/db_dump.pm,
+	  scripts/plugins/find_proxies.pm, scripts/plugins/log_summary.pm,
+	  scripts/plugins/sample_plugin.pm,
+	  scripts/plugins/search_terms.pm, scripts/process_logs.sh:
+	  *
+	  Significant documentation updates
+	  * Added --help and --version as command line options
+	  * Overhauled man page layout and formatting
+	  * Updated db_dump.pm to handle both requests and responses
+	  * Minor code refactoring
+	  * Fixed spurious directory open error in client_flows.pl when
+	  using -d
+	  * In client_flows.pl, -d was changed to -t and code was
+	  refactored for consistency
+
+2006-08-03 23:03  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/ChangeLog, doc/README, httpry.1, httpry.c,
+	  httpry.conf:
+	  * Broadened default capture filter
+	  * Changed -n switch to use parsed packets, not total packets
+	  captured
+	  * Updated documentation and sample config
+
+2006-07-18 23:54  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/format-string, scripts/client_flows.pl,
+	  scripts/content_check.pl, scripts/plugins/find_proxies.pm,
+	  scripts/plugins/log_summary.pm, scripts/plugins/search_terms.pm:
+	  * Updated default output format string (yes, again) to include
+	  Host:
+	  * Modified scripts to handle (or simply discard) both client and
+	  server lines
+	  * Added additional checks for missing data
+	  * Updated documentation
+
+2006-07-18 06:03  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, httpry.c:
+	  * Test for and warn user if relative
+	  output file paths provided
+	  * chown output files to process owner if changing from root
+	  * Warn if run_dir specified when not in daemon mode
+
+2006-07-17 23:22  jbittel <jason.bittel@gmail.com>
+
+	* error.h, httpry.c:
+	  * Added log_info macro
+	  * Exit signal handling is now additionally reported to the syslog
+
+2006-07-17 22:24  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, error.h, httpry.c, httpry.conf:
+	  * Added log_warn
+	  macro to eliminate redundant text strings
+	  * Changed all config file options to lowercase to (hopefully)
+	  reduce confusion
+	  * Updated sample config file
+
+2006-07-16 23:45  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/ChangeLog, doc/README, doc/format-string, httpry.c:
+	  * All output format fields are now dynamic
+	  * Updated default format string
+	  * Updated documentation accordingly
+
+2006-07-15 06:38  jbittel <jason.bittel@gmail.com>
+
+	* doc/perl-tools, scripts/plugins/db_dump.cfg,
+	  scripts/plugins/db_dump.mysql, scripts/plugins/db_dump.pm:
+	  *
+	  db_dump.pm module successfully dumps data into database; still
+	  need to be able to remove old data
+	  * Updated db_dump.cfg
+	  * Added db_dump.mysql for creating database table structure
+	  * Minor documentation updates
+
+2006-07-13 15:40  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Revert the request/response direction if block changes
+	  as it hosed the whole program; remind me to test this stuff
+	  before I commit
+
+2006-07-13 15:34  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, doc/ChangeLog, httpry.c, parse_log.pl, plugins,
+	  process_logs.sh, rotate_log.pl, scripts,
+	  scripts/content_check.pl, scripts/parse_log.pl, scripts/plugins,
+	  scripts/process_logs.sh, scripts/rotate_log.pl:
+	  * Fixed text
+	  against invalid data in httpry
+	  * Reorganized scripts into separate subdirectory
+	  * Minor code cleanups
+
+2006-07-11 05:31  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Cleaned up formatting; removed now unnecessary default
+	  value checks in config file parser
+
+2006-07-10 23:01  jbittel <jason.bittel@gmail.com>
+
+	* doc/ChangeLog, httpry.c, plugins/find_proxies.pm:
+	  Implemented
+	  custom command line argument parser; allows for future
+	  flexibility and fixes the config file options potentially
+	  overriding command line parameters
+
+2006-07-05 23:43  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, doc/ChangeLog, doc/README, doc/perl-tools:
+	  *
+	  Added ability to content_check.pl to dump all detail records
+	  * Minor documentation updates
+
+2006-07-05 22:35  jbittel <jason.bittel@gmail.com>
+
+	* plugins/db_dump.cfg, plugins/db_dump.pm, plugins/find_proxies.pm:
+	  * Added db_dump.pm plugin for inserting log data into database
+	  * Added proper variable declaration to find_proxies.pm
+
+2006-06-20 17:04  jbittel <jason.bittel@gmail.com>
+
+	* plugins/search_terms.pm:
+	  Added Ask.com query support to
+	  search_terms.pm
+
+2006-06-14 07:33  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/format-string, doc/perl-tools, httpry.c:
+	  * Made
+	  Direction a selectable output option
+	  * Added Direction to default format string
+	  * Significant documentation updates
+
+2006-06-13 23:23  jbittel <jason.bittel@gmail.com>
+
+	* config.h, httpry.c:
+	  Did some refactoring of constant names for
+	  readability and consistency
+
+2006-06-13 17:47  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/ChangeLog, doc/README, httpry.1, httpry.c:
+	  Server
+	  response parsing functional; needs some cleanup but works
+	  correctly
+
+2006-06-13 06:44  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Started work on parsing server response; compiles but
+	  doesn't fully work
+
+2006-06-13 02:08  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, httpry.h:
+	  Added structs and did some refactoring to
+	  prepare for server response data
+
+2006-06-12 04:10  jbittel <jason.bittel@gmail.com>
+
+	* plugins/log_summary.pm:
+	  We should get more accurate results with
+	  case insensitive extensions in log_summary.pm
+
+2006-06-11 05:52  jbittel <jason.bittel@gmail.com>
+
+	* process_logs.sh:
+	  Remind me to learn proper shell script syntax
+
+2006-06-09 23:30  jbittel <jason.bittel@gmail.com>
+
+	* httpry.1, plugins/find_proxies.cfg, plugins/log_summary.cfg,
+	  plugins/search_terms.cfg, process_logs.sh, rc.httpry:
+	  Added check
+	  to rc.httpry to ensure a PID file doesn't exist before starting;
+	  minor tweaks to config files/shell scripts
+
+2006-06-08 22:33  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Moved signal handler creation up to ensure that the
+	  die() macro won't be called without the signal handler function
+	  being bound
+
+2006-06-08 15:25  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Minor performance tweak to content_check.pl
+
+2006-06-08 06:26  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c, tcp.h:
+	  * Added (I think) an appropriate
+	  quote to README
+	  * Removed some unused, commented out #includes
+
+2006-06-06 17:19  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, parse_log.pl, plugins/find_proxies.cfg,
+	  plugins/find_proxies.pm, plugins/log_summary.pm,
+	  plugins/sample_plugin.pm, plugins/search_terms.pm, rotate_log.pl:
+	  Lots of minor code tweaks and cleanups
+
+2006-06-05 18:22  jbittel <jason.bittel@gmail.com>
+
+	* doc/AUTHORS, doc/README, doc/format-string, doc/perl-tools,
+	  httpry.1:
+	  Lots of documentation additions and updates
+
+2006-06-02 16:08  jbittel <jason.bittel@gmail.com>
+
+	* README, doc/ChangeLog, doc/README:
+	  * Moved changelog information
+	  into separate file
+	  * Added soft link to README from root dir
+
+2006-05-23 02:11  jbittel <jason.bittel@gmail.com>
+
+	* doc/perl-tools, rotate_log.pl:
+	  * Updated regexps in rotate_log.pl
+	  * Added summary documentation for all perl tool scripts
+
+2006-05-14 03:53  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, list.c, list.h:
+	  * free_list() function added to list.c
+	  * Linked list memory is now explicitly freed in cleanup_exit()
+	  * PID_FILE is now only removed if running in daemon mode
+
+2006-05-12 23:31  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, httpry.h, tcp.h:
+	  * Moved TCP structs into separate
+	  tcp.h header file
+	  * Added BSD copyright text to tcp.h which should properly bring
+	  it into line with the license
+	  * Removed unnecessary header includes from tcp.h
+
+2006-05-12 18:41  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, config.h, content_check.pl, doc/LICENSE, doc/README,
+	  error.h, httpry.c, httpry.conf, httpry.h, list.c, list.h,
+	  parse_log.pl, plugins/find_proxies.pm, plugins/log_summary.pm,
+	  plugins/sample_plugin.pm, plugins/search_terms.pm,
+	  process_logs.sh, rotate_log.pl:
+	  * Removed program names and
+	  version numbers from perl scripts; names were unnecessary and
+	  version numbers were arbitrary and meaningless
+	  * Updated rotate_log.pl to include full usage text and removed
+	  unnecessary newlines from error strings
+	  * Specifically declare file creation dates so they are not
+	  confused with modification dates
+	  * Documentation updates and fixes
+
+2006-05-12 16:26  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, process_logs.sh, rc.httpry:
+	  * Fixed spurious
+	  error message in content_check.pl when not using -d
+	  * Added session concurrency tracking to content_check.pl
+	  * Updated shell script to match changes to httpry and tool
+	  scripts
+
+2006-05-11 21:28  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Replaced all die() calls with log_die(); removed -x
+	  parameter from getopt list; minor tweaks and cleanups
+
+2006-05-11 20:26  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, doc/format-string, httpry.1, httpry.c:
+	  Updated
+	  documentation to reference new features; added documentation for
+	  format string functionality
+
+2006-05-11 03:47  jbittel <jason.bittel@gmail.com>
+
+	* config.h, error.h, httpry.c, httpry.h, list.c, list.h:
+	  * Moved
+	  error macros to separate header file
+	  * log_die macro now raises SIGINT instead of calling
+	  cleanup_exit() directly
+	  * Linked list name element is now allocated dynamically
+	  * Trimmed down global variables in httpry.c
+	  * Minor cleanups and changes
+
+2006-05-11 00:09  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, httpry.c, httpry.h, list.c, list.h:
+	  Rewrote
+	  HTTP parsing core to use a linked list to store entities; still
+	  rough but it compiles and runs; updated documentation accordingly
+
+2006-05-05 21:29  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c:
+	  Reordered pointer clearing block to ensure
+	  it is only performed when necessary; minor comment and
+	  documentation updates
+
+2006-05-04 23:52  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Removed unnecessary malloc() pass over packet buffer
+	  and replaced with a single string termination assignment
+
+2006-05-04 21:39  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/AUTHORS, doc/README, httpry.c, httpry.conf:
+	  *
+	  Format string option now functional for HTTP fields; packet
+	  fields not available as yet
+	  * Added command line/config file options for format string
+	  * Moved whitespace stripping code into separate function
+	  * Updated documentation accordingly
+
+2006-05-04 03:39  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, httpry.h:
+	  Further progress on implementing custom
+	  output format; still broken but fixes a few errors
+
+2006-05-04 00:03  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c, httpry.h:
+	  Began work on user defined output
+	  string
+
+2006-05-02 22:24  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, httpry.c, httpry.conf, httpry.h,
+	  plugins/search_terms.pm:
+	  * Added full RFC2616 request header
+	  parsing
+	  * Minor refactoring of existing variables to match RFC2616
+	  * Updated documentation
+	  * Additional wording/clarification changes in comments and
+	  documentation
+
+2006-04-26 23:17  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c, httpry.conf, httpry.h:
+	  * Moved output
+	  macros to header file
+	  * Changed config file parsing routine to handle inner spaces
+	  * Few minor tweaks and changes
+	  * Updated documentation
+
+2006-04-19 23:42  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, httpry.conf:
+	  All config options now freed on exit;
+	  minor tweaks to sample httpry.conf configuration file
+
+2006-04-14 23:32  jbittel <jason.bittel@gmail.com>
+
+	* plugins/search_terms.pm:
+	  Added MSN service search term parsing to
+	  search_terms.pm
+
+2006-04-10 17:22  jbittel <jason.bittel@gmail.com>
+
+	* plugins/search_terms.pm:
+	  Added Yahoo search support to
+	  search_terms.pm
+
+2006-04-06 23:32  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  parse_log.pl now properly outputs each plugin name
+	  in output text after the plugin has been initialized instead of
+	  including the full hash string
+
+2006-04-05 22:21  jbittel <jason.bittel@gmail.com>
+
+	* plugins/search_terms.pm:
+	  * search_terms.pm now utilizes CGI.pm to
+	  parse URIs for search strings
+	  * Added YouTube support for search string parsing
+
+2006-04-05 03:16  jbittel <jason.bittel@gmail.com>
+
+	* plugins/find_proxies.cfg, plugins/find_proxies.pm:
+	  Improved URI
+	  embedded request regexp in find_proxies.pm
+
+2006-04-04 23:33  jbittel <jason.bittel@gmail.com>
+
+	* plugins/find_proxies.cfg, plugins/find_proxies.pm,
+	  plugins/log_summary.cfg, plugins/log_summary.pm,
+	  plugins/search_terms.cfg, plugins/search_terms.pm:
+	  * Added plugin
+	  to locate proxy usage (find_proxies.pm)
+	  * Added plugin to track search terms (search_terms.pm)
+	  * Changed email wording for log_summary.pm
+	  * Changed default output file names to be more specific
+
+2006-04-04 03:56  jbittel <jason.bittel@gmail.com>
+
+	* config.h, content_check.pl, httpry.1, httpry.c, httpry.h,
+	  parse_log.pl, plugins/log_summary.cfg, plugins/log_summary.pm,
+	  plugins/sample_plugin.pm, rotate_log.pl:
+	  * Updated copyright year
+	  to match current date
+	  * Fixed $summary_cap incorrectly handling negative numbers
+	  * Added descriptions of all variables within log_summary.cfg
+
+2006-04-03 16:28  jbittel <jason.bittel@gmail.com>
+
+	* plugins/log_summary.cfg, plugins/log_summary.pm,
+	  plugins/sample_plugin.pm:
+	  * Added sample_plugin.pm to describe
+	  and document how a simple plugin works
+	  * Removed an unnecessary include from log_summary.pm
+	  * Added a check to ensure config file existence in log_summary.pm
+	  * Removed personal file path from log_summary.cfg
+
+2006-04-02 04:29  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, parse_log.pl, plugins/log_summary.cfg,
+	  plugins/log_summary.pm:
+	  * Minor cleanups to parse_log.pl
+	  * Minor cleanups to content_check.pl
+	  * Added option to log_summary.cfg
+	  * Finished initial log summary code in log_summary.pm
+	  * Several fixes to log_summary.pm
+
+2006-03-30 23:23  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, parse_log.pl:
+	  Minor tweaks to help and usage
+	  information in the perl parsing scripts
+
+2006-03-30 00:40  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  Removed all line processing code from parse_log.pl;
+	  all processing should be handled by each plugin as necessary and
+	  not performed globally
+
+2006-03-29 03:16  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl, plugins/log_summary.pm, rc.httpry:
+	  Minor changes
+	  and cleanup to the perl parse core/plugin code
+
+2006-03-25 00:28  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl, plugins/log_summary.cfg, plugins/log_summary.pm:
+	  *
+	  Removed legacy log summary code from parse_log.pl
+	  * Improved error text strings for layout and clarity
+	  * Fix plugin config file importing
+	  * Plugins actually load and initialize correctly now
+	  * General code cleanup
+
+2006-03-21 00:10  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, offensive.txt:
+	  * Removed offensive.txt content
+	  checks file as it wasn't technically part of the project
+	  * Added help switch to content_check.pl and extended usage
+	  information
+	  * Cleaned up error strings in content_check.pl
+
+2006-03-17 07:36  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, parse_flows.pl, parse_log.pl,
+	  plugins/log_summary.cfg, plugins/log_summary.pm,
+	  plugins/process_log.cfg, plugins/process_log.pm,
+	  plugins/trace_flows.cfg, plugins/trace_flows.pm:
+	  * Removed
+	  duplicate code from the creation of content_check.pl
+	  * Cleaned up plugin script
+	  * Renamed process_log.pl to log_summary.pl to better reflect its
+	  focus
+	  * Removed legacy code from log_summary.pl
+	  * Updated httpry changelog
+
+2006-03-08 23:29  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Added ability to content_check.pl to skip
+	  commented lines in hitlist file (line must begin with a #
+	  character)
+
+2006-03-07 07:14  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Minor comment tweaks and cleanup to
+	  content_check.pl
+
+2006-03-02 23:28  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl, doc/AUTHORS:
+	  Added text file deletion to
+	  content_check.pl to prevent host detail records from continuously
+	  appending; added AUTHORS text file as it seems to be somewhat of
+	  a standard thing to have
+
+2006-03-02 19:44  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Removed -s option from content_check.pl; added
+	  history hash to ease regexp matches; some cleanup and refactoring
+
+2006-03-01 03:29  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  content_check.pl mostly works at this point;
+	  still need to test some of the extended functionality but it
+	  seems to generate correct output data; I'll need to review the
+	  code when I'm less sleepy and see what's broken
+
+2006-02-28 09:41  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Made several fixes to content_check.pl; cleaned
+	  up some of the commented out code that was not going to be used
+	  again
+
+2006-02-28 00:57  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Significant content_check.pl changes and
+	  cleanup; most functionality kind of works at this point, although
+	  there are still a couple critical pieces left as documented in
+	  TODO comments; execution time needs to be addressed as well,
+	  along with any potential data structure optimizations
+
+2006-02-23 00:33  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Additional progress on content_check.pl; fixed
+	  several output errors and worked on the internal data structures;
+	  the data structures are reaching the point of unweildy and
+	  confusing, so it would be ideal to find some alternatives
+
+2006-02-22 08:01  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Made further progress on content_check.pl; the
+	  script is still non-functioning, but it is closer to working than
+	  when I started; I'm going to bed
+
+2006-02-18 01:12  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  Significant progress on content_check.pl;
+	  Merged trace_ and parse_ functions into a single entity; compiles
+	  and runs cleanly at this point but doesn't tag flows correctly
+
+2006-02-17 01:07  jbittel <jason.bittel@gmail.com>
+
+	* content_check.pl:
+	  We're going a different direction with the
+	  scripts; parse_log.pl, parse_flows.pl and trace_flows.pl are
+	  being rolled into a single content_check.pl script which should
+	  allow for better speed and maintainability; it isn't fully
+	  functional as yet, it's still in the process of being merged
+	  together and cleaned up; we also need to clean up the directory
+	  structure
+
+2006-02-07 00:46  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl, plugins/process_log.cfg, plugins/process_log.pm,
+	  plugins/trace_flows.cfg, plugins/trace_flows.pm:
+	  Began process of
+	  checking return values for the callback functions
+
+2006-02-06 08:20  jbittel <jason.bittel@gmail.com>
+
+	* config.h, parse_log.pl, plugins, plugins/process_log.cfg,
+	  plugins/process_log.pm, plugins/trace_flows.cfg,
+	  plugins/trace_flows.pm, trace_flows.pl:
+	  Major code rewrite of the
+	  perl tool scripts to begin shifing over to the new plugin
+	  interface; not functional yet but a significant amount of the
+	  work; some repository file/dir rearrangement to account for the
+	  new/changed files
+
+2006-02-01 04:16  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c:
+	  Fixed crash related to pcap_close() and
+	  using an input file; it shouldn't crash according to the docs
+	  (but it does anyway) so since the call to pcap_close was
+	  redundant due to program termination it was simply removed; the
+	  use_infile variable is now not free'd in main() so it can be
+	  safely tested against on exit
+
+2006-02-01 03:42  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl, parse_log.pl, trace_flows.pl:
+	  If input file is
+	  not present, print error message along with usage information so
+	  user knows why it didn't work instead of failing silently
+
+2006-01-27 05:34  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.1, parse_log.pl:
+	  Minor documentation updates
+	  and fixes in preparation for the 0.0.7 release
+
+2006-01-25 16:31  jbittel <jason.bittel@gmail.com>
+
+	* process_logs.sh:
+	  Added specific -log and -flow suffixes to log
+	  files in process_logs.sh to better differentiate between them and
+	  prevent them from clobbering each other
+
+2005-12-30 00:11  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, httpry.1:
+	  Added compiler flag to treat
+	  warnings as errors; major documentation updates and fixes
+
+2005-12-28 07:27  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, httpry.c:
+	  Removed all C99isms from code, it now
+	  compiles cleanly as strict ANSI C which should help portability
+
+2005-12-25 05:36  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl, parse_log.pl, rotate_log.pl:
+	  Fixed missing print
+	  if no tagged records in parse_log.pl; added option to
+	  rotate_log.pl to maintain a maximum size for the logs directory;
+	  quite a bit of code/comment cleanup and reordering of functions
+
+2005-12-23 07:12  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, httpry.conf:
+	  Rewrite config file parsing routine; added
+	  sample configuration file
+
+2005-12-23 00:35  jbittel <jason.bittel@gmail.com>
+
+	* process_logs.sh, rc.httpry:
+	  Updated shell scripts to reflect
+	  changes to httpry
+
+2005-12-20 04:25  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c:
+	  Cleaned up stats code formatting slightly;
+	  updated documentation
+
+2005-12-20 01:17  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Implemented basic packet capture/parsing statistics
+	  that are printed at program termination
+
+2005-12-19 00:55  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Added binary output file to config file option list
+
+2005-12-18 06:48  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/README, httpry.c, offensive.txt, parse_flows.pl,
+	  parse_log.pl:
+	  Added binary output file option; several minor
+	  fixes and improvements in both parsing scripts; documentation
+	  updated
+
+2005-12-17 00:47  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, httpry.h:
+	  Implemented an extended information option so
+	  that additional packet/header information can be displayed; this
+	  functionality is more of a stop-gap implementation, ultimately
+	  I'd like to allow a custom output format string which would allow
+	  the user to define the precise format of the output string
+
+2005-12-09 19:40  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl, parse_log.pl:
+	  We now distinguish between watching
+	  and detail host output files
+
+2005-12-06 07:32  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c:
+	  Implemented the beginnings of the extended
+	  packet info printing; still needs more work and thought, but it
+	  will do nicely for a start
+
+2005-12-02 23:29  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, parse_flows.pl:
+	  Minor function rearranging in httpry;
+	  added a watch list option to parse_flows.pl that allows all flows
+	  from a particular host to be saved out regardless of tagging;
+	  still untested and needs some polishing but it should work
+
+2005-11-22 00:47  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Fixed the crash when freeing memory while using a
+	  config file; made some other minor cleanups at the same time
+
+2005-11-21 04:56  jbittel <jason.bittel@gmail.com>
+
+	* config.h, doc/README, httpry.c:
+	  Broke config file parsing into
+	  separate function and as a result put config variables as static
+	  globals; lots of other minor changes and cleanups; the code
+	  crashes in the free() calls on exit so something is still screwed
+	  up but I'm tired and need a break
+
+2005-11-19 00:42  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c:
+	  Further progress on config file option:
+	  the
+	  actual config code mostly works, but needs to be shifted to use
+	  mallocs instead of static arrays; this will alleviate the need to
+	  test strlen for each array; began process of updating
+	  documentation; also need to push config code into separate
+	  function to trim down main()
+
+2005-11-18 09:08  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Added the other numeric value handling to the config
+	  file code
+
+2005-11-18 01:08  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Made much more progress on reading an input config
+	  file; need to rework the main function so there are variables to
+	  store the config strings into
+
+2005-11-17 10:00  jbittel <jason.bittel@gmail.com>
+
+	* config.h, httpry.c:
+	  Changed all file handling to use fopen();
+	  further progress on config file handling; moved configuration
+	  variables out into config.h; code currently compiles but the
+	  config file portion is non-functioning
+
+2005-11-17 00:47  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Made some progress on implementing a config file
+	  option; need to change open to fopen for the PID file
+
+2005-11-16 06:17  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl, parse_log.pl:
+	  Cleaned up parse_log.pl and
+	  parse_flows.pl; removed some unnecessary variables, made some
+	  slight efficiency improvements, tidied up comments and generally
+	  improved things. The code compiles but hasn't been extensively
+	  tested. Still need to try to find a way to have the content check
+	  output from these two programs match up.
+
+2005-11-10 10:18  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl, parse_log.pl, process_logs.sh:
+	  Cleaned up several
+	  minor problems and improved readability of output
+
+2005-11-08 00:46  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl:
+	  Fixed several minor problems with parse_flows.pl
+	  that prevented it from working properly
+
+2005-11-07 08:40  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl:
+	  Minor documentation updates to parse_flows.pl
+
+2005-11-05 08:19  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c, parse_flows.pl, parse_log.pl, process_logs.sh,
+	  trace_flows.pl:
+	  Lots of minor updates and polish on the perl tool
+	  scripts; began work on adding a config file option to httpry
+
+2005-11-05 01:36  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl, trace_flows.pl:
+	  parse_flows.pl is pretty much
+	  feature complete and has been cleaned up significantly; still
+	  needs minor tweaking
+
+2005-11-04 14:40  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl:
+	  Cleaned up parse_flows.pl significantly, still
+	  not feature complete but it runs and produces output
+
+2005-11-04 01:21  jbittel <jason.bittel@gmail.com>
+
+	* parse_flows.pl, parse_log.pl:
+	  Fixed bug in parse_log.pl with
+	  content checks repeating; significant progress on parse_flows.pl,
+	  mostly untested and needs a lot more work before it will even run
+
+2005-11-03 13:52  jbittel <jason.bittel@gmail.com>
+
+	* offensive.txt, parse_flows.pl, trace_flows.pl:
+	  Made minor tweaks
+	  to trace_flows.pl; added parse_flows.pl which will be similar to
+	  parse_log.pl, but with flows; updated word list
+
+2005-11-02 06:18  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  Major improvements to trace_flows.pl:
+	  removed
+	  debugging code, added one-to-one/one-to-many flow parsing
+	  options, tweaked flow discard limit, sped up internal data
+	  representation and many other minor tweaks and fixes
+
+2005-11-02 01:01  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  Fixed off-by-one date error in trace_flows.pl and
+	  changed flow timeout value from minutes to seconds
+
+2005-11-01 03:43  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  Made major improvements in execution speed and
+	  efficiency for trace_flows.pl, still room for improvement but
+	  great progress; cleaned up testing code and changed to proper
+	  UNIX line endings
+
+2005-11-01 01:11  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  More code improvements, trying to improve the
+	  execution time; needs a lot more work especially when dealing
+	  with large log files
+
+2005-10-31 06:47  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  Cleaned up trace_flows.pl:
+	  more informative
+	  header line for each flow, discarding of brief flows, general
+	  code cleanup; still a ways to go, but this is making a fine start
+
+2005-10-30 21:54  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  Rudimentary flow parsing is functional but needs
+	  a lot of polishing; committing so that I have a backup
+
+2005-10-27 05:05  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  Finished updating trace_flows.pl with the code
+	  shell required for file processing; it should be ready for the
+	  actual flow processing code
+
+2005-10-26 05:39  jbittel <jason.bittel@gmail.com>
+
+	* trace_flows.pl:
+	  Added trace_flows.pl to repository; ultimately
+	  this will be able to extract HTTP flows from log files for
+	  further data analysis and searching
+
+2005-10-26 04:59  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  Fixed conflict with parse_log.pl
+
+2005-10-25 23:09  jbittel <jason.bittel@gmail.com>
+
+	* offensive.txt, parse_log.pl:
+	  Updated word list; tweaked extension
+	  handling in parse_log.pl to capture extensions of length 2-4
+
+2005-10-20 06:31  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  Added a hex decoding switch (-x) to display
+	  prettier and more readable output URIs
+
+2005-10-15 21:58  jbittel <jason.bittel@gmail.com>
+
+	* httpry.1:
+	  Updated date in man page
+
+2005-10-15 21:45  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/LICENSE, doc/README, httpry.1, httpry.c,
+	  parse_log.pl, process_logs.sh, rotate_log.pl:
+	  Lots of text and
+	  code cleanups in prepration for the .6 release
+
+2005-10-14 22:06  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, httpry.1, httpry.c, httpry.h, parse_log.pl,
+	  process_logs.sh, rc.httpry, rotate_log.pl:
+	  Many minor changes to
+	  licensing header information, comments and readme; also added a
+	  summary line to parse_log.pl to print the date that the report
+	  was generated
+
+2005-10-04 05:12  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Moved outfile stream reopening outside program
+	  arguments case statement again...I'm trying to keep all program
+	  logic outside of that switch block
+
+2005-10-03 23:58  jbittel <jason.bittel@gmail.com>
+
+	* httpry.c:
+	  Fixed issue with outfile option I accidentally
+	  introduced in the previous commit
+
+2005-10-03 01:42  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c:
+	  Minor code reorganization and cleanup;
+	  documentation updated
+
+2005-09-30 23:39  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.1, httpry.c:
+	  Split display_usage() into
+	  display_version() and display_help() and added appropriate
+	  command line switches; documentation updated to reflect this
+	  change
+
+2005-09-29 14:12  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  Minor cleanups in parse_log.pl; more efficient way
+	  of sorting output IP addresses for content hits summary
+
+2005-09-28 07:29  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl, rotate_log.pl:
+	  Minor code cleanup and fixes;
+	  parse_log.pl now sorts content check summary IP addresses in true
+	  ascending order; the current implementation works, but I believe
+	  it can be made slightly more efficient through the use of the
+	  inet_ functions to convert the IP addresses
+
+2005-09-27 04:29  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl, process_logs.sh:
+	  Minor text/comments changes; upped
+	  content hits noise filter in parse_log.pl from 1 to 2
+
+2005-09-26 16:46  jbittel <jason.bittel@gmail.com>
+
+	* offensive.txt, parse_log.pl:
+	  Detail logs are now only dumped for
+	  non-pruned IP addresses; currently untested but shouldn't be
+	  completely broken; word list updated
+
+2005-09-25 05:48  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  More changes to parse_log.pl:
+	  efficiency
+	  improvements in main hashes; pruning of content check hash to
+	  suppress low values; -x changed to -d; lots of code cleanup and
+	  improvements
+
+2005-09-25 01:45  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  parse_log.pl now implements a multi-dimensional
+	  hash to provide a summary of tripped content checks; content
+	  check details are now accessable in the host detail logs created
+	  via -x
+
+2005-09-25 00:14  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  Modified parse_log.pl to require an output file;
+	  STDOUT printing for data was removed completely; email attachment
+	  filenames should be displayed correctly now; several functions
+	  were created/combined and the code was improved significantly
+
+2005-09-23 23:50  jbittel <jason.bittel@gmail.com>
+
+	* offensive.txt, parse_log.pl:
+	  Modified email handling in
+	  parse_log.pl for more reliance on MIME::Lite along with some
+	  general code cleanup; updated word list
+
+2005-09-23 08:00  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  Reworked email/attachment handling to use
+	  MIME::Lite instead of a handrolled solution; not fully tested
+	  yet, but a big step in the right direction
+
+2005-09-22 21:21  jbittel <jason.bittel@gmail.com>
+
+	* parse_log.pl:
+	  Added -x option to parse_log.pl to create a
+	  reporting subfile for each host tagged in content checks; made
+	  further progress in adding an attachment option to email
+	  functionality
+
+2005-09-22 05:44  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.1, httpry.c:
+	  Fixed an erroneous warning
+	  message; added additional syslog error messages when changing
+	  users; more documentation updates
+
+2005-09-22 04:10  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.1, httpry.c:
+	  Fixed an incorrect array
+	  initilization; documentation updates
+
+2005-09-20 15:14  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README:
+	  Cleaned up output text in makefile
+
+2005-09-20 06:51  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.c, process_logs.sh, rc.httpry:
+	  Even more
+	  documentation updates
+
+2005-09-20 05:23  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, parse_log.pl, process_logs.sh, rotate_log.pl:
+	  More
+	  documentation updates and minor formatting changes
+
+2005-09-19 06:36  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, httpry.c:
+	  More documentation updates
+
+2005-09-18 07:02  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry.1:
+	  Documentation and man page updates
+
+2005-09-18 06:34  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, httpry.1, httpry.c, httpry.h, parse_log.pl,
+	  process_logs.sh, rc.httpry, rotate_log.pl:
+	  Lots of changes to
+	  license documentation; tools cleaned up; stub man page added
+
+2005-09-17 19:12  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, doc/README, httpry.c, httpry.h, src:
+	  Cleaned up
+	  makefile and expanded its functionality. Not perfect yet, but a
+	  good start
+
+2005-09-17 05:09  jbittel <jason.bittel@gmail.com>
+
+	* httpry:
+	  Removed binary httpry file
+
+2005-09-17 05:06  jbittel <jason.bittel@gmail.com>
+
+	* ., doc/README, src/httpry.c:
+	  Minor text rewordings and general
+	  cleanup
+
+2005-09-17 03:02  jbittel <jason.bittel@gmail.com>
+
+	* doc/README, httpry, src/httpry.c:
+	  Minor functional changes;
+	  general tidying up
+
+2005-09-17 02:04  jbittel <jason.bittel@gmail.com>
+
+	* Makefile, process_logs.sh:
+	  Now all project files use correct UNIX
+	  line endings
+
+2005-09-17 02:03  jbittel <jason.bittel@gmail.com>
+
+	* doc/LICENSE:
+	  Added correct author information
+
+2005-09-17 00:04  jbittel <jason.bittel@gmail.com>
+
+	* src/httpry.c:
+	  Cleaned up error/warning messages
+
+2005-09-16 23:28  jbittel <jason.bittel@gmail.com>
+
+	* ., Makefile, doc, doc/README, httpry, offensive.txt,
+	  parse_log.pl, process_logs.sh, rc.httpry, rotate_log.pl, src,
+	  src/httpry.c:
+	  Modified directory structure to include
+	  trunk/branches/tags
+
