@@ -32,6 +32,7 @@
 /* Function declarations */
 int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
+void set_header_len(int header_type);
 void runas_daemon();
 void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
@@ -57,6 +58,7 @@ static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static char *buf = NULL;
 static unsigned num_parsed = 0; /* Count of fully parsed HTTP packets */
 static unsigned start_time = 0; /* Start tick for statistics calculations */
+static int header_len = 0;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
 
@@ -78,16 +80,12 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                         dev = interface;
                 }
 
-                if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1)
-                        LOG_DIE("Cannot find network info for '%s': %s", dev, errbuf);
+                if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) net = 0;
 
                 pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, 0, errbuf);
 
                 if (pcap_hnd == NULL)
                         LOG_DIE("Cannot open live capture on '%s': %s", dev, errbuf);
-
-	        if (pcap_datalink(pcap_hnd) != DLT_EN10MB)
-                        LOG_DIE("'%s' is not an ethernet device", dev);
         } else {
                 /* Reading from a saved capture, so open file */
                 pcap_hnd = pcap_open_offline(filename, errbuf);
@@ -105,9 +103,30 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 
         pcap_freecode(&filter);
 
-        if (!filename) LOG_PRINT("Starting capture on %s", dev);
+        set_header_len(pcap_datalink(pcap_hnd));
+
+        if (!filename) LOG_PRINT("Starting capture on %s interface", dev);
 
         return pcap_hnd;
+}
+
+/* Set the proper offset length for the packet header */
+void set_header_len(int header_type) {
+        switch (header_type) {
+                case DLT_EN10MB:
+                        header_len = 14;
+                        break;
+#ifdef DLT_LINUX_SLL
+                case DLT_LINUX_SLL:
+                        header_len = 16;
+                        break;
+#endif
+                default:
+                        LOG_DIE("Unsupported datalink type: %d", header_type);
+                        break;
+        }
+
+        return;
 }
 
 /* Run program as a daemon process */
@@ -198,21 +217,18 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
 
-        const struct pkt_eth *eth;
         const struct pkt_ip *ip;
         const struct pkt_tcp *tcp;
         const char *data;
 
-        int size_eth = sizeof(struct pkt_eth);
         int size_ip = sizeof(struct pkt_ip);
         int size_data;
 
         /* Position pointers within packet stream */
-        eth = (struct pkt_eth *) (pkt);
-        ip = (struct pkt_ip *) (pkt + size_eth);
-        tcp = (struct pkt_tcp *) (pkt + size_eth + size_ip);
-        data = (char *) (pkt + size_eth + size_ip + (tcp->th_off * 4));
-        size_data = (header->caplen - (size_eth + size_ip + (tcp->th_off * 4)));
+        ip = (struct pkt_ip *) (pkt + header_len);
+        tcp = (struct pkt_tcp *) (pkt + header_len + size_ip);
+        data = (char *) (pkt + header_len + size_ip + (tcp->th_off * 4));
+        size_data = (header->caplen - (header_len + size_ip + (tcp->th_off * 4)));
 
         if (ip->ip_p != IPPROTO_TCP) return;
         if (size_data <= 0) return;

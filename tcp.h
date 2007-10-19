@@ -48,13 +48,6 @@
  * $FreeBSD: src/sys/netinet/tcp.h,v 1.26 2004/08/16 18:32:07 rwatson Exp $
  */
 
-/* Ethernet header */
-struct pkt_eth {
-        u_char  ether_dhost[ETHER_ADDR_LEN];    /* Destination host address */
-        u_char  ether_shost[ETHER_ADDR_LEN];    /* Source host address */
-        u_short ether_type;                     /* IP? ARP? RARP? etc */
-};
-
 /* IP header */
 struct pkt_ip {
 #if BYTE_ORDER == LITTLE_ENDIAN
