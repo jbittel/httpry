@@ -32,7 +32,7 @@
 /* Function declarations */
 int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
-void set_header_len(int header_type);
+void set_header_offset(int header_type);
 void runas_daemon();
 void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
@@ -58,7 +58,7 @@ static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static char *buf = NULL;
 static unsigned num_parsed = 0; /* Count of fully parsed HTTP packets */
 static unsigned start_time = 0; /* Start tick for statistics calculations */
-static int header_len = 0;
+static int header_offset = 0;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
 
@@ -103,26 +103,47 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 
         pcap_freecode(&filter);
 
-        set_header_len(pcap_datalink(pcap_hnd));
+        set_header_offset(pcap_datalink(pcap_hnd));
 
         if (!filename) LOG_PRINT("Starting capture on %s interface", dev);
 
         return pcap_hnd;
 }
 
-/* Set the proper offset length for the packet header */
-void set_header_len(int header_type) {
+/* Set the proper packet header offset length based on the datalink type */
+void set_header_offset(int header_type) {
+
+#ifdef DEBUG
+        ASSERT(header_type > 0);
+#endif
+
         switch (header_type) {
                 case DLT_EN10MB:
-                        header_len = 14;
+                        header_offset = 14;
                         break;
-#ifdef DLT_LINUX_SLL
-                case DLT_LINUX_SLL:
-                        header_len = 16;
+#ifdef DLT_IEEE802_11
+                case DLT_IEEE802_11:
+                        header_offset = 32;
                         break;
 #endif
+#ifdef DLT_LINUX_SLL
+                case DLT_LINUX_SLL:
+                        header_offset = 16;
+                        break;
+#endif
+#ifdef DLT_LOOP
+                case DLT_LOOP:
+                        header_offset = 4;
+                        break;
+#endif
+                case DLT_NULL:
+                        header_offset = 4;
+                        break;
+                case DLT_RAW:
+                        header_offset = 0;
+                        break;
                 default:
-                        LOG_DIE("Unsupported datalink type: %d", header_type);
+                        LOG_DIE("Unsupported datalink type: %s", pcap_datalink_val_to_name(header_type));
                         break;
         }
 
@@ -184,7 +205,7 @@ void change_user(char *name) {
         ASSERT(strlen(name) > 0);
 #endif
 
-        if (geteuid() != 0)
+        if ((getuid() != 0) && (geteuid() != 0))
                 LOG_DIE("You must be root to switch users");
 
         if (!(user = getpwnam(name)))
@@ -225,10 +246,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         int size_data;
 
         /* Position pointers within packet stream */
-        ip = (struct pkt_ip *) (pkt + header_len);
-        tcp = (struct pkt_tcp *) (pkt + header_len + size_ip);
-        data = (char *) (pkt + header_len + size_ip + (tcp->th_off * 4));
-        size_data = (header->caplen - (header_len + size_ip + (tcp->th_off * 4)));
+        ip = (struct pkt_ip *) (pkt + header_offset);
+        tcp = (struct pkt_tcp *) (pkt + header_offset + size_ip);
+        data = (char *) (pkt + header_offset + size_ip + (tcp->th_off * 4));
+        size_data = (header->caplen - (header_offset + size_ip + (tcp->th_off * 4)));
 
         if (ip->ip_p != IPPROTO_TCP) return;
         if (size_data <= 0) return;
@@ -367,6 +388,10 @@ void handle_signal(int sig) {
 void cleanup() {
         struct pcap_stat pkt_stats;
         float run_time;
+
+#ifdef PCAP_BREAKLOOP
+        pcap_breakloop(pcap_hnd);
+#endif
 
         /* Print capture/parsing statistics when available */
         if (pcap_hnd && !use_infile) {
