@@ -94,6 +94,8 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                         LOG_DIE("Cannot open saved capture file: %s", errbuf);
         }
 
+        set_header_offset(pcap_datalink(pcap_hnd));
+
         /* Compile capture filter and apply to handle */
         if (pcap_compile(pcap_hnd, &filter, capfilter, 0, net) == -1)
                 LOG_DIE("Cannot compile capture filter '%s': %s", capfilter, pcap_geterr(pcap_hnd));
@@ -102,8 +104,6 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                 LOG_DIE("Cannot apply capture filter: %s", pcap_geterr(pcap_hnd));
 
         pcap_freecode(&filter);
-
-        set_header_offset(pcap_datalink(pcap_hnd));
 
         if (!filename) LOG_PRINT("Starting capture on %s interface", dev);
 
@@ -255,6 +255,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         if (size_data <= 0) return;
 
         /* Check if we appear to have a valid request or response */
+        /* TODO: Add support for any request method */
         if (strncmp(data, GET_STRING, strlen(GET_STRING)) == 0 ||
             strncmp(data, HEAD_STRING, strlen(HEAD_STRING)) == 0) {
                 is_request = 1;
@@ -274,13 +275,11 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         if (is_request) {
                 if (parse_client_request(header_line) == 0) return;
-                insert_value("direction", ">");
         } else if (is_response) {
                 if (parse_server_response(header_line) == 0) return;
-                insert_value("direction", "<");
         }
 
-        /* Iterate through HTTP header lines */
+        /* Iterate through request/entity header fields */
         while ((header_line = parse_header_line(NULL)) != NULL) {
                 if ((req_value = strchr(header_line, ':')) == NULL) continue;
                 *req_value++ = '\0';
@@ -339,10 +338,12 @@ int parse_client_request(char *header_line) {
         *request_uri++ = '\0';
         if ((http_version = strchr(request_uri, ' ')) == NULL) return 0;
         *http_version++ = '\0';
+        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 0;
 
         insert_value("method", method);
         insert_value("request-uri", request_uri);
         insert_value("http-version", http_version);
+        insert_value("direction", ">");
 
         return 1;
 }
@@ -353,6 +354,7 @@ int parse_server_response(char *header_line) {
 
         http_version = header_line;
 
+        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 0;
         if ((status_code = strchr(http_version, ' ')) == NULL) return 0;
         *status_code++ = '\0';
         if ((reason_phrase = strchr(status_code, ' ')) == NULL) return 0;
@@ -361,6 +363,7 @@ int parse_server_response(char *header_line) {
         insert_value("http-version", http_version);
         insert_value("status-code", status_code);
         insert_value("reason-phrase", reason_phrase);
+        insert_value("direction", "<");
 
         return 1;
 }

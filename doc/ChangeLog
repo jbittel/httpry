@@ -25,7 +25,6 @@
 	  * Improved the readability and
 	  reduced the complexity of client_flows.pm by removing legacy code
 	  * Removed client_flows.pl from SVN
-	  * Updated documentation
 
 2007-08-15 22:29  jbittel <jason.bittel@gmail.com>
 
@@ -39,12 +38,6 @@
 	  scripts/parse_log.pl:
 	  * Changed allow/ignore options in parse_log
 	  to use lookup tables instead of searching each array
-	  * Updated comments and documentation
-
-2007-08-15 00:31  jbittel <jason.bittel@gmail.com>
-
-	* doc/ChangeLog:
-	  Minor documentation tweak
 
 2007-07-25 23:28  jbittel <jason.bittel@gmail.com>
 
@@ -53,7 +46,6 @@
 	  functions into a single generic function
 	  * Made -a and -i exclusive to eliminate confusing precedence
 	  issues
-	  * Updated documentation
 
 2007-07-24 00:04  jbittel <jason.bittel@gmail.com>
 
@@ -62,7 +54,6 @@
 	  Removed static @ignore array from parse_log.pl
 	  * Added -a and -i switches to parse_log.pl to enable
 	  comma-delimited lists of plugins to allow or ignore, respectively
-	  * Updated documentation
 
 2007-07-21 00:02  jbittel <jason.bittel@gmail.com>
 
@@ -76,7 +67,6 @@
 	  * Changed some
 	  "magic numbers" into strlen calls (should be optimized away at
 	  compile)
-	  * Documentation updates
 
 2007-07-16 05:30  jbittel <jason.bittel@gmail.com>
 
@@ -94,7 +84,6 @@
 	  * Changed signal informational messages from LOG_WARN to
 	  LOG_PRINT
 	  * Added another call to pcap_geterr within the statistics code
-	  * Minor documentation and comment updates
 
 2007-07-12 23:51  jbittel <jason.bittel@gmail.com>
 
@@ -108,8 +97,6 @@
 	  Added additional pcap error strings where possible to provide
 	  as much info as possible
 	  
-	  Minor refactoring and documentation updates
-
 2007-07-12 07:20  jbittel <jason.bittel@gmail.com>
 
 	* config.h, httpry.c:
@@ -122,7 +109,6 @@
 	  * Added a custom header
 	  tokenize function so we actually stop at the end of the header,
 	  and it's more efficient to boot
-	  * Updated documentation and program comments
 
 2007-07-10 23:06  jbittel <jason.bittel@gmail.com>
 
@@ -136,7 +122,6 @@
 	  unexpectedly
 	  * Reimplemented the output format data structure as a hybrid
 	  binary tree and linked list
-	  * Minor documentation updates
 
 2007-07-10 07:33  jbittel <jason.bittel@gmail.com>
 
@@ -148,7 +133,6 @@
 	* doc/ChangeLog, error.h, format.c, httpry.c:
 	  * Renamed INFO macro
 	  to PRINT for consistency
-	  * Minor refactoring and cleanups
 
 2007-07-06 23:45  jbittel <jason.bittel@gmail.com>
 
@@ -158,8 +142,6 @@
 	  * handle_signal() now exits on the signal received instead of
 	  EXIT_SUCCESS
 	  * Added LOG_PRINT macro
-	  * Documentation updates
-	  * Minor refactoring
 
 2007-07-05 06:10  jbittel <jason.bittel@gmail.com>
 
@@ -191,9 +173,6 @@
 	  verification checks
 	  * Prevent zero length strings from being added as a format string
 	  name
-	  * Improved and extended comments to clarify portions of the
-	  source
-	  * Minor formatting changes
 
 2007-06-26 07:28  jbittel <jason.bittel@gmail.com>
 
@@ -218,7 +197,6 @@
 	* doc/COPYING, doc/ChangeLog, doc/LICENSE, doc/perl-tools:
 	  *
 	  Renamed LICENSE to COPYING
-	  * Updated documentation
 
 2007-06-22 23:57  jbittel <jason.bittel@gmail.com>
 
@@ -256,7 +234,6 @@
 	  are case insensitive
 	  * In parse_log.pl, lowercase header fields when parsed, not per
 	  line
-	  * Updated documentation
 
 2007-06-19 00:12  jbittel <jason.bittel@gmail.com>
 
@@ -308,7 +285,6 @@
 	  to -r and -l to -f
 	  * Backed off changes to capture filter; occasionally data is
 	  appearing outside PSH/ACK packets
-	  * Updated documentation
 
 2007-06-11 22:44  jbittel <jason.bittel@gmail.com>
 
@@ -377,7 +353,6 @@
 	  * Eliminated client request and server response structs
 	  * Removed httpry.h
 	  * Renamed print_names() to print_header_line()
-	  * Partially updated documentation
 	  * Updated usage output text
 
 2007-06-07 21:45  jbittel <jason.bittel@gmail.com>
@@ -395,7 +370,6 @@
 	* httpry.c:
 	  * Rolled all of the pcap setup code into a single
 	  function for simplicity and clarity
-	  * Tweaked code layout and formatting
 
 2007-05-16 16:11  jbittel <jason.bittel@gmail.com>
 
