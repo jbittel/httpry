@@ -1,17 +1,25 @@
+#
+#  ----------------------------------------------------
+#  httpry - HTTP logging and information retrieval tool
+#  ----------------------------------------------------
+#
+#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
+#
+
 CC		= gcc
-CFLAGS  	= -Wall -O3 -funroll-loops -ansi
-DEBUGFLAGS	= -Wall -g -DDEBUG -ansi
-LIBS		= -lpcap -I/usr/include/pcap -I/usr/local/include/pcap
+CCFLAGS  	= -Wall -O3 -funroll-loops -I/usr/include/pcap -I/usr/local/include/pcap
+DEBUGFLAGS	= -Wall -g -DDEBUG -I/usr/include/pcap -I/usr/local/include/pcap
+LIBS		= -lpcap
 PROG		= httpry
+FILES		= httpry.c format.c
 
-$(PROG): $(PROG).c format.c
-	$(CC) $(CFLAGS) -o $(PROG) $(PROG).c format.c $(LIBS)
+all: $(PROG)
 
-all:
-	$(PROG)
+$(PROG): $(FILES)
+	$(CC) $(CCFLAGS) -o $(PROG) $(FILES) $(LIBS)
 
-debug: $(PROG).c format.c
-	$(CC) $(DEBUGFLAGS) -o $(PROG) $(PROG).c format.c $(LIBS)
+debug: $(FILES)
+	$(CC) $(DEBUGFLAGS) -o $(PROG) $(FILES) $(LIBS)
 
 install: $(PROG)
 	@echo "--------------------------------------------------"

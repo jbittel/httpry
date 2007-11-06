@@ -12,7 +12,6 @@ Additionally, any input log file needs to be a valid httpry log file,
 including the field specifier at the start of the file.
 
 The following Perl modules must be installed to run all included plugins:
-        MIME::Lite
         DBI
 
 A summary of the included Perl scripts:

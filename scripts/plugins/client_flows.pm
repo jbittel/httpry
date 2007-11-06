@@ -12,7 +12,6 @@ package client_flows;
 
 use warnings;
 use File::Basename;
-use MIME::Lite;
 use Socket qw(inet_ntoa inet_aton);
 use Time::Local qw(timelocal);
 
@@ -125,7 +124,6 @@ sub main {
 sub end {
         &timeout_flows(0);
         &write_summary_file();
-        &send_email() if $email_addr;
 
         return;
 }
@@ -194,8 +192,8 @@ sub delete_text_files {
 
 # -----------------------------------------------------------------------------
 # Search for specified content in the hostname and URI and return true if
-# match occurs; store results of search in a (rudimentary) cache so we don't
-# have to match the same text twice
+# match occurs; store hostname search results in a (rudimentary) cache since
+# they tend to be fairly repetitive
 #
 # Potential hash values: -1 unmatched / 1 matched / 0 no match
 # -----------------------------------------------------------------------------
@@ -208,10 +206,9 @@ sub content_check {
         $uri = quotemeta($uri);
 
         $history{$hostname} = -1 if (!defined $history{$hostname});
-        $history{$uri} = -1 if (!defined $history{$uri});
 
-        return 1 if (($history{$hostname} == 1) || ($history{$uri} == 1));
-        return 0 if (($history{$hostname} == 0) && ($history{$uri} == 0));
+        return 1 if ($history{$hostname} == 1);
+        return 0 if ($history{$hostname} == 0);
 
         foreach $word (@hitlist) {
                 if ($hostname =~ /$word/i) {
@@ -220,13 +217,11 @@ sub content_check {
                 }
 
                 if ($uri =~ /$word/i) {
-                        $history{$uri} = 1;
                         return 1;
                 }
         }
 
         $history{$hostname} = 0;
-        $history{$uri} = 0;
 
         return 0;
 }
@@ -344,37 +339,6 @@ sub write_summary_file {
         }
 
         close(OUTFILE);
-
-        return;
-}
-
-# -----------------------------------------------------------------------------
-# Send email to specified address and attach output file
-# -----------------------------------------------------------------------------
-sub send_email {
-        my $msg;
-        my $output_filename = basename($output_file);
-
-        $msg = MIME::Lite->new(
-                From    => 'noreply@example.com',
-                To      => "$email_addr",
-                Subject => 'httpry Content Check Report - ' . localtime(),
-                Type    => 'multipart/mixed'
-        );
-
-        $msg->attach(
-                Type => 'TEXT',
-                Data => 'httpry content check report for ' . localtime()
-        );
-
-        $msg->attach(
-                Type        => 'TEXT',
-                Path        => "$output_file",
-                Filename    => "$output_filename",
-                Disposition => 'attachment'
-        );
-
-        $msg->send('sendmail', $SENDMAIL) or die "Error: Cannot send mail: $!\n";
 
         return;
 }

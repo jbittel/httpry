@@ -8,6 +8,9 @@
 
 */
 
+#ifndef _HAVE_ERROR_H
+#define _HAVE_ERROR_H
+
 #include <signal.h>
 #include <syslog.h>
 #include "config.h"
@@ -33,3 +36,5 @@
                 exit(EXIT_FAILURE);                                  \
         }
 #endif
+
+#endif /* ! _HAVE_ERROR_H */

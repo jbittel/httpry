@@ -8,7 +8,6 @@
 
 */
 
-#define _BSD_SOURCE 1 /* Needed for Linux/BSD compatibility */
 #define MAX_TIME_LEN 20
 
 #include <ctype.h>
@@ -238,20 +237,35 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
 
-        const struct pkt_ip *ip;
-        const struct pkt_tcp *tcp;
+        const struct ip_header *ip;
+        const struct tcp_header *tcp;
         const char *data;
+        int size_ip, size_tcp, size_data;
 
-        int size_ip = sizeof(struct pkt_ip);
-        int size_data;
-
-        /* Position pointers within packet stream */
-        ip = (struct pkt_ip *) (pkt + header_offset);
-        tcp = (struct pkt_tcp *) (pkt + header_offset + size_ip);
-        data = (char *) (pkt + header_offset + size_ip + (tcp->th_off * 4));
-        size_data = (header->caplen - (header_offset + size_ip + (tcp->th_off * 4)));
-
+        /* Position pointers within packet stream and do sanity checks */
+        ip = (struct ip_header *) (pkt + header_offset);
+	size_ip = IP_HL(ip)*4;
+        if (size_ip < 20) {
+#ifdef DEBUG
+		PRINT("Invalid IP header length: %u bytes", size_ip);
+                ASSERT(size_ip < 20);
+#endif
+		return;
+	}
         if (ip->ip_p != IPPROTO_TCP) return;
+
+        tcp = (struct tcp_header *) (pkt + header_offset + size_ip);
+	size_tcp = TH_OFF(tcp)*4;
+	if (size_tcp < 20) {
+#ifdef DEBUG
+		PRINT("Invalid TCP header length: %u bytes", size_tcp);
+                ASSERT(size_tcp < 20);
+#endif
+		return;
+	}
+
+        data = (char *) (pkt + header_offset + size_ip + size_tcp);
+        size_data = (header->caplen - (header_offset + size_ip + size_tcp));
         if (size_data <= 0) return;
 
         /* Check if we appear to have a valid request or response */

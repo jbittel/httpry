@@ -44,7 +44,7 @@ sub init {
 
         # Call our load configuration sub; this can be good to break out
         # into a separate sub like this, particularly if you end up with
-        # many checks on the config variables.
+        # many checks on the config variables
         if (&load_config($plugin_dir) == 0) {
                 return 0;
         }
@@ -60,14 +60,13 @@ sub main {
         my $record = shift; # Reference to hash containing record data
 
         # Simple processing can be handled here; more complex processing
-        # would probably be better handled in a different sub.
+        # would probably be better handled in a different sub
 
         return;
 }
 
 # This sub is called once at program termination; all shutdown code (i.e.
-# closing files, deleting temp files, sending email, etc) should be
-# included here.
+# closing files, deleting temp files, etc) should be included here
 sub end {
 
         return;

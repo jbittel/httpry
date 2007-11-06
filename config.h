@@ -8,6 +8,9 @@
 
 */
 
+#ifndef _HAVE_CONFIG_H
+#define _HAVE_CONFIG_H
+
 #define PROG_NAME "httpry"
 #define PROG_VER "0.1.2"
 
@@ -30,3 +33,5 @@
 #define GET_STRING "GET "
 #define HEAD_STRING "HEAD "
 #define HTTP_STRING "HTTP/"
+
+#endif /* ! _HAVE_CONFIG_H */

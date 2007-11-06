@@ -12,7 +12,6 @@ package log_summary;
 
 use warnings;
 use File::Basename;
-use MIME::Lite;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
@@ -183,37 +182,6 @@ sub percent_of {
         my $total = shift;
 
         return sprintf("%.1f", ($subset / $total) * 100);
-}
-
-# -----------------------------------------------------------------------------
-# Send email to specified address and attach output file
-# -----------------------------------------------------------------------------
-sub send_email {
-        my $msg;
-        my $output_filename = basename($output_file);
-
-        $msg = MIME::Lite->new(
-                From    => 'noreply@example.com',
-                To      => "$email_addr",
-                Subject => 'httpry Log Summary - ' . localtime(),
-                Type    => 'multipart/mixed'
-        );
-
-        $msg->attach(
-                Type => 'TEXT',
-                Data => 'httpry log summary for ' . localtime()
-        );
-
-        $msg->attach(
-                Type        => 'TEXT',
-                Path        => "$output_file",
-                Filename    => "$output_filename",
-                Disposition => 'attachment'
-        );
-
-        $msg->send('sendmail', $SENDMAIL) or die "Error: Cannot send mail: $!\n";
-
-        return;
 }
 
 1;
