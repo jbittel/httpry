@@ -18,7 +18,6 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $SENDMAIL     = "/usr/lib/sendmail -i -t";
 my $FLOW_TIMEOUT = 300;
 my $TAGGED_LIMIT = 15;
 
@@ -39,7 +38,7 @@ my %flow_info = ();       # Holds metadata about each flow
 my %flow_data_lines = (); # Holds actual log file lines for each flow
 my %tagged_lines = ();    # IP/flow/hostname information for tagged flows
 my %tagged_flows = ();    # Pruned and cleaned tagged flows for display
-my %history = ();         # Holds history of content checks to avoid matching
+my %history = ();         # Holds cache of content checks to avoid matching
 my @hitlist = ();         # List of content check keywords
 
 # -----------------------------------------------------------------------------
@@ -192,8 +191,8 @@ sub delete_text_files {
 
 # -----------------------------------------------------------------------------
 # Search for specified content in the hostname and URI and return true if
-# match occurs; store hostname search results in a (rudimentary) cache since
-# they tend to be fairly repetitive
+# match occurs; store results of search in a (rudimentary) cache so we don't
+# have to match the same text twice
 #
 # Potential hash values: -1 unmatched / 1 matched / 0 no match
 # -----------------------------------------------------------------------------
@@ -206,22 +205,25 @@ sub content_check {
         $uri = quotemeta($uri);
 
         $history{$hostname} = -1 if (!defined $history{$hostname});
+        $history{$uri} = -1 if (!defined $history{$uri});
 
-        return 1 if ($history{$hostname} == 1);
-        return 0 if ($history{$hostname} == 0);
+        return 1 if (($history{$hostname} == 1) || ($history{$uri} == 1));
+        return 0 if (($history{$hostname} == 0) && ($history{$uri} == 0));
 
         foreach $word (@hitlist) {
-                if ($hostname =~ /$word/i) {
+                if (index($hostname, $word) >= 0) {
                         $history{$hostname} = 1;
                         return 1;
                 }
 
-                if ($uri =~ /$word/i) {
+                if (index($uri, $word) >= 0) {
+                        $history{$uri} = 1;
                         return 1;
                 }
         }
 
         $history{$hostname} = 0;
+        $history{$uri} = 0;
 
         return 0;
 }
@@ -236,6 +238,7 @@ sub timeout_flows {
         my $flow_str;
         my $ip;
         my $hostname;
+        my $len;
 
         foreach $ip (keys %flow_info) {
                 if ($epochstamp) {
@@ -243,8 +246,9 @@ sub timeout_flows {
                 }
 
                 # Update minimum/maximum flow length as necessary
-                $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
-                $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
+                $len = $flow_info{$ip}->{"length"};
+                $flow_min_len = $len if ($len < $flow_min_len);
+                $flow_max_len = $len if ($len > $flow_max_len);
 
                 &append_host_subfile("$all_dir/detail_$ip.txt", $ip) if $all_dir;
 
