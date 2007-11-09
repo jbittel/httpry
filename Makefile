@@ -19,6 +19,15 @@ $(PROG): $(FILES)
 	$(CC) $(CCFLAGS) -o $(PROG) $(FILES) $(LIBS)
 
 debug: $(FILES)
+	@echo "--------------------------------------------------"
+	@echo " Compiling $(PROG) in debug mode"
+	@echo ""
+	@echo " This will cause the program to run slightly"
+	@echo " slower, but enables additional checks and"
+	@echo " sanity checks. Not recommended for live"
+	@echo " installations"
+	@echo "--------------------------------------------------"
+	@echo ""
 	$(CC) $(DEBUGFLAGS) -o $(PROG) $(FILES) $(LIBS)
 
 install: $(PROG)
@@ -28,6 +37,7 @@ install: $(PROG)
 	@echo " You will need to move the Perl scripts and other"
 	@echo " tools to a location of your choosing manually"
 	@echo "--------------------------------------------------"
+	@echo ""
 	cp -f $(PROG) /usr/sbin/
 	cp -f $(PROG).1 /usr/man/man1/ || cp -f $(PROG).1 /usr/local/man/man1/
 

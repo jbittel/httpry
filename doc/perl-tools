@@ -25,14 +25,12 @@ A summary of the included Perl scripts:
         Core script for plugins. Processes log files and delivers data to each
         initialized plugin. Plugins are utilized by having a .pm extension
         and being placed in the plugin directory (default is ./plugins). If
-        a plugins directory is specified (-p), that is used instead. If
+        a plugins directory is specified (-d), that is used instead. If
         no directory is specified, the script first searches the current
         directory for a plugin directory followed by the base directory of
-        the script. The first directory found is used. If no directory is
-        found, the script complains and exits. To customize the plugins that
-        are loaded, either add/remove them from the plugin directory or use
-        the -a or -i switch to provide a comma-delimited list of plugins to
-        allow or ignore.
+        the script. The first directory found is used. To load only specifc
+        plugins, use the -p switch to provide a comma-delimited list of
+        plugins to load.
 
  ./scripts/plugins/client_flows.pm
         Breaks the input file into client flows which are time delimited

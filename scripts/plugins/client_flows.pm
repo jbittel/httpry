@@ -201,9 +201,6 @@ sub content_check {
         my $uri = shift;
         my $word;
 
-        $hostname = quotemeta($hostname);
-        $uri = quotemeta($uri);
-
         $history{$hostname} = -1 if (!defined $history{$hostname});
         $history{$uri} = -1 if (!defined $history{$uri});
 

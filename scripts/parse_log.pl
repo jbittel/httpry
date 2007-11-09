@@ -16,19 +16,15 @@ use File::Basename;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $VERBOSE = 0;
-my $PLUGIN_DIR = "plugins";
+my $VERBOSE = 1;
+my $DEFAULT_PLUGIN_DIR = "plugins";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %nameof = ();        # Stores human readable plugin names
 my @callbacks = ();     # List of initialized plugins
-my @plugins = ();       # List of plugin files in directory
-my @allow = ();         # List of plugins to load
-my %allow_table = ();   # ...corresponding lookup table
-my @ignore = ();        # List of plugins to ignore
-my %ignore_table = ();  # ...corresponding lookup table
+my @plugins = ();       # List of plugins to be loaded
 
 # Command line arguments
 my %opts;
@@ -52,46 +48,29 @@ sub init_plugins {
         my $plugin;
         my $i = 0;
         my $curr_dir;
-        my $file;
 
-        @allow_table{@allow} = () if @allow;
-        @ignore_table{@ignore} = () if @ignore;
-
-        # If a custom plugin directory, assume the user knows what they're doing;
-        # otherwise, search the current dir and script base dir for a plugin folder
-        if ($custom_plugin_dir) {
-                unless (-d $plugin_dir) {
-                        die "Error: '$plugin_dir' is not a valid directory\n";
-                }
-        } else {
-                if (-d "./".$plugin_dir) {
-                        $plugin_dir = "./" . $plugin_dir;
-                } elsif (-d dirname($0).'/'.basename($plugin_dir)) {
-                        $plugin_dir = dirname($0).'/'.basename($plugin_dir);
-                } else {
-                        die "Error: Cannot find a '$plugin_dir' directory\n";
-                }
-        }
-
-        # Initialize list of plugins to load
-        opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
-                foreach $file (readdir(PLUGINDIR)) {
-                        next if ($file !~ /\.pm$/);
-                        next if (@ignore && (exists $ignore_table{$file}));
-                        next if (@allow && (not exists $allow_table{$file}));
-
-                        push(@plugins, $file);
-                }
-        closedir PLUGINDIR;
-
-        if (scalar @plugins == 0) {
-                die "Error: No plugins loaded from specified directory\n";
-        }
+        &search_plugin_dir if (scalar @plugins == 0);
 
         # Load up each plugin
         foreach $plugin (@plugins) {
-                print "Loading $plugin_dir/$plugin...\n" if $VERBOSE;
-                require "$plugin_dir/$plugin";
+                print "Loading $plugin...\n" if $VERBOSE;
+
+                if (! -e $plugin) {
+                        # Tack on an extension to see if the plugin
+                        # was specified without one
+                        if (-e "$plugin.pm") {
+                                $plugin = "$plugin.pm"
+                        } else {
+                                print "Warning: Cannot locate $plugin\n";
+                                next;
+                        }
+                }
+
+                require $plugin;
+        }
+
+        if (scalar @callbacks == 0) {
+                die "Error: No plugins loaded\n";
         }
 
         # Check for required functions and initialize each loaded plugin
@@ -117,6 +96,44 @@ sub init_plugins {
 }
 
 # -----------------------------------------------------------------------------
+# Locate and search a directory for plugins to initialize
+# -----------------------------------------------------------------------------
+sub search_plugin_dir {
+        my $file;
+
+        # If a custom plugin directory, assume the user knows what they're doing;
+        # otherwise, search the current dir and script base dir for a plugin folder
+        if ($custom_plugin_dir) {
+                unless (-d $plugin_dir) {
+                        die "Error: '$plugin_dir' is not a valid directory\n";
+                }
+        } else {
+                if (-d "./".$plugin_dir) {
+                        $plugin_dir = "./" . $plugin_dir;
+                } elsif (-d dirname($0).'/'.basename($plugin_dir)) {
+                        $plugin_dir = dirname($0).'/'.basename($plugin_dir);
+                } else {
+                        die "Error: Cannot find a '$plugin_dir' directory\n";
+                }
+        }
+
+        # Initialize list of plugins to load
+        opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
+                foreach $file (readdir(PLUGINDIR)) {
+                        next if ($file !~ /\.pm$/);
+
+                        push(@plugins, "$plugin_dir/$file");
+                }
+        closedir PLUGINDIR;
+
+        if (scalar @plugins == 0) {
+                die "Error: No plugins loaded from $plugin_dir\n";
+        }
+
+        return;
+}
+
+# -----------------------------------------------------------------------------
 # Create list of each plugin's callback information
 # -----------------------------------------------------------------------------
 sub register_plugin {
@@ -124,12 +141,12 @@ sub register_plugin {
 
         if ($plugin->can('new')) {
                 push @callbacks, $plugin->new();
+        
+                # Save a readable copy of the plugin name so we can use it in output text
+                $nameof{$callbacks[-1]} = $plugin;
         } else {
                 print "Warning: Plugin '$plugin' does not contain a required new() function...disabling\n";
         }
-
-        # Save a plaintext copy of the plugin name so we can use it in output text
-        $nameof{$callbacks[-1]} = $plugin;
 
         return;
 }
@@ -202,7 +219,7 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('a:hi:p:', \%opts) or &print_usage();
+        getopts('d:hp:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -213,14 +230,13 @@ sub get_arguments {
 
         # Currently, specifying both of these causes precedence confusion,
         # so we'll disallow that behavior
-        die "Error: -a and -i cannot be combined\n" if ($opts{a} && $opts{i});
+        die "Error: -d and -p are mutually exclusive\n" if ($opts{d} && $opts{p});
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
-        $plugin_dir = $PLUGIN_DIR unless ($plugin_dir = $opts{p});
-        $custom_plugin_dir = 1 if ($opts{p});
-        @allow = split /,/, $opts{a} if ($opts{a});
-        @ignore = split /,/, $opts{i} if ($opts{i});
+        $plugin_dir = $DEFAULT_PLUGIN_DIR unless ($plugin_dir = $opts{d});
+        $custom_plugin_dir = 1 if ($opts{d});
+        @plugins = split /,/, $opts{p} if ($opts{p});
 
         # Strip trailing slash from plugin directory path
         if ($plugin_dir =~ /(.*)\/$/) {
@@ -235,11 +251,10 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [-h] [-a list] [-i list] [-p dir] file1 [file2 ...]
-  -a   comma-delimited list of plugins to use (ignoring all others)
+Usage: $0 [-h] [-d dir] [-p plugins] file1 [file2 ...]
+  -d   base directory to use when searching for plugins
   -h   print this help information and exit
-  -i   comma-delimited list of plugins to ignore (using all others)
-  -p   load plugins from specified directory
+  -p   specify a list of plugins to load
 
 USAGE
 }
