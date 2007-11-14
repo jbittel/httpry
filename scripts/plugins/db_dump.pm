@@ -78,11 +78,9 @@ sub main {
                 return unless exists $record->{"host"};
                 return unless exists $record->{"request-uri"};
 
-                $request_uri = quotemeta($record->{"request-uri"});
-
                 $sql = qq{ INSERT INTO client_data (timestamp, pktstamp, src_ip, dst_ip, hostname, uri)
                            VALUES ('$now', '$timestamp', '$record->{"source-ip"}', '$record->{"dest-ip"}',
-                           '$record->{"host"}', '$request_uri') };
+                           '$record->{"host"}', '$record->{"request_uri"}') };
         } elsif ($record->{"direction"} eq '<') {
                 return unless exists $record->{"status-code"};
                 return unless exists $record->{"reason-phrase"};

@@ -58,8 +58,7 @@ sub main {
         # balance that cleans up the results and applies to all users. If
         # you can do it better, knock yourself out (oh, and send me the code).
         foreach $domain (keys %domains) {
-                $name   = quotemeta($domains{$domain});
-                $domain = quotemeta($domain);
+                $name = $domains{$domain};
 
                 if ($record->{"host"} =~ /$domain$/) {
                         # Here we use the encoded URI to ensure that '&' chars in the search term

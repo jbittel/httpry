@@ -70,11 +70,23 @@ sub main {
         my $curr_line;
         my $decoded_uri;
 
+        # Retain this variable between calls
+        BEGIN {
+                my $curr_epochstamp = 0;
+
+                sub get_curr_epochstamp {
+                        return $curr_epochstamp;
+                }
+
+                sub set_curr_epochstamp {
+                        $curr_epochstamp = shift;
+                }
+        }
+
         # Make sure we really want to be here
         return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
         return unless exists $record->{"timestamp"};
         return unless exists $record->{"source-ip"};
-        return unless exists $record->{"dest-ip"};
         return unless exists $record->{"host"};
         return unless exists $record->{"request-uri"};
 
@@ -86,19 +98,22 @@ sub main {
                 $max_concurrent = keys %flow_info;
         }
 
-        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
+        $curr_line = "$record->{'timestamp'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
 
         # Convert timestamp of current record to epoch seconds
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
-        &timeout_flows($epochstamp);
+        # Only call timeout_flows() if we've crossed a time boundary
+        if (&get_curr_epochstamp() != $epochstamp) {
+                &timeout_flows($epochstamp);
+                &set_curr_epochstamp($epochstamp);
+        }
 
         # Begin a new flow if one doesn't exist
         if (!exists $flow_info{$record->{"source-ip"}}) {
                 $flow_cnt++;
 
-                $flow_info{$record->{"source-ip"}}->{"src_ip"} = $record->{"source-ip"};
                 $flow_info{$record->{"source-ip"}}->{"start_time"} = $record->{"timestamp"};
                 $flow_info{$record->{"source-ip"}}->{"length"} = 0;
                 $flow_info{$record->{"source-ip"}}->{"tagged_lines"} = 0;
@@ -234,8 +249,6 @@ sub timeout_flows {
         my $epochstamp = shift;
         my $flow_str;
         my $ip;
-        my $hostname;
-        my $len;
 
         foreach $ip (keys %flow_info) {
                 if ($epochstamp) {
@@ -243,9 +256,8 @@ sub timeout_flows {
                 }
 
                 # Update minimum/maximum flow length as necessary
-                $len = $flow_info{$ip}->{"length"};
-                $flow_min_len = $len if ($len < $flow_min_len);
-                $flow_max_len = $len if ($len > $flow_max_len);
+                $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
+                $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
 
                 &append_host_subfile("$all_dir/detail_$ip.txt", $ip) if $all_dir;
 
@@ -259,9 +271,10 @@ sub timeout_flows {
                         $tagged_flows{$ip}->{$flow_str} = $tagged_lines{$ip};
 
                         &append_host_subfile("$tagged_dir/tagged_$ip.txt", $ip) if $tagged_dir;
+                
+                        delete $tagged_lines{$ip};
                 }
 
-                delete $tagged_lines{$ip};
                 delete $flow_info{$ip};
                 delete $flow_data_lines{$ip};
         }
