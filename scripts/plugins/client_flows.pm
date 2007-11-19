@@ -72,15 +72,10 @@ sub main {
 
         # Retain this variable between calls
         BEGIN {
-                my $curr_epochstamp = 0;
+                my $prev_epochstamp = 0;
 
-                sub get_curr_epochstamp {
-                        return $curr_epochstamp;
-                }
-
-                sub set_curr_epochstamp {
-                        $curr_epochstamp = shift;
-                }
+                sub get_prev_epochstamp { return $prev_epochstamp; }
+                sub set_prev_epochstamp { $prev_epochstamp = shift; }
         }
 
         # Make sure we really want to be here
@@ -105,9 +100,9 @@ sub main {
         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
         # Only call timeout_flows() if we've crossed a time boundary
-        if (&get_curr_epochstamp() != $epochstamp) {
+        if (&get_prev_epochstamp() != $epochstamp) {
                 &timeout_flows($epochstamp);
-                &set_curr_epochstamp($epochstamp);
+                &set_prev_epochstamp($epochstamp);
         }
 
         # Begin a new flow if one doesn't exist
@@ -118,8 +113,6 @@ sub main {
                 $flow_info{$record->{"source-ip"}}->{"length"} = 0;
                 $flow_info{$record->{"source-ip"}}->{"tagged_lines"} = 0;
         }
-
-        $flow_line_cnt++;
 
         $flow_info{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
         $flow_info{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
@@ -258,6 +251,8 @@ sub timeout_flows {
                 # Update minimum/maximum flow length as necessary
                 $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
                 $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
+
+                $flow_line_cnt += $flow_info{$ip}->{"length"};
 
                 &append_host_subfile("$all_dir/detail_$ip.txt", $ip) if $all_dir;
 
