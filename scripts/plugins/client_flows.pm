@@ -70,12 +70,14 @@ sub main {
         my $curr_line;
         my $decoded_uri;
 
-        # Retain this variable between calls
+        # Keep track of the next future time to call 
+        # timeout_flows(); i.e. don't call the function
+        # unless there's a chance for a flow to end
         BEGIN {
-                my $prev_epochstamp = 0;
+                my $epoch_boundary = 0;
 
-                sub get_prev_epochstamp { return $prev_epochstamp; }
-                sub set_prev_epochstamp { $prev_epochstamp = shift; }
+                sub get_epoch_boundary { return $epoch_boundary; }
+                sub set_epoch_boundary { $epoch_boundary = shift; }
         }
 
         # Make sure we really want to be here
@@ -100,9 +102,8 @@ sub main {
         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
         # Only call timeout_flows() if we've crossed a time boundary
-        if (&get_prev_epochstamp() != $epochstamp) {
-                &timeout_flows($epochstamp);
-                &set_prev_epochstamp($epochstamp);
+        if (&get_epoch_boundary() <= $epochstamp) {
+                &set_epoch_boundary(&timeout_flows($epochstamp));
         }
 
         # Begin a new flow if one doesn't exist
@@ -236,16 +237,25 @@ sub content_check {
 # -----------------------------------------------------------------------------
 # Handle end of flow duties: flush to disk and delete hash entries; passing an
 # epochstamp value causes all flows inactive longer than $FLOW_TIMEOUT to be
-# flushed, while passing a zero forces all active flows to be flushed
+# flushed, while passing a zero forces all active flows to be flushed.
+#
+# Return the next potential epoch boundary at which flows could time out.
 # -----------------------------------------------------------------------------
 sub timeout_flows {
         my $epochstamp = shift;
         my $flow_str;
+        my $epoch_diff;
+        my $max_epoch_diff = 0;
         my $ip;
 
         foreach $ip (keys %flow_info) {
                 if ($epochstamp) {
-                        next unless (($epochstamp - $flow_info{$ip}->{"end_epoch"}) > $FLOW_TIMEOUT);
+                        $epoch_diff = $epochstamp - $flow_info{$ip}->{"end_epoch"};
+                        if ($epoch_diff <= $FLOW_TIMEOUT) {
+                                $max_epoch_diff = $epoch_diff if ($epoch_diff > $max_epoch_diff);
+
+                                next;
+                        }
                 }
 
                 # Update minimum/maximum flow length as necessary
@@ -274,7 +284,7 @@ sub timeout_flows {
                 delete $flow_data_lines{$ip};
         }
 
-        return;
+        return $epochstamp + ($FLOW_TIMEOUT - $max_epoch_diff);
 }
 
 # -----------------------------------------------------------------------------
