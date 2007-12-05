@@ -66,7 +66,7 @@ sub main {
         # Only allow hostnames of the forms: a.b, a.b.c, a.b.c.d (with optional port)
         return unless ($hostname =~ /^([\-\w]+?\.){1,3}[\-\w]+?(:\d+?)??$/);
 
-        $hostnames{$hostname} = "" unless exists($hostnames{$hostname});
+        $hostnames{$hostname}++;
 
         return;
 }
@@ -77,7 +77,7 @@ sub end {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
         
         foreach $host (keys %hostnames) {
-                print OUTFILE "$host\n";
+                print OUTFILE "$hostnames{$host}\t$host\n";
         }
 
         close(OUTFILE);
