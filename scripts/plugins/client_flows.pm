@@ -11,7 +11,6 @@
 package client_flows;
 
 use warnings;
-use File::Basename;
 use Socket qw(inet_ntoa inet_aton);
 use Time::Local qw(timelocal);
 
@@ -19,7 +18,13 @@ use Time::Local qw(timelocal);
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
 my $FLOW_TIMEOUT = 300;
-my $TAGGED_LIMIT = 15;
+#my $TAGGED_LIMIT = 15;
+
+my $HOST_WEIGHT = 0.0;
+my $PATH_WEIGHT = 0.50;
+my $QUERY_WEIGHT = 0.75;
+
+my $SCORE_THRESHOLD = 10.00;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -30,16 +35,16 @@ my $flow_line_cnt = 0;
 my $flow_min_len = 999999;
 my $flow_max_len = 0;
 my $tagged_flows_cnt = 0;
-my $total_tagged_lines_cnt = 0;
+#my $total_tagged_lines_cnt = 0;
 my $max_concurrent = 0;
 
 # Data structures
-my %flow_info = ();       # Holds metadata about each flow
-my %flow_data_lines = (); # Holds actual log file lines for each flow
-my %tagged_lines = ();    # IP/flow/hostname information for tagged flows
-my %tagged_flows = ();    # Pruned and cleaned tagged flows for display
-my %history = ();         # Holds cache of content checks to avoid matching
-my @hitlist = ();         # List of content check keywords
+my %active_flows = ();       # Holds data about each active flow
+#my %flow_data_lines = (); # Holds actual log file lines for each flow
+#my %tagged_terms = ();
+my %tagged_flows = ();    # Pruned and cleaned tagged flows for output
+#my %history = ();         # Holds cache of content checks to avoid matching
+my %terms = ();           # Dictionary of terms and corresponding weights
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -54,12 +59,31 @@ sub new {
 sub init {
         my $self = shift;
         my $plugin_dir = shift;
+        my $term;
+        my $weight;
 
         if (&load_config($plugin_dir) == 0) {
                 return 0;
         }
 
-        &delete_text_files();
+        # Read in query terms to search for
+        # TODO: add more error checking
+        open(TERMS, "$terms_file") or die "Error: Cannot open $terms_file: $!\n";
+                foreach (<TERMS>) {
+                        chomp;
+                        next if /^#/; # Skip comments
+
+                        ($term, $weight) = split / /, $_;
+                        $terms{$term} = $weight;
+                }
+        close(TERMS);
+
+        # Remove any existing text files so they don't accumulate
+        opendir(DIR, $output_dir) or die "Error: Cannot open directory $output_dir: $!\n";
+                foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
+                        unlink;
+                }
+        closedir(DIR);
 
         return 1;
 }
@@ -70,9 +94,7 @@ sub main {
         my $curr_line;
         my $decoded_uri;
 
-        # Keep track of the next future time to call 
-        # timeout_flows(); i.e. don't call the function
-        # unless there's a chance for a flow to end
+        # Retain this variable across function calls
         BEGIN {
                 my $epoch_boundary = 0;
 
@@ -91,40 +113,38 @@ sub main {
         $decoded_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
         $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
-        if ((keys %flow_info) > $max_concurrent) {
-                $max_concurrent = keys %flow_info;
-        }
-
         $curr_line = "$record->{'timestamp'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
 
         # Convert timestamp of current record to epoch seconds
         $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
         $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
 
-        # Only call timeout_flows() if we've crossed a time boundary
+        if ((keys %active_flows) > $max_concurrent) {
+                $max_concurrent = keys %active_flows;
+        }
+
+        # Only call timeout_flows() if we've crossed a time boundary; i.e., 
+        # if there's actually a chance for a flow to end
         if (&get_epoch_boundary() <= $epochstamp) {
                 &set_epoch_boundary(&timeout_flows($epochstamp));
         }
 
         # Begin a new flow if one doesn't exist
-        if (!exists $flow_info{$record->{"source-ip"}}) {
+        if (!exists $active_flows{$record->{"source-ip"}}) {
                 $flow_cnt++;
 
-                $flow_info{$record->{"source-ip"}}->{"start_time"} = $record->{"timestamp"};
-                $flow_info{$record->{"source-ip"}}->{"length"} = 0;
-                $flow_info{$record->{"source-ip"}}->{"tagged_lines"} = 0;
+                $active_flows{$record->{"source-ip"}}->{"start_time"} = $record->{"timestamp"};
+                $active_flows{$record->{"source-ip"}}->{"length"} = 0;
+                $active_flows{$record->{"source-ip"}}->{"score"} = 0;
         }
 
-        $flow_info{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
-        $flow_info{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
-        $flow_info{$record->{"source-ip"}}->{"length"}++;
+        $active_flows{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
+        $active_flows{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
+        $active_flows{$record->{"source-ip"}}->{"length"}++;
 
-        push(@{$flow_data_lines{$record->{"source-ip"}}}, $curr_line);
+        push(@{ $active_flows{$record->{"source-ip"}}->{"data"} }, $curr_line);
 
-        if ($hitlist_file && &content_check($record->{"host"}, $decoded_uri)) {
-                $tagged_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
-                $flow_info{$record->{"source-ip"}}->{"tagged_lines"}++;
-        }
+        &content_check("$record->{'host'}$record->{'request-uri'}", $record->{"source-ip"});
 
         return;
 }
@@ -152,50 +172,16 @@ sub load_config {
                 print "Error: No output file provided\n";
                 return 0;
         }
-        if ($tagged_dir && !$hitlist_file) {
-                print "Warning: -t requires -l, ignoring\n";
-                $tagged_dir = 0;
+
+        if (!$terms_file) {
+                print "Error: No terms file provided\n";
+                return 0;
         }
 
-        # Read in option files
-        if ($hitlist_file) {
-                open(HITLIST, "$hitlist_file") or die "Error: Cannot open $hitlist_file: $!\n";
-                        foreach (<HITLIST>) {
-                                chomp;
-                                next if /^#/; # Skip comments
-                                push @hitlist, $_;
-                        }
-                close(HITLIST);
-        }
+        $output_dir = "." if (!$output_dir);
+        $output_dir =~ s/\/$//; # Remove trailing slash
 
         return 1;
-}
-
-# -----------------------------------------------------------------------------
-# Remove text detail files to ensure they don't append between runs
-# -----------------------------------------------------------------------------
-sub delete_text_files {
-        $tagged_dir =~ s/\/$//; # Remove trailing slash
-        $all_dir =~ s/\/$//;    # ...
-
-        if ($tagged_dir) {
-                opendir(DIR, $tagged_dir) or die "Error: Cannot open directory $tagged_dir: $!\n";
-                        foreach (grep /^tagged_.+\.txt$/, readdir(DIR)) {
-                                unlink;
-                        }
-                closedir(DIR);
-        }
-
-        if ($all_dir) {
-                opendir(DIR, $all_dir) or die "Error: Cannot open directory $all_dir: $!\n";
-                        foreach (grep /^detail_.+\.txt$/, readdir(DIR)) {
-                                unlink;
-                        }
-                closedir(DIR);
-        }
-
-
-        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -206,32 +192,65 @@ sub delete_text_files {
 # Potential hash values: -1 unmatched / 1 matched / 0 no match
 # -----------------------------------------------------------------------------
 sub content_check {
-        my $hostname = shift;
+#        my $hostname = shift;
+#        my $uri = shift;
+#        my $ip = shift;
+#        my $term;
         my $uri = shift;
-        my $word;
+        my $ip = shift;
+        my $term;
 
-        $history{$hostname} = -1 if (!defined $history{$hostname});
-        $history{$uri} = -1 if (!defined $history{$uri});
+        $uri =~ /^([^\/?#]*)?([^?#]*)(\?([^#]*))?(#(.*))?/;
 
-        return 1 if (($history{$hostname} == 1) || ($history{$uri} == 1));
-        return 0 if (($history{$hostname} == 0) && ($history{$uri} == 0));
+        my $host = $1;
+        my $path = $2;
+        my $query = $4;
 
-        foreach $word (@hitlist) {
-                if (index($hostname, $word) >= 0) {
-                        $history{$hostname} = 1;
-                        return 1;
+        # TODO: $host may not always be set here
+        foreach $term (keys %terms) {
+                if ($host && index($host, $term) >= 0) {
+                        $active_flows{$ip}->{"score"} += $terms{$term} * $HOST_WEIGHT;
+                        $active_flows{$ip}->{"terms"}->{$term}++;
+                        $active_flows{$ip}->{"hosts"}->{$host}++;
                 }
 
-                if (index($uri, $word) >= 0) {
-                        $history{$uri} = 1;
-                        return 1;
+                if ($path && index($path, $term) >= 0) {
+                        $active_flows{$ip}->{"score"} += $terms{$term} * $PATH_WEIGHT;
+                        $active_flows{$ip}->{"terms"}->{$term}++;
+                        $active_flows{$ip}->{"hosts"}->{$host}++;
+                }
+
+                if ($query && index($query, $term) >= 0) {
+                        $active_flows{$ip}->{"score"} += $terms{$term} * $QUERY_WEIGHT;
+                        $active_flows{$ip}->{"terms"}->{$term}++;
+                        $active_flows{$ip}->{"hosts"}->{$host}++;
                 }
         }
 
-        $history{$hostname} = 0;
-        $history{$uri} = 0;
+#        $history{$hostname} = -1 if (!defined $history{$hostname});
+#        $history{$uri} = -1 if (!defined $history{$uri});
+#
+#        return 1 if (($history{$hostname} == 1) || ($history{$uri} == 1));
+#        return 0 if (($history{$hostname} == 0) && ($history{$uri} == 0));
+#
+#        foreach $term (@terms) {
+#                if (index($hostname, $term) >= 0) {
+#                        $history{$hostname} = 1;
+#                        $tagged_terms{$ip}->{$term}++;
+#                        return 1;
+#                }
+#
+#                if (index($uri, $term) >= 0) {
+#                        $history{$uri} = 1;
+#                        $tagged_terms{$ip}->{$term}++;
+#                        return 1;
+#                }
+#        }
+#
+#        $history{$hostname} = 0;
+#        $history{$uri} = 0;
 
-        return 0;
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -248,9 +267,9 @@ sub timeout_flows {
         my $max_epoch_diff = 0;
         my $ip;
 
-        foreach $ip (keys %flow_info) {
+        foreach $ip (keys %active_flows) {
                 if ($epochstamp) {
-                        $epoch_diff = $epochstamp - $flow_info{$ip}->{"end_epoch"};
+                        $epoch_diff = $epochstamp - $active_flows{$ip}->{"end_epoch"};
                         if ($epoch_diff <= $FLOW_TIMEOUT) {
                                 $max_epoch_diff = $epoch_diff if ($epoch_diff > $max_epoch_diff);
 
@@ -259,46 +278,43 @@ sub timeout_flows {
                 }
 
                 # Update minimum/maximum flow length as necessary
-                $flow_min_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} < $flow_min_len);
-                $flow_max_len = $flow_info{$ip}->{"length"} if ($flow_info{$ip}->{"length"} > $flow_max_len);
+                $flow_min_len = $active_flows{$ip}->{"length"} if ($active_flows{$ip}->{"length"} < $flow_min_len);
+                $flow_max_len = $active_flows{$ip}->{"length"} if ($active_flows{$ip}->{"length"} > $flow_max_len);
 
-                $flow_line_cnt += $flow_info{$ip}->{"length"};
-
-                &append_host_subfile("$all_dir/detail_$ip.txt", $ip) if $all_dir;
+                $flow_line_cnt += $active_flows{$ip}->{"length"};
 
                 # Check if we have enough hits to be interested in the flow
-                if ($flow_info{$ip}->{"tagged_lines"} > $TAGGED_LIMIT) {
+                if ($active_flows{$ip}->{"score"} > $SCORE_THRESHOLD) {
                         $tagged_flows_cnt++;
-                        $total_tagged_lines_cnt += $flow_info{$ip}->{"tagged_lines"};
+#                        $total_tagged_lines_cnt += $active_flows{$ip}->{"tagged_lines"};
 
                         # Copy data to output hash so we can prune and reformat
-                        $flow_str = "[$flow_info{$ip}->{'start_time'}]->[$flow_info{$ip}->{'end_time'}]";
-                        $tagged_flows{$ip}->{$flow_str} = $tagged_lines{$ip};
+                        $flow_str = "[$active_flows{$ip}->{'start_time'}]->[$active_flows{$ip}->{'end_time'}]";
+#                        $flow_str .= " (" . sprintf("%.2f", $active_flows{$ip}->{"score"}) . ")";
+                        $tagged_flows{$ip}->{"flows"}->{$flow_str} = $active_flows{$ip}->{"hosts"};
+                        $tagged_flows{$ip}->{"score"} = $active_flows{$ip}->{"score"};
+                        $tagged_flows{$ip}->{"terms"} = $active_flows{$ip}->{"terms"};
 
-                        &append_host_subfile("$tagged_dir/tagged_$ip.txt", $ip) if $tagged_dir;
-                
-                        delete $tagged_lines{$ip};
+                        &append_tagged_file($ip);
                 }
 
-                delete $flow_info{$ip};
-                delete $flow_data_lines{$ip};
+                delete $active_flows{$ip};
         }
 
         return $epochstamp + ($FLOW_TIMEOUT - $max_epoch_diff);
 }
 
 # -----------------------------------------------------------------------------
-# Write detail subfile for specified client IP
+# Append flow data to a detail file based on client IP
 # -----------------------------------------------------------------------------
-sub append_host_subfile {
-        my $path = shift;
+sub append_tagged_file {
         my $ip = shift;
         my $line;
 
-        open(HOSTFILE, ">>$path") or die "Error: Cannot open $path: $!\n";
+        open(HOSTFILE, ">>$output_dir/tagged_$ip.txt") or die "Error: Cannot open $output_dir/tagged_$ip.txt: $!\n";
 
         print HOSTFILE '>' x 80 . "\n";
-        foreach $line (@{$flow_data_lines{$ip}}) {
+        foreach $line (@{ $active_flows{$ip}->{"data"} }) {
                 print HOSTFILE $line, "\n";
         }
         print HOSTFILE '<' x 80 . "\n";
@@ -314,6 +330,7 @@ sub append_host_subfile {
 sub write_summary_file {
         my $ip;
         my $flow;
+        my $term;
         my $hostname;
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
@@ -322,37 +339,45 @@ sub write_summary_file {
         print OUTFILE "Generated:      " . localtime() . "\n";
         print OUTFILE "Flow count:     $flow_cnt\n";
         print OUTFILE "Flow lines:     $flow_line_cnt\n";
+        print OUTFILE "Max Concurrent: $max_concurrent\n";
+        print OUTFILE "Min/Max/Avg:    ";
         if ($flow_cnt > 0) {
-                print OUTFILE "Max Concurrent: $max_concurrent\n";
-                print OUTFILE "Min/Max/Avg:    $flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+                print OUTFILE "$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+        } else {
+                print OUTFILE "0/0/0\n";
         }
 
-        if ($hitlist_file) {
-                print OUTFILE "Tagged IPs:     " . (keys %tagged_flows) . "\n";
-                print OUTFILE "Tagged flows:   $tagged_flows_cnt\n";
-                print OUTFILE "Tagged lines:   $total_tagged_lines_cnt\n";
-                print OUTFILE "\n\nCLIENT FLOWS CONTENT CHECKS\n";
-                print OUTFILE "FILTER FILE: $hitlist_file\n\n";
+        print OUTFILE "Tagged IPs:     " . (keys %tagged_flows) . "\n";
+        print OUTFILE "Tagged flows:   $tagged_flows_cnt\n";
+#        print OUTFILE "Tagged lines:   $total_tagged_lines_cnt\n";
+        print OUTFILE "\n\nCLIENT SCORES\n";
+        print OUTFILE "FILTER FILE: $terms_file\n\n";
 
-                if ($tagged_flows_cnt == 0) {
-                        print OUTFILE "*** No tagged flows found\n";
-                        close(OUTFILE);
-                        
-                        return;
-                }
+        if ($tagged_flows_cnt == 0) {
+                print OUTFILE "*** No tagged flows found\n";
+                close(OUTFILE);
+                
+                return;
+        }
 
-                foreach $ip (map { inet_ntoa $_ }
-                             sort
-                             map { inet_aton $_ } keys %tagged_flows) {
-                        print OUTFILE "$ip\n";
+        foreach $ip (map { inet_ntoa $_ }
+                     sort
+                     map { inet_aton $_ } keys %tagged_flows) {
+#        foreach $ip (sort { $client_scores{$b} <=> $tagged_flows{$a} } keys %tagged_flows) {
+                print OUTFILE "$ip\n";
 
-                        foreach $flow (sort keys %{$tagged_flows{$ip}}) {
-                                print OUTFILE "\t$flow\n";
+                foreach $flow (sort keys %{ $tagged_flows{$ip}->{"flows"} }) {
+                        print OUTFILE "\t$flow\n\t\t";
 
-                                foreach $hostname (sort keys %{$tagged_flows{$ip}->{$flow}}) {
-                                        print OUTFILE "\t\t($tagged_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
-                                }
+                        foreach $term (sort keys %{ $tagged_flows{$ip}->{"terms"} }) {
+                                print OUTFILE "$term ($tagged_flows{$ip}->{'terms'}->{$term}) ";
                         }
+                        print OUTFILE "\n\n";
+
+                        foreach $hostname (sort keys %{ $tagged_flows{$ip}->{$flow} }) {
+                                print OUTFILE "\t\t($tagged_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
+                        }
+
                         print OUTFILE "\n";
                 }
         }

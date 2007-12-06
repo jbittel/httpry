@@ -15,6 +15,9 @@
 
 package content_analysis;
 
+use warnings;
+use Socket qw(inet_ntoa inet_aton);
+
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
@@ -22,14 +25,15 @@ my $HOST_WEIGHT = 0.0;
 my $PATH_WEIGHT = 0.50;
 my $QUERY_WEIGHT = 0.75;
 
-my $SCORE_THRESHOLD = 3.00;
+my $SCORE_THRESHOLD = 5.00;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %client_scores = ();
 my %terms = ();
-my %client_terms = ();
+my %tagged_terms = ();
+my %tagged_hosts = ();
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -88,17 +92,20 @@ sub main {
         foreach $term (keys %terms) {
                 if ($host && index($host, $term) >= 0) {
                         $client_scores{$record->{"source-ip"}} += $terms{$term} * $HOST_WEIGHT;
-                        $client_terms{$record->{"source-ip"}}->{$term}++;
+                        $tagged_terms{$record->{"source-ip"}}->{$term}++;
+                        $tagged_hosts{$record->{"source-ip"}}->{$record->{"host"}}++;
                 }
 
                 if ($path && index($path, $term) >= 0) {
                         $client_scores{$record->{"source-ip"}} += $terms{$term} * $PATH_WEIGHT;
-                        $client_terms{$record->{"source-ip"}}->{$term}++;
+                        $tagged_terms{$record->{"source-ip"}}->{$term}++;
+                        $tagged_hosts{$record->{"source-ip"}}->{$record->{"host"}}++;
                 }
 
                 if ($query && index($query, $term) >= 0) {
                         $client_scores{$record->{"source-ip"}} += $terms{$term} * $QUERY_WEIGHT;
-                        $client_terms{$record->{"source-ip"}}->{$term}++;
+                        $tagged_terms{$record->{"source-ip"}}->{$term}++;
+                        $tagged_hosts{$record->{"source-ip"}}->{$record->{"host"}}++;
                 }
         }
 
@@ -162,6 +169,8 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub write_summary_file {
         my $client;
+        my $host;
+        my $term;
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
@@ -178,14 +187,32 @@ sub write_summary_file {
         }
 
         print OUTFILE "CLIENT SCORES\n\n";
+#        foreach $client (map { inet_ntoa $_ }
+#                         sort
+#                         map { inet_aton $_ } keys %client_scores) {
         foreach $client (sort { $client_scores{$b} <=> $client_scores{$a} } keys %client_scores) {
                 print OUTFILE "$client\t" . sprintf("%.2f", $client_scores{$client}) . "\n";
-                print OUTFILE "\tTerms: ";
-                foreach $term (sort keys %{$client_terms{$client}}) {
-                        print OUTFILE "$term*$client_terms{$client}->{$term} ";
+
+                foreach $host (sort keys %{ $tagged_hosts{$client} }) {
+                        print OUTFILE "\t($tagged_hosts{$client}->{$host})\t$host\n";
                 }
+
+                print OUTFILE "\n\t";
+                foreach $term (sort keys %{ $tagged_terms{$client} }) {
+                        print OUTFILE "$term ($tagged_terms{$client}->{$term}) ";
+                }
+
                 print OUTFILE "\n\n";
         }
+
+#        foreach $client (sort { $client_scores{$b} <=> $client_scores{$a} } keys %client_scores) {
+#                print OUTFILE "$client\t" . sprintf("%.2f", $client_scores{$client}) . "\n";
+#                print OUTFILE "\tTerms: ";
+#                foreach $term (sort keys %{$client_terms{$client}}) {
+#                        print OUTFILE "$term*$client_terms{$client}->{$term} ";
+#                }
+#                print OUTFILE "\n\n";
+#        }
 
         close(OUTFILE);
 
