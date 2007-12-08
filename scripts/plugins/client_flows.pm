@@ -367,15 +367,15 @@ sub write_summary_file {
                 print OUTFILE "$ip\n";
 
                 foreach $flow (sort keys %{ $tagged_flows{$ip}->{"flows"} }) {
-                        print OUTFILE "\t$flow\n\t\t";
+                        print OUTFILE "\t$flow\t$tagged_flows{$ip}->{'score'}\n\t\t";
 
                         foreach $term (sort keys %{ $tagged_flows{$ip}->{"terms"} }) {
                                 print OUTFILE "$term ($tagged_flows{$ip}->{'terms'}->{$term}) ";
                         }
                         print OUTFILE "\n\n";
 
-                        foreach $hostname (sort keys %{ $tagged_flows{$ip}->{$flow} }) {
-                                print OUTFILE "\t\t($tagged_flows{$ip}->{$flow}->{$hostname})\t$hostname\n";
+                        foreach $hostname (sort keys %{ $tagged_flows{$ip}->{"flows"}->{$flow} }) {
+                                print OUTFILE "\t\t($tagged_flows{$ip}->{'flows'}->{$flow}->{$hostname})\t$hostname\n";
                         }
 
                         print OUTFILE "\n";
