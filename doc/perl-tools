@@ -6,10 +6,9 @@ custom plugins to extend the processing abilities.
 
 *** IMPORTANT! ***
 By default, the log parser will attempt to use all plugins that it finds in
-the plugin directory. To override this behavior, use the -a and -i switches
-to allow or ignore a comma-delimited list of plugins, respectively.
-Additionally, any input log file needs to be a valid httpry log file,
-including the field specifier at the start of the file.
+the plugin directory. To override this behavior, use the -p switch to specify
+plugins by path and name. Additionally, any input log file needs to be a
+valid httpry log file with the field specifier at the start of the file.
 
 The following Perl modules must be installed to run all included plugins:
         DBI
@@ -32,12 +31,10 @@ A summary of the included Perl scripts:
         plugins, use the -p switch to provide a comma-delimited list of
         plugins to load.
 
- ./scripts/plugins/client_flows.pm
-        Breaks the input file into client flows which are time delimited
-        blocks of traffic for each client IP. It is also able to search for
-        specified content in the Host and Request-URI fields and flag flows
-        accordingly. Because of the nature of its task, all server responses
-        are discarded.
+ ./scripts/plugins/content_analysis.pm
+        Breaks the input file into flows which are time delimited blocks of
+        log lines by client IP. It the searches for specified keywords and
+        scores the flows accordingly.
 
  ./scripts/plugins/db_dump.pm
         Dumps log file data into a previously prepared database. Useful
