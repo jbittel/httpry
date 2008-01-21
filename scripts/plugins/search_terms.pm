@@ -41,7 +41,7 @@ sub init {
 }
 
 sub main {
-        my $self   = shift;
+        my $self = shift;
         my $record = shift;
         my $search_term;
         my $domain;
@@ -140,7 +140,8 @@ sub write_output_file {
                 return;
         }
 
-        print OUTFILE "Num of queries: $num_queries\n";
+        print OUTFILE "Num of terms:        $num_terms\n";
+        print OUTFILE "Num of queries:      $num_queries\n";
         print OUTFILE "Avg terms per query: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
         
         foreach $hostname (sort keys %search_terms) {

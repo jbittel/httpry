@@ -327,6 +327,13 @@ sub write_summary_file {
                 print OUTFILE "0/0/0\n";
         }
 
+        if (scalar(keys %scored_flow) == 0) {
+                print OUTFILE "\n\n*** No scored flows found\n";
+                close(OUTFILE);
+                
+                return;
+        }
+
         &partition_scores();
 
         # Delete flows and associated files from the lower partition
@@ -335,13 +342,6 @@ sub write_summary_file {
                         delete $scored_flow{$ip};
                         unlink "$output_dir/scored_$ip.txt";
                 }
-        }
-
-        if (scalar(keys %scored_flow) == 0) {
-                print OUTFILE "\n\n*** No scored flows found\n";
-                close(OUTFILE);
-                
-                return;
         }
 
         map { $scored_flows_cnt += $scored_flow{$_}->{"num_flows"} } keys %scored_flow;
@@ -370,48 +370,54 @@ sub write_summary_file {
 sub partition_scores() {
         my $ip;
         my $diff;
-        my $new_center;
+        my $dist;
         my $max_score = 0;
+        my $new_center;
+        my $pos;
         my $centroid;
         my @center = (0, 1);
         my @members;
 
-        # Normalize all values into the range 0..1
-        foreach $ip (keys %scored_flow) {
-                if ($scored_flow{$ip}->{"score"} > $max_score) { $max_score = $scored_flow{$ip}->{"score"}; }
-        }
+        # Normalize scores into the range 0..1 and flatten to one decimal place of precision
+        map { $max_score = $scored_flow{$_}->{"score"} if ($scored_flow{$_}->{"score"} > $max_score) } keys %scored_flow;
         map { $scored_flow{$_}->{"norm_score"} = sprintf("%.1f", $scored_flow{$_}->{"score"} / $max_score) } keys %scored_flow;
-
+        
         do {
                 $diff = 0;
 
                 # Assign points to nearest center
                 foreach $ip (keys %scored_flow) {
-                        my $dist0 = abs $scored_flow{$ip}->{"norm_score"} - $center[0];
-                        my $dist1 = abs $scored_flow{$ip}->{"norm_score"} - $center[1];
+                        $scored_flow{$ip}->{"cluster"} = 1;
+                        $dist = abs $scored_flow{$ip}->{"norm_score"} - $center[1];
 
-                        if ($dist0 < $dist1) {
+                        if ((abs $scored_flow{$ip}->{"norm_score"} - $center[0]) < $dist) {
                                 $scored_flow{$ip}->{"cluster"} = 0;
-                        } else {
-                                $scored_flow{$ip}->{"cluster"} = 1;
                         }
                 }
 
                 # Compute new centers
                 foreach $centroid (0..$#center) {
-
                         @members = sort map { $scored_flow{$_}->{"norm_score"} }
                                    grep { $scored_flow{$_}->{"cluster"} == $centroid } keys %scored_flow;
 
                         # Calculate new center based on median
-                        # TODO: this could go out of bounds
-                        $new_center = $members[int(scalar @members / 2) - 1];
+                        $pos = int(@members / 2) - 1;
+                        if (@members == 0) {
+                                print "no members\n";
+                                $new_center = 0;
+                        } elsif (@members % 2 == 0) {
+                                print "even members: " . scalar @members . "\n";
+                                $new_center = ($members[$pos] + $members[$pos + 1]) / 2;
+                        } else {
+                                print "odd members: " . scalar @members . "\n";
+                                $new_center = $members[$pos];
+                        }
                         print "new center ($centroid): $new_center\n";
 
                         $diff += abs $center[$centroid] - $new_center;
                         $center[$centroid] = $new_center;
                 }
-        } while ($diff > 0.01);
+        } while ($diff > 0.1);
 
         return;
 }

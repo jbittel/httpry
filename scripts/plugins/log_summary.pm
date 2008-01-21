@@ -86,7 +86,6 @@ sub end {
         $end_time = (times)[0];
         
         &write_output_file();
-        &send_email() if $email_addr;
 
         return;
 }
