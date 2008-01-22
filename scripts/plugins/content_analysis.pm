@@ -36,8 +36,8 @@ my $max_concurrent = 0;
 my %active_flow = ();       # Holds metadata about each active flow
 my %active_flow_data = ();  # Holds individual flow data lines
 my %scored_flow = ();
-#my %history = ();         # Holds cache of content checks to avoid matching
-my %terms = ();           # Dictionary of terms and corresponding weights
+#my %history = ();           # Holds cache of content checks to avoid matching
+my %terms = ();             # Dictionary of terms and corresponding weights
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -199,19 +199,19 @@ sub content_check {
         foreach $term (keys %terms) {
                 if ($host && index($host, $term) >= 0) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $HOST_WEIGHT;
-#                        $active_flow{$ip}->{"terms"}->{$term}++;
+                        $active_flow{$ip}->{"terms"}->{$term}++;
 #                        $active_flow{$ip}->{"hosts"}->{$host}++;
                 }
 
                 if ($path && index($path, $term) >= 0) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $PATH_WEIGHT;
-#                        $active_flow{$ip}->{"terms"}->{$term}++;
+                        $active_flow{$ip}->{"terms"}->{$term}++;
 #                        $active_flow{$ip}->{"hosts"}->{$host}++;
                 }
 
                 if ($query && index($query, $term) >= 0) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $QUERY_WEIGHT;
-#                        $active_flow{$ip}->{"terms"}->{$term}++;
+                        $active_flow{$ip}->{"terms"}->{$term}++;
 #                        $active_flow{$ip}->{"hosts"}->{$host}++;
                 }
         }
@@ -245,9 +245,9 @@ sub content_check {
 # -----------------------------------------------------------------------------
 # Handle end of flow duties: flush to disk and delete hash entries; passing an
 # epochstamp value causes all flows inactive longer than $FLOW_TIMEOUT to be
-# flushed, while passing a zero forces all active flows to be flushed.
+# flushed, while passing a zero forces all active flows to be flushed
 #
-# Returns the next potential epoch boundary at which flows could time out.
+# Returns the next potential epoch value at which flows could time out
 # -----------------------------------------------------------------------------
 sub timeout_flows {
         my $epochstamp = shift;
@@ -275,6 +275,7 @@ sub timeout_flows {
                 if ($active_flow{$ip}->{"score"} > 0) {
                         $scored_flow{$ip}->{"num_flows"}++;
                         $scored_flow{$ip}->{"score"} += $active_flow{$ip}->{"score"};
+                        $scored_flow{$ip}->{"terms"} = $active_flow{$ip}->{"terms"};
 
                         &append_scored_file($ip);
                 }
@@ -307,10 +308,12 @@ sub append_scored_file {
 }
 
 # -----------------------------------------------------------------------------
-# Collect and write summary information to specified output file
+# Format and write summary information to specified output file
 # -----------------------------------------------------------------------------
 sub write_summary_file {
         my $ip;
+        my $term;
+        my $term_cnt;
         my $scored_flow_cnt = 0;
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
@@ -351,7 +354,15 @@ sub write_summary_file {
         print OUTFILE "Scored flows:   $scored_flows_cnt\n\n";
 
         foreach $ip (sort { $scored_flow{$b}->{"score"} <=> $scored_flow{$a}->{"score"} } keys %scored_flow) {
-                print OUTFILE sprintf("%.2f", $scored_flow{$ip}->{"score"}) . "\t$scored_flow{$ip}->{'num_flows'}\t$ip\n";
+                $term_cnt = 0;
+
+                map { $term_cnt += $scored_flow{$ip}->{"terms"}->{$_} } keys %{ $scored_flow{$ip}->{"terms"} };
+
+                print OUTFILE sprintf("%.2f", $scored_flow{$ip}->{"score"}) . "\t$scored_flow{$ip}->{'num_flows'}\t$ip\t$term_cnt\t";
+                foreach $term (keys %{ $scored_flow{$ip}->{"terms"} } ) {
+                        print OUTFILE"$term ";
+                }
+                print OUTFILE "\n";
         }
 
         close(OUTFILE);
@@ -370,7 +381,6 @@ sub write_summary_file {
 sub partition_scores() {
         my $ip;
         my $diff;
-        my $dist;
         my $max_score = 0;
         my $new_center;
         my $pos;
@@ -387,11 +397,11 @@ sub partition_scores() {
 
                 # Assign points to nearest center
                 foreach $ip (keys %scored_flow) {
-                        $scored_flow{$ip}->{"cluster"} = 1;
-                        $dist = abs $scored_flow{$ip}->{"norm_score"} - $center[1];
-
-                        if ((abs $scored_flow{$ip}->{"norm_score"} - $center[0]) < $dist) {
+                        if ((abs $scored_flow{$ip}->{"norm_score"} - $center[0]) < 
+                            (abs $scored_flow{$ip}->{"norm_score"} - $center[1])) {
                                 $scored_flow{$ip}->{"cluster"} = 0;
+                        } else {
+                                $scored_flow{$ip}->{"cluster"} = 1;
                         }
                 }
 
@@ -403,16 +413,12 @@ sub partition_scores() {
                         # Calculate new center based on median
                         $pos = int(@members / 2) - 1;
                         if (@members == 0) {
-                                print "no members\n";
-                                $new_center = 0;
+                                $new_center = $center[$centroid];
                         } elsif (@members % 2 == 0) {
-                                print "even members: " . scalar @members . "\n";
                                 $new_center = ($members[$pos] + $members[$pos + 1]) / 2;
                         } else {
-                                print "odd members: " . scalar @members . "\n";
                                 $new_center = $members[$pos];
                         }
-                        print "new center ($centroid): $new_center\n";
 
                         $diff += abs $center[$centroid] - $new_center;
                         $center[$centroid] = $new_center;
