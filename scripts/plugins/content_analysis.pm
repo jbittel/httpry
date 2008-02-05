@@ -36,7 +36,6 @@ my $max_concurrent = 0;
 my %active_flow = ();       # Holds metadata about each active flow
 my %active_flow_data = ();  # Holds individual flow data lines
 my %scored_flow = ();
-#my %history = ();           # Holds cache of content checks to avoid matching
 my %terms = ();             # Dictionary of terms and corresponding weights
 
 # -----------------------------------------------------------------------------
@@ -54,19 +53,31 @@ sub init {
         my $plugin_dir = shift;
         my $term;
         my $weight;
+        my $line_num = 0;
 
         if (&load_config($plugin_dir) == 0) {
                 return 0;
         }
 
         # Read in query terms and weights from input file
-        # TODO: add more error checking
         open(TERMS, "$terms_file") or die "Error: Cannot open $terms_file: $!\n";
                 foreach (<TERMS>) {
+                        $line_num++;
                         chomp;
-                        next if /^#/; # Skip comments
+
+                        $_ =~ s/\#.*$//; # Remove comments
+                        $_ =~ s/^\s+//;  # Remove leading whitespace
+                        $_ =~ s/\s+$//;  # Remove trailing whitespace
+                        $_ =~ s/\s+/ /;  # Remove sequential whitespace
+                        next if /^$/;    # Skip blank lines
 
                         ($term, $weight) = split / /, $_;
+
+                        if (!$term || !$weight) {
+                                print "Warning: Invalid data found in $terms_file, line $line_num\n";
+                                next;
+                        }
+
                         $terms{$term} = $weight;
                 }
         close(TERMS);
@@ -178,13 +189,10 @@ sub load_config {
 }
 
 # -----------------------------------------------------------------------------
-#
+# Search for specified terms in each line, scoring according to term and
+# positional weights
 # -----------------------------------------------------------------------------
 sub content_check {
-#        my $hostname = shift;
-#        my $uri = shift;
-#        my $ip = shift;
-#        my $term;
         my $uri = shift;
         my $ip = shift;
         my $term;
@@ -195,7 +203,6 @@ sub content_check {
         my $path = $2;
         my $query = $4;
 
-        # TODO: $host may not always be set here
         foreach $term (keys %terms) {
                 if ($host && index($host, $term) >= 0) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $HOST_WEIGHT;
@@ -215,29 +222,6 @@ sub content_check {
 #                        $active_flow{$ip}->{"hosts"}->{$host}++;
                 }
         }
-
-#        $history{$hostname} = -1 if (!defined $history{$hostname});
-#        $history{$uri} = -1 if (!defined $history{$uri});
-#
-#        return 1 if (($history{$hostname} == 1) || ($history{$uri} == 1));
-#        return 0 if (($history{$hostname} == 0) && ($history{$uri} == 0));
-#
-#        foreach $term (@terms) {
-#                if (index($hostname, $term) >= 0) {
-#                        $history{$hostname} = 1;
-#                        $tagged_terms{$ip}->{$term}++;
-#                        return 1;
-#                }
-#
-#                if (index($uri, $term) >= 0) {
-#                        $history{$uri} = 1;
-#                        $tagged_terms{$ip}->{$term}++;
-#                        return 1;
-#                }
-#        }
-#
-#        $history{$hostname} = 0;
-#        $history{$uri} = 0;
 
         return;
 }
