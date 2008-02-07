@@ -1,16 +1,19 @@
 A number of Perl scripts are included with the project to provide a log
 parsing framework. There is a central Perl script (parse_log.pl) that handles
 all of the core log parsing duties, and a set of Perl plugins (plugins/*.pm)
-that perform assorted processing duties. It is straightforward to create
-custom plugins to extend the processing abilities.
+that perform assorted processing duties. It is straightforward to create or
+modify the plugins to customize processing.
 
 *** IMPORTANT! ***
 By default, the log parser will attempt to use all plugins that it finds in
 the plugin directory. To override this behavior, use the -p switch to specify
-plugins by path and name. Additionally, any input log file needs to be a
-valid httpry log file with the field specifier at the start of the file.
+plugins by path and name. If the plugin requires a configuration file, it
+must be located in the same directory as the plugin and named as
+'<plugin name>.cfg'. Additionally, any input log file needs to be a valid
+httpry log file with the field specifier at the start of the file.
 
-The following Perl modules must be installed to run all included plugins:
+The following non-core Perl modules must be installed to run all included
+plugins:
         DBI
 
 A summary of the included Perl scripts:
@@ -18,7 +21,7 @@ A summary of the included Perl scripts:
  ./scripts/rotate_log.pl
         Moves an active log file into a specified directory. Also offers
         options for deleting text files, compressing the log files and/or
-        purging old log files according to number or total size.
+        purging old log files by number or total size.
 
  ./scripts/parse_log.pl
         Core script for plugins. Processes log files and delivers data to each
@@ -34,8 +37,9 @@ A summary of the included Perl scripts:
 
  ./scripts/plugins/content_analysis.pm
         Breaks the input file into flows which are time delimited blocks of
-        log lines by client IP. It the searches for specified keywords and
-        scores the flows accordingly.
+        log lines by client IP. It then searches for specified keywords and
+        scores the flows accordingly. Requires an input file containing
+        search terms and corresponding weights.
 
  ./scripts/plugins/db_dump.pm
         Dumps log file data into a previously prepared database. Useful

@@ -18,7 +18,7 @@
    so as to avoid recursion. The tree structure should help this
    scale relatively well to longer format strings.
 
-   TODO: We could squeeze out a litte more efficiency if we implement
+   TODO: We could squeeze out a little more efficiency if we implement
    this as a balanced binary tree. Right now, worst case behavior
    means the whole thing behaves as a linked list, which is how it
    was implemented previously anyway. In the future we should convert

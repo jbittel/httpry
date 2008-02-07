@@ -23,9 +23,9 @@ debug: $(FILES)
 	@echo " Compiling $(PROG) in debug mode"
 	@echo ""
 	@echo " This will cause the program to run slightly"
-	@echo " slower, but enables additional checks and"
-	@echo " sanity checks. Not recommended for live"
-	@echo " installations"
+	@echo " slower, but enables additional data verification"
+	@echo " and sanity checks. Recommended for testing, not"
+	@echo " production usage."
 	@echo "--------------------------------------------------"
 	@echo ""
 	$(CC) $(DEBUGFLAGS) -o $(PROG) $(FILES) $(LIBS)

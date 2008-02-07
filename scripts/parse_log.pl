@@ -109,14 +109,19 @@ sub search_plugin_dir {
         opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
                 foreach (readdir(PLUGINDIR)) {
                         next if ($_ !~ /\.pm$/);
-
                         $p = (fileparse($_, '\.pm'))[0];
+
+                        if (exists $plugins{$p}) {
+                                print "Warning: Plugin '$p' already loaded...ignoring\n";
+                                next;
+                        }
+
                         $plugins{$p}->{'dir'} = $plugin_dir;
                         $plugins{$p}->{'path'} = $plugin_dir.'/'.$_;
                 }
         closedir PLUGINDIR;
 
-        die "Error: No plugins found in $plugin_dir\n" if (scalar keys %plugins == 0);
+        print "Warning: No plugins found in $plugin_dir\n" if (scalar keys %plugins == 0);
 
         return;
 }
@@ -131,6 +136,7 @@ sub register_plugin {
                 $plugins{$p}->{'callback'} = $p->new();
         } else {
                 print "Warning: Plugin '$p' does not contain a required new() function...disabling\n";
+                delete $plugins{$p};
         }
 
         return;
@@ -211,11 +217,6 @@ sub get_arguments {
                 &print_usage();
         }
 
-        if ($opts{d} && $opts{p}) {
-                print "Warning: -p take precedence over -d, ignoring -d\n";
-                $opts{d} = undef;
-        }
-
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
         &search_plugin_dir($opts{d}) if ($opts{d});
@@ -223,8 +224,13 @@ sub get_arguments {
         if ($opts{p}) {
                 foreach (split /,/, $opts{p}) {
                         $_ =~ s/ //g;
-
                         $p = (fileparse($_, '\.pm'))[0];
+
+                        if (exists $plugins{$p}) {
+                                print "Warning: Plugin '$p' already loaded...ignoring\n";
+                                next;
+                        }
+
                         $plugins{$p}->{'dir'} = dirname($_);
                         $plugins{$p}->{'path'} = $_;
                 }
@@ -239,9 +245,9 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 Usage: $0 [-h] [-d dir] [-p plugins] file1 [file2 ...]
-  -d  base directory to use when searching for plugins
+  -d  load plugins from specified directory
   -h  print this help information and exit
-  -p  specify a list of plugins to load
+  -p  load plugins from comma-delimited list
 
 USAGE
 }
