@@ -5,7 +5,7 @@
 #  httpry - HTTP logging and information retrieval tool
 #  ----------------------------------------------------
 #
-#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
+#  Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>
 #
 
 # An example shell script for orchestrating some of the included tools.
@@ -53,8 +53,7 @@ perl ${tools_dir}/rotate_log.pl -ct -i ${logs_dir}/${log_fn} -d ${logs_dir}
 # Process new log file data; make sure appropriate plugins are
 # enabled/disabled for parse_log.pl
 if [ -r "${logs_dir}/${parse_fn}" ] ; then
-        perl ${tools_dir}/parse_log.pl -p ${tools_dir}/plugins \
-             -i sample_plugin,db_dump,xml_output ${logs_dir}/${parse_fn}
+        perl ${tools_dir}/parse_log.pl -d ${tools_dir}/plugins ${logs_dir}/${parse_fn}
 else
         if [ -n ${parse_fn} ] ; then
                 die "File ${logs_dir}/${parse_fn} does not exist or is unreadable"

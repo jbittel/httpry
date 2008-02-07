@@ -5,7 +5,7 @@
 #  httpry - HTTP logging and information retrieval tool
 #  ----------------------------------------------------
 #
-#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
+#  Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>
 #
 
 # This is an example plugin for the perl parse script parse_log.pl.  It shows
@@ -40,12 +40,12 @@ sub new {
 # any startup specific code or subs are handled here.
 sub init {
         my $self = shift;
-        my $plugin_dir = shift;
+        my $cfg_dir = shift;
 
         # Call our load configuration sub; this can be good to break out
         # into a separate sub like this, particularly if you end up with
         # many checks on the config variables
-        if (&load_config($plugin_dir) == 0) {
+        if (&load_config($cfg_dir) == 0) {
                 return 0;
         }
 
@@ -76,11 +76,11 @@ sub end {
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
 sub load_config {
-        my $plugin_dir = shift;
+        my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
-        if (-e "$plugin_dir/" . __PACKAGE__ . ".cfg") {
-                require "$plugin_dir/" . __PACKAGE__ . ".cfg";
+        if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
+                require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         }
 
         # Check for required options and combinations from the configuration

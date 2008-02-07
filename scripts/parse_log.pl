@@ -5,7 +5,7 @@
 #  httpry - HTTP logging and information retrieval tool
 #  ----------------------------------------------------
 #
-#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
+#  Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>
 #
 
 use strict;
@@ -22,21 +22,17 @@ my $DEFAULT_PLUGIN_DIR = "plugins";
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %nameof = ();        # Stores human readable plugin names
-my @callbacks = ();     # List of initialized plugins
-my @plugins = ();       # List of plugins to be loaded
+my %plugins = ();
 
 # Command line arguments
 my %opts;
 my @input_files;
-my $plugin_dir;
-my $custom_plugin_dir = 0;
 
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-&init_plugins($plugin_dir);
+&init_plugins();
 &process_logfiles();
 &end_plugins();
 
@@ -44,53 +40,40 @@ my $custom_plugin_dir = 0;
 # Load and initialize all plugins in specified directory
 # -----------------------------------------------------------------------------
 sub init_plugins {
-        my $plugin_dir = shift;
-        my $plugin;
+        my $p;
         my $i = 0;
-        my $curr_dir;
 
-        &search_plugin_dir if (scalar @plugins == 0);
+        foreach $p (keys %plugins) {
+                print "Loading plugin: $p\n" if $VERBOSE;
 
-        # Load up each plugin
-        foreach $plugin (@plugins) {
-                print "Loading $plugin...\n" if $VERBOSE;
-
-                if (! -e $plugin) {
-                        # Tack on an extension to see if the plugin
-                        # was specified without one
-                        if (-e "$plugin.pm") {
-                                $plugin = "$plugin.pm"
-                        } else {
-                                print "Warning: Cannot locate $plugin\n";
-                                next;
-                        }
-                }
-
-                require $plugin;
-        }
-
-        if (scalar @callbacks == 0) {
-                die "Error: No plugins loaded\n";
-        }
-
-        # Check for required functions and initialize each loaded plugin
-        foreach $plugin (@callbacks) {
-                unless ($plugin->can('main')) {
-                        print "Warning: Plugin '$nameof{$plugin}' does not contain a required main() function...disabling\n";
-                        splice @callbacks, $i, 1;
+                if (! -e $plugins{$p}->{'path'}) {
+                        print "Warning: Cannot locate $plugins{$p}->{'path'}\n";
+                        delete $plugins{$p};
                         next;
                 }
 
-                if ($plugin->can('init')) {
-                        if ($plugin->init($plugin_dir) == 0) {
-                                print "Warning: Plugin '$nameof{$plugin}' did not initialize properly...disabling\n";
-                                splice @callbacks, $i, 1;
+                require $plugins{$p}->{'path'};
+
+                unless ($plugins{$p}->{'callback'}->can('main')) {
+                        print "Warning: Plugin '$p' does not contain a required main() function...disabling\n";
+                        delete $plugins{$p};
+                        next;
+                }
+
+                if ($plugins{$p}->{'callback'}->can('init')) {
+                        if ($plugins{$p}->{'callback'}->init($plugins{$p}->{'dir'}) == 0) {
+                                print "Warning: Plugin '$p' did not initialize properly...disabling\n";
+                                delete $plugins{$p};
+                                next;
                         } else {
-                                print "Initialized plugin: $nameof{$plugin}\n" if $VERBOSE;
+                                print "Initialized plugin: $p\n" if $VERBOSE;
                                 $i++;
                         }
                 }
         }
+
+        die "Error: No plugins loaded\n" if (scalar keys %plugins == 0);
+        print int(scalar keys %plugins) . " plugin(s) loaded\n" if $VERBOSE;
 
         return;
 }
@@ -99,36 +82,41 @@ sub init_plugins {
 # Locate and search a directory for plugins to initialize
 # -----------------------------------------------------------------------------
 sub search_plugin_dir {
-        my $file;
+        my $custom_dir = shift;
+        my $plugin_dir;
+        my $p;
 
         # If a custom plugin directory, assume the user knows what they're doing;
         # otherwise, search the current dir and script base dir for a plugin folder
-        if ($custom_plugin_dir) {
-                unless (-d $plugin_dir) {
-                        die "Error: '$plugin_dir' is not a valid directory\n";
-                }
+        if ($custom_dir) {
+                $custom_dir =~ s/\/$//;
+                $plugin_dir = $custom_dir;
+
+                die "Error: '$plugin_dir' is not a valid directory\n" unless (-d $plugin_dir);
         } else {
-                if (-d "./".$plugin_dir) {
-                        $plugin_dir = "./" . $plugin_dir;
-                } elsif (-d dirname($0).'/'.basename($plugin_dir)) {
-                        $plugin_dir = dirname($0).'/'.basename($plugin_dir);
+                if (-d "./".$DEFAULT_PLUGIN_DIR) {
+                        $plugin_dir = "./".$DEFAULT_PLUGIN_DIR;
+                } elsif (-d dirname($0).'/'.basename($DEFAULT_PLUGIN_DIR)) {
+                        $plugin_dir = dirname($0).'/'.basename($DEFAULT_PLUGIN_DIR);
                 } else {
-                        die "Error: Cannot find a '$plugin_dir' directory\n";
+                        die "Error: Cannot find a '$DEFAULT_PLUGIN_DIR' directory\n";
                 }
         }
 
-        # Initialize list of plugins to load
-        opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
-                foreach $file (readdir(PLUGINDIR)) {
-                        next if ($file !~ /\.pm$/);
+        print "Using plugin directory: $plugin_dir\n" if $VERBOSE;
 
-                        push(@plugins, "$plugin_dir/$file");
+        # Extract all plugins found in directory
+        opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
+                foreach (readdir(PLUGINDIR)) {
+                        next if ($_ !~ /\.pm$/);
+
+                        $p = (fileparse($_, '\.pm'))[0];
+                        $plugins{$p}->{'dir'} = $plugin_dir;
+                        $plugins{$p}->{'path'} = $plugin_dir.'/'.$_;
                 }
         closedir PLUGINDIR;
 
-        if (scalar @plugins == 0) {
-                die "Error: No plugins loaded from $plugin_dir\n";
-        }
+        die "Error: No plugins found in $plugin_dir\n" if (scalar keys %plugins == 0);
 
         return;
 }
@@ -137,15 +125,12 @@ sub search_plugin_dir {
 # Create list of each plugin's callback information
 # -----------------------------------------------------------------------------
 sub register_plugin {
-        my $plugin = shift;
+        my $p = shift;
 
-        if ($plugin->can('new')) {
-                push @callbacks, $plugin->new();
-        
-                # Save a readable copy of the plugin name so we can use it in output text
-                $nameof{$callbacks[-1]} = $plugin;
+        if ($p->can('new')) {
+                $plugins{$p}->{'callback'} = $p->new();
         } else {
-                print "Warning: Plugin '$plugin' does not contain a required new() function...disabling\n";
+                print "Warning: Plugin '$p' does not contain a required new() function...disabling\n";
         }
 
         return;
@@ -157,7 +142,7 @@ sub register_plugin {
 sub process_logfiles {
         my $curr_file; # Current input file
         my $curr_line; # Current line in input file
-        my $plugin;
+        my $num_fields = 0;
         my @fields;
         my @header = ();
         my %record;
@@ -167,6 +152,8 @@ sub process_logfiles {
                         print "Error: Cannot open $curr_file: $!\n";
                         next;
                 }
+
+                print "Processing $curr_file\n" if $VERBOSE;
 
                 while ($curr_line = <INFILE>) {
                         chomp $curr_line;
@@ -179,21 +166,15 @@ sub process_logfiles {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map lc, split(/\,/, $1);
                                 %record = ();
+                                $num_fields = scalar @header;
                         }
 
-                        if (scalar(@header) == 0) {
-                                die "Error: No field description line found; cannot proceed\n";
-                        }
-                        @fields = split(/\t/, $curr_line);
-                        next if (scalar(@fields) != scalar(@header)); # Malformed fields count
+                        die "Error: No field description line found; cannot proceed\n" if ($num_fields == 0);
+                        @fields = split /\t/, $curr_line;
+                        next if (scalar @fields != $num_fields); # Malformed fields count
 
-                        foreach (0..$#fields) {
-                                $record{$header[$_]} = $fields[$_];
-                        }
-
-                        foreach $plugin (@callbacks) {
-                                $plugin->main(\%record);
-                        }
+                        map { $record{$header[$_]} = $fields[$_] } (0..$#fields);
+                        map { $plugins{$_}->{'callback'}->main(\%record) } keys %plugins;
                 }
 
                 close(INFILE);
@@ -206,10 +187,10 @@ sub process_logfiles {
 # Call termination function in each loaded plugin
 # -----------------------------------------------------------------------------
 sub end_plugins {
-        my $plugin;
+        my $p;
 
-        foreach $plugin (@callbacks) {
-                $plugin->end() if ($plugin->can('end'));
+        foreach $p (keys %plugins) {
+                $plugins{$p}->{'callback'}->end() if ($plugins{$p}->{'callback'}->can('end'));
         }
 
         return;
@@ -219,6 +200,8 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
+        my $p;
+
         getopts('d:hp:', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
@@ -228,19 +211,23 @@ sub get_arguments {
                 &print_usage();
         }
 
-        # Currently, specifying both of these causes precedence confusion,
-        # so we'll disallow that behavior
-        die "Error: -d and -p are mutually exclusive\n" if ($opts{d} && $opts{p});
+        if ($opts{d} && $opts{p}) {
+                print "Warning: -p take precedence over -d, ignoring -d\n";
+                $opts{d} = undef;
+        }
 
         # Copy command line arguments to internal variables
         @input_files = @ARGV;
-        $plugin_dir = $DEFAULT_PLUGIN_DIR unless ($plugin_dir = $opts{d});
-        $custom_plugin_dir = 1 if ($opts{d});
-        @plugins = split /,/, $opts{p} if ($opts{p});
+        &search_plugin_dir($opts{d}) if ($opts{d});
 
-        # Strip trailing slash from plugin directory path
-        if ($plugin_dir =~ /(.*)\/$/) {
-                $plugin_dir = $1;
+        if ($opts{p}) {
+                foreach (split /,/, $opts{p}) {
+                        $_ =~ s/ //g;
+
+                        $p = (fileparse($_, '\.pm'))[0];
+                        $plugins{$p}->{'dir'} = dirname($_);
+                        $plugins{$p}->{'path'} = $_;
+                }
         }
 
         return;
@@ -252,9 +239,9 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 Usage: $0 [-h] [-d dir] [-p plugins] file1 [file2 ...]
-  -d   base directory to use when searching for plugins
-  -h   print this help information and exit
-  -p   specify a list of plugins to load
+  -d  base directory to use when searching for plugins
+  -h  print this help information and exit
+  -p  specify a list of plugins to load
 
 USAGE
 }

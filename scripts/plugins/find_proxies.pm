@@ -5,7 +5,7 @@
 #  httpry - HTTP logging and information retrieval tool
 #  ----------------------------------------------------
 #
-#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
+#  Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>
 #
 
 package find_proxies;
@@ -34,9 +34,9 @@ sub new {
 
 sub init {
         my $self = shift;
-        my $plugin_dir = shift;
+        my $cfg_dir = shift;
 
-        if (&load_config($plugin_dir) == 0) {
+        if (&load_config($cfg_dir) == 0) {
                 return 0;
         }
 
@@ -63,11 +63,14 @@ sub end {
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
 sub load_config {
-        my $plugin_dir = shift;
+        my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
-        if (-e "$plugin_dir/" . __PACKAGE__ . ".cfg") {
-                require "$plugin_dir/" . __PACKAGE__ . ".cfg";
+        if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
+                require "$cfg_dir/" . __PACKAGE__ . ".cfg";
+        } else {
+                print "Error: No config file found\n";
+                return 0;
         }
 
         # Check for required options and combinations

@@ -5,7 +5,7 @@
 #  httpry - HTTP logging and information retrieval tool
 #  ----------------------------------------------------
 #
-#  Copyright (c) 2005-2007 Jason Bittel <jason.bittel@gmail.com>
+#  Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>
 #
 
 package content_analysis;
@@ -16,11 +16,11 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $FLOW_TIMEOUT = 300;
+my $FLOW_TIMEOUT = 300; # In seconds
 
-my $HOST_WEIGHT = 0.0;
-my $PATH_WEIGHT = 0.50;
-my $QUERY_WEIGHT = 0.75;
+my $HOST_WEIGHT = 1.0;
+my $PATH_WEIGHT = 1.5;
+my $QUERY_WEIGHT = 2.0;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -50,37 +50,13 @@ sub new {
 
 sub init {
         my $self = shift;
-        my $plugin_dir = shift;
-        my $term;
-        my $weight;
-        my $line_num = 0;
+        my $cfg_dir = shift;
 
-        if (&load_config($plugin_dir) == 0) {
+        if (&load_config($cfg_dir) == 0) {
                 return 0;
         }
 
-        # Read in query terms and weights from input file
-        open(TERMS, "$terms_file") or die "Error: Cannot open $terms_file: $!\n";
-                foreach (<TERMS>) {
-                        $line_num++;
-                        chomp;
-
-                        $_ =~ s/\#.*$//; # Remove comments
-                        $_ =~ s/^\s+//;  # Remove leading whitespace
-                        $_ =~ s/\s+$//;  # Remove trailing whitespace
-                        $_ =~ s/\s+/ /;  # Remove sequential whitespace
-                        next if /^$/;    # Skip blank lines
-
-                        ($term, $weight) = split / /, $_;
-
-                        if (!$term || !$weight) {
-                                print "Warning: Invalid data found in $terms_file, line $line_num\n";
-                                next;
-                        }
-
-                        $terms{$term} = $weight;
-                }
-        close(TERMS);
+        &load_terms();
 
         # Remove any existing text files so they don't accumulate
         opendir(DIR, $output_dir) or die "Error: Cannot open directory $output_dir: $!\n";
@@ -164,11 +140,14 @@ sub end {
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
 sub load_config {
-        my $plugin_dir = shift;
+        my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
-        if (-e "$plugin_dir/" . __PACKAGE__ . ".cfg") {
-                require "$plugin_dir/" . __PACKAGE__ . ".cfg";
+        if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
+                require "$cfg_dir/" . __PACKAGE__ . ".cfg";
+        } else {
+                print "Error: No config file found\n";
+                return 0;
         }
 
         # Check for required options and combinations
@@ -186,6 +165,50 @@ sub load_config {
         $output_dir =~ s/\/$//; # Remove trailing slash
 
         return 1;
+}
+
+# -----------------------------------------------------------------------------
+# Read in query terms and weights from input file
+# -----------------------------------------------------------------------------
+sub load_terms {
+        my $line;
+        my $line_num;
+        my $term;
+        my $weight;
+
+        open(TERMS, "$terms_file") or die "Error: Cannot open $terms_file: $!\n";
+                while ($line = <TERMS>) {
+                        $line_num++;
+                        chomp $line;
+
+                        $line =~ s/\#.*$//; # Remove comments
+                        $line =~ s/^\s+//;  # Remove leading whitespace
+                        $line =~ s/\s+$//;  # Remove trailing whitespace
+                        $line =~ s/\s+/ /;  # Remove sequential whitespace
+                        next if $line =~ /^$/;    # Skip blank lines
+
+                        ($term, $weight) = split / /, $line;
+
+                        if (!$term || !$weight) {
+                                print "Warning: Invalid data found in $terms_file, line $line_num\n";
+                                next;
+                        }
+
+                        if ($weight < 0) {
+                                print "Warning: '$term' assigned invalid weight '$weight', clamping to 0\n";
+                                $weight = 0;
+                        }
+
+                        if ($weight > 1) {
+                                print "Warning: '$term' assigned invalid weight '$weight', clamping to 1\n";
+                                $weight = 1;
+                        }
+
+                        $terms{$term} = 1 + $weight;
+                }
+        close(TERMS);
+
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -207,19 +230,16 @@ sub content_check {
                 if ($host && index($host, $term) >= 0) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $HOST_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
-#                        $active_flow{$ip}->{"hosts"}->{$host}++;
                 }
 
                 if ($path && index($path, $term) >= 0) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $PATH_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
-#                        $active_flow{$ip}->{"hosts"}->{$host}++;
                 }
 
                 if ($query && index($query, $term) >= 0) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $QUERY_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
-#                        $active_flow{$ip}->{"hosts"}->{$host}++;
                 }
         }
 
@@ -259,7 +279,7 @@ sub timeout_flows {
                 if ($active_flow{$ip}->{"score"} > 0) {
                         $scored_flow{$ip}->{"num_flows"}++;
                         $scored_flow{$ip}->{"score"} += $active_flow{$ip}->{"score"};
-                        $scored_flow{$ip}->{"terms"} = $active_flow{$ip}->{"terms"};
+                        map { $scored_flow{$ip}->{"terms"}->{$_} += $active_flow{$ip}->{"terms"}->{$_} } keys %{ $active_flow{$ip}->{"terms"} };
 
                         &append_scored_file($ip);
                 }
@@ -344,7 +364,7 @@ sub write_summary_file {
 
                 print OUTFILE sprintf("%.2f", $scored_flow{$ip}->{"score"}) . "\t$scored_flow{$ip}->{'num_flows'}\t$ip\t$term_cnt\t";
                 foreach $term (keys %{ $scored_flow{$ip}->{"terms"} } ) {
-                        print OUTFILE"$term ";
+                        print OUTFILE "$term ";
                 }
                 print OUTFILE "\n";
         }

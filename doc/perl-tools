@@ -29,7 +29,8 @@ A summary of the included Perl scripts:
         directory for a plugin directory followed by the base directory of
         the script. The first directory found is used. To load only specifc
         plugins, use the -p switch to provide a comma-delimited list of
-        plugins to load.
+        plugins to load. Most included plugins require a config file, which
+        must be located in the same directory as the plugin.
 
  ./scripts/plugins/content_analysis.pm
         Breaks the input file into flows which are time delimited blocks of
