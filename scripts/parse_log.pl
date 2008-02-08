@@ -236,6 +236,8 @@ sub get_arguments {
                 }
         }
 
+        &search_plugin_dir() if (!$opts{d} && !$opts{p});
+
         return;
 }
 

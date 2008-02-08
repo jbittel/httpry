@@ -113,12 +113,10 @@ sub main {
         if (!exists $active_flow{$record->{"source-ip"}}) {
                 $flow_cnt++;
 
-#                $active_flow{$record->{"source-ip"}}->{"start_time"} = $record->{"timestamp"};
                 $active_flow{$record->{"source-ip"}}->{"length"} = 0;
                 $active_flow{$record->{"source-ip"}}->{"score"} = 0;
         }
 
-#        $active_flow{$record->{"source-ip"}}->{"end_time"} = $record->{"timestamp"};
         $active_flow{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
         $active_flow{$record->{"source-ip"}}->{"length"}++;
 
@@ -185,7 +183,7 @@ sub load_terms {
                         $line =~ s/^\s+//;  # Remove leading whitespace
                         $line =~ s/\s+$//;  # Remove trailing whitespace
                         $line =~ s/\s+/ /;  # Remove sequential whitespace
-                        next if $line =~ /^$/;    # Skip blank lines
+                        next if $line =~ /^$/;
 
                         ($term, $weight) = split / /, $line;
 
@@ -227,17 +225,17 @@ sub content_check {
         my $query = $4;
 
         foreach $term (keys %terms) {
-                if ($host && index($host, $term) >= 0) {
+                if ($host && index($host, $term) != -1) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $HOST_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
 
-                if ($path && index($path, $term) >= 0) {
+                if ($path && index($path, $term) != -1) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $PATH_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
 
-                if ($query && index($query, $term) >= 0) {
+                if ($query && index($query, $term) != -1) {
                         $active_flow{$ip}->{"score"} += $terms{$term} * $QUERY_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
@@ -362,7 +360,7 @@ sub write_summary_file {
 
                 map { $term_cnt += $scored_flow{$ip}->{"terms"}->{$_} } keys %{ $scored_flow{$ip}->{"terms"} };
 
-                print OUTFILE sprintf("%.2f", $scored_flow{$ip}->{"score"}) . "\t$scored_flow{$ip}->{'num_flows'}\t$ip\t$term_cnt\t";
+                print OUTFILE sprintf("%.1f", $scored_flow{$ip}->{"score"}) . "\t$scored_flow{$ip}->{'num_flows'}\t$ip\t$term_cnt\t";
                 foreach $term (keys %{ $scored_flow{$ip}->{"terms"} } ) {
                         print OUTFILE "$term ";
                 }
