@@ -18,9 +18,9 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 my $FLOW_TIMEOUT = 300; # In seconds
 
-my $HOST_WEIGHT = 1.0;
-my $PATH_WEIGHT = 1.5;
-my $QUERY_WEIGHT = 2.0;
+my $HOST_MULT = 1.0;
+my $PATH_MULT = 1.5;
+my $QUERY_MULT = 2.0;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -82,7 +82,6 @@ sub main {
                 sub set_epoch_boundary { $epoch_boundary = shift; }
         }
 
-        # Make sure we really want to be here
         return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
         return unless exists $record->{"timestamp"};
         return unless exists $record->{"source-ip"};
@@ -226,17 +225,17 @@ sub content_check {
 
         foreach $term (keys %terms) {
                 if ($host && index($host, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $terms{$term} * $HOST_WEIGHT;
+                        $active_flow{$ip}->{"score"} += $terms{$term} * $HOST_MULT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
 
                 if ($path && index($path, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $terms{$term} * $PATH_WEIGHT;
+                        $active_flow{$ip}->{"score"} += $terms{$term} * $PATH_MULT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
 
                 if ($query && index($query, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $terms{$term} * $QUERY_WEIGHT;
+                        $active_flow{$ip}->{"score"} += $terms{$term} * $QUERY_MULT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
         }

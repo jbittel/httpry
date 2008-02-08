@@ -39,7 +39,7 @@ sub init {
 }
 
 sub main {
-        my $self   = shift;
+        my $self = shift;
         my $record = shift;
         my $hostname;
 

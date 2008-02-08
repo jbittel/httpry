@@ -94,10 +94,10 @@ sub search_plugin_dir {
 
                 die "Error: '$plugin_dir' is not a valid directory\n" unless (-d $plugin_dir);
         } else {
-                if (-d "./".$DEFAULT_PLUGIN_DIR) {
-                        $plugin_dir = "./".$DEFAULT_PLUGIN_DIR;
-                } elsif (-d dirname($0).'/'.basename($DEFAULT_PLUGIN_DIR)) {
-                        $plugin_dir = dirname($0).'/'.basename($DEFAULT_PLUGIN_DIR);
+                if (-d "./" . $DEFAULT_PLUGIN_DIR) {
+                        $plugin_dir = "./" . $DEFAULT_PLUGIN_DIR;
+                } elsif (-d dirname($0) . '/' . basename($DEFAULT_PLUGIN_DIR)) {
+                        $plugin_dir = dirname($0) . '/' . basename($DEFAULT_PLUGIN_DIR);
                 } else {
                         die "Error: Cannot find a '$DEFAULT_PLUGIN_DIR' directory\n";
                 }
@@ -223,7 +223,8 @@ sub get_arguments {
 
         if ($opts{p}) {
                 foreach (split /,/, $opts{p}) {
-                        $_ =~ s/ //g;
+                        $_ =~ s/^\s+//;
+                        $_ =~ s/\s+$//;
                         $p = (fileparse($_, '\.pm'))[0];
 
                         if (exists $plugins{$p}) {
