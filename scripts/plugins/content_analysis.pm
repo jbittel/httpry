@@ -18,9 +18,9 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 my $FLOW_TIMEOUT = 300; # In seconds
 
-my $HOST_MULT = 1.0;
-my $PATH_MULT = 1.5;
-my $QUERY_MULT = 2.0;
+my $HOST_WEIGHT = 0.0;
+my $PATH_WEIGHT = 0.5;
+my $QUERY_WEIGHT = 1.0;
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
@@ -225,17 +225,17 @@ sub content_check {
 
         foreach $term (keys %terms) {
                 if ($host && index($host, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $terms{$term} * $HOST_MULT;
+                        $active_flow{$ip}->{"score"} += $HOST_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
 
                 if ($path && index($path, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $terms{$term} * $PATH_MULT;
+                        $active_flow{$ip}->{"score"} += $PATH_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
 
                 if ($query && index($query, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $terms{$term} * $QUERY_MULT;
+                        $active_flow{$ip}->{"score"} += $QUERY_WEIGHT;
                         $active_flow{$ip}->{"terms"}->{$term}++;
                 }
         }
@@ -272,10 +272,13 @@ sub timeout_flows {
                 $flow_max_len = $active_flow{$ip}->{"length"} if ($active_flow{$ip}->{"length"} > $flow_max_len);
                 $flow_line_cnt += $active_flow{$ip}->{"length"};
 
+                # Apply term multipliers to flow score
+                map { $active_flow{$ip}->{'score'} += $active_flow{$ip}->{'terms'}->{$_} * $terms{$_} } keys %{ $active_flow{$ip}->{'terms'} };
+
                 # Save score information only if a score has been applied
-                if ($active_flow{$ip}->{"score"} > 0) {
-                        $scored_flow{$ip}->{"num_flows"}++;
-                        $scored_flow{$ip}->{"score"} += $active_flow{$ip}->{"score"};
+                if ($active_flow{$ip}->{'score'} > 0) {
+                        $scored_flow{$ip}->{'num_flows'}++;
+                        $scored_flow{$ip}->{'score'} += $active_flow{$ip}->{'score'};
                         map { $scored_flow{$ip}->{"terms"}->{$_} += $active_flow{$ip}->{"terms"}->{$_} } keys %{ $active_flow{$ip}->{"terms"} };
 
                         &append_scored_file($ip);
@@ -334,7 +337,7 @@ sub write_summary_file {
         if (scalar(keys %scored_flow) == 0) {
                 print OUTFILE "\n\n*** No scored flows found\n";
                 close(OUTFILE);
-                
+
                 return;
         }
 
@@ -372,9 +375,9 @@ sub write_summary_file {
 }
 
 # -----------------------------------------------------------------------------
-# Dynamically partition scored flows into a high and a low set using the
-# k-means clustering algorithm; this allows us to skim the top scoring flows
-# off the top without setting arbitrary thresholds or levels 
+# Dynamically partition scored flows into sets using the k-means clustering
+# algorithm; this allows us to trim the low scoring flows off the bottom
+# without setting arbitrary thresholds or levels 
 #
 # K-means code originally taken from: http://www.perlmonks.org/?node_id=541000
 # Many subsequent modifications and changes have been made
@@ -386,32 +389,36 @@ sub partition_scores() {
         my $new_center;
         my $pos;
         my $centroid;
-        my @center = (0, 1);
+        my @center = (0.0, 0.5, 1.0);
         my @members;
 
-        # Normalize scores into the range 0..1 and flatten to one decimal place of precision
+        # Normalize scores into the range 0..1 and flatten to two decimal places of precision
         map { $max_score = $scored_flow{$_}->{"score"} if ($scored_flow{$_}->{"score"} > $max_score) } keys %scored_flow;
-        map { $scored_flow{$_}->{"norm_score"} = sprintf("%.1f", $scored_flow{$_}->{"score"} / $max_score) } keys %scored_flow;
-        
+        map { $scored_flow{$_}->{"norm_score"} = sprintf("%.2f", $scored_flow{$_}->{"score"} / $max_score) } keys %scored_flow;
+
         do {
                 $diff = 0;
 
                 # Assign points to nearest center
                 foreach $ip (keys %scored_flow) {
-                        if ((abs $scored_flow{$ip}->{"norm_score"} - $center[0]) < 
-                            (abs $scored_flow{$ip}->{"norm_score"} - $center[1])) {
-                                $scored_flow{$ip}->{"cluster"} = 0;
-                        } else {
-                                $scored_flow{$ip}->{"cluster"} = 1;
+                        my $closest = 0;
+                        my $dist = abs $scored_flow{$ip}->{'norm_score'} - $center[$closest];
+ 
+                        foreach (1..$#center) {
+                                if (abs $scored_flow{$ip}->{'norm_score'} - $center[$_] < $dist) {
+                                        $dist = abs $scored_flow{$ip}->{'norm_score'} - $center[$_];
+                                        $closest = $_;
+                                }
                         }
+
+                        $scored_flow{$ip}->{"cluster"} = $closest;
                 }
 
-                # Compute new centers
+                # Compute new centers based on median
                 foreach $centroid (0..$#center) {
                         @members = sort map { $scored_flow{$_}->{"norm_score"} }
                                    grep { $scored_flow{$_}->{"cluster"} == $centroid } keys %scored_flow;
 
-                        # Calculate new center based on median
                         $pos = int(@members / 2) - 1;
                         if (@members == 0) {
                                 $new_center = $center[$centroid];
@@ -424,7 +431,7 @@ sub partition_scores() {
                         $diff += abs $center[$centroid] - $new_center;
                         $center[$centroid] = $new_center;
                 }
-        } while ($diff > 0.1);
+        } while ($diff > 0.01);
 
         return;
 }
