@@ -12,13 +12,12 @@
    Currently the output format string is stored as a hash table 
    with all of the nodes additionally chained together as a linked
    list. This allows insert_value() to utilize the more efficient
-   hash structure to find nodes, while print_values() that needs to
-   traverse all nodes in insertion order can do so. Functions that
-   need to traverse the entire hash can use the linked list as well.
+   hash structure to find nodes, while functions that need to
+   traverse all nodes (in insertion order) can use the linked list.
 
-   The hash structure causes some wasted space as the table tends to
-   be rather sparse, but the efficiency amortizes nicely on longer
-   runs and it scales well to longer format strings.
+   The hash table creates some wasted space as the table tends to
+   be rather sparse, but the efficiency amortizes on longer runs
+   and it scales well to longer format strings.
 */
 
 #include <ctype.h>
@@ -28,24 +27,24 @@
 #include "error.h"
 #include "format.h"
 
-#define HASHSIZE 100
+#define HASHSIZE 50
 
 typedef struct node NODE;
 struct node {
         char *name, *value;
-        NODE *next;
+        NODE *next, *list;
 };
 
 NODE *insert_node(char *str);
-NODE *lookup(char *s);
-unsigned hash(char *s);
+NODE *hash_lookup(char *str);
+unsigned hash(char *str);
 char *strip_whitespace(char *str);
 int strcmp_name(const char *s1, const char *s2);
 
 static NODE *output_fields[HASHSIZE];
 static NODE *head = NULL;
 
-/* Parse format string to find and insert output fields */
+/* Parse and insert output fields from format string */
 void parse_format_string(char *str) {
         char *name, *tmp, *i, *c;
         int num_nodes = 0;
@@ -76,7 +75,28 @@ void parse_format_string(char *str) {
         free(tmp);
 
         if (num_nodes == 0)
-                LOG_DIE("No valid names found in format string");
+                LOG_DIE("No valid fields found in format string");
+
+#ifdef DEBUG
+        int j, num_buckets = 0, num_chain, max_chain = 0;
+        NODE *node;
+
+        for (j = 0; j <= HASHSIZE; j++) {
+                if (output_fields[j]) num_buckets++;
+
+                num_chain = 0;
+                for (node = output_fields[j]; node != NULL; node = node->next) num_chain++;
+                if (num_chain > max_chain) max_chain = num_chain;
+        }
+
+        PRINT("----------------------------");
+        PRINT("Hash buckets:       %d", HASHSIZE);
+        PRINT("Nodes inserted:     %d", num_nodes);
+        PRINT("Buckets in use:     %d", num_buckets);
+        PRINT("Hash collisions:    %d", num_nodes - num_buckets);
+        PRINT("Longest hash chain: %d", max_chain);
+        PRINT("----------------------------");
+#endif
 
         return;
 }
@@ -92,11 +112,16 @@ NODE *insert_node(char *name) {
         ASSERT(strlen(name) > 0);
 #endif
 
-        if ((node = lookup(name)) == NULL) {
+        if ((node = hash_lookup(name)) == NULL) {
                 if ((node = (NODE *) malloc(sizeof(NODE))) == NULL)
                         LOG_DIE("Cannot allocate memory for new node");
 
                 hashval = hash(name);
+
+#ifdef DEBUG
+        ASSERT((hashval >= 0) && (hashval <= HASHSIZE));
+#endif
+
                 node->next = output_fields[hashval];
                 output_fields[hashval] = node;
         } else {
@@ -109,9 +134,10 @@ NODE *insert_node(char *name) {
         
         strcpy(node->name, name);
         node->value = NULL;
+        node->list = NULL;
 
         /* Update the linked list pointers */
-        if (prev) prev->next = node;
+        if (prev) prev->list = node;
         prev = node;
         if (!head) head = node;
 
@@ -131,7 +157,7 @@ void insert_value(char *name, char *value) {
 
         if (strlen(value) == 0) return;
 
-        if ((node = lookup(name)))
+        if ((node = hash_lookup(name)))
                 node->value = value;
 
         return;
@@ -142,15 +168,15 @@ void print_header_line() {
         NODE *node = head;
 
 #ifdef DEBUG
-        ASSERT(output_fields);
+        ASSERT(head);
 #endif
 
         printf("# Fields: ");
         while (node) {
                 printf("%s", node->name);
-                if (node->next != NULL) printf(",");
+                if (node->list != NULL) printf(",");
 
-                node = node->next;
+                node = node->list;
         }
         printf("\n");
 
@@ -163,7 +189,7 @@ void print_values() {
         NODE *node = head;
 
 #ifdef DEBUG
-        ASSERT(output_fields);
+        ASSERT(head);
 #endif
 
         while (node) {
@@ -174,7 +200,7 @@ void print_values() {
                         printf("-\t");
                 }
 
-                node = node->next;
+                node = node->list;
         }
         printf("\n");
 
@@ -186,12 +212,12 @@ void print_values() {
 void free_format() {
         NODE *prev, *curr;
 
-        if (!output_fields) return;
+        if (!head) return;
 
         curr = head;
         while (curr) {
                 prev = curr;
-                curr = curr->next;
+                curr = curr->list;
 
                 free(prev->name);
                 free(prev);
@@ -202,22 +228,33 @@ void free_format() {
 
 /* Lookup a particular node in hash; return pointer to node
    if found, NULL otherwise */
-NODE *lookup(char *s) {
+NODE *hash_lookup(char *str) {
         NODE *node;
 
-        for (node = output_fields[hash(s)]; node != NULL; node = node->next)
-                if (strcmp_name(s, node->name) == 0)
+#ifdef DEBUG
+        ASSERT(str);
+        ASSERT(strlen(str) > 0);
+        ASSERT((hash(str) >= 0) && (hash(str) <= HASHSIZE));
+#endif
+
+        for (node = output_fields[hash(str)]; node != NULL; node = node->next)
+                if (strcmp_name(str, node->name) == 0)
                         return node;
 
         return NULL;
 }
 
-/* Use the djb2 hash function, supposed to be pretty good for strings */
-unsigned hash(char *s) {
+/* Use the djb2 hash function; supposed to be good for strings */
+unsigned hash(char *str) {
         unsigned hashval;
 
-        for (hashval = 5381; *s != '\0'; s++)
-                hashval = (hashval * 33) ^ *s;
+#ifdef DEBUG
+        ASSERT(str);
+        ASSERT(strlen(str) > 0);
+#endif
+
+        for (hashval = 5381; *str != '\0'; str++)
+                hashval = (hashval * 33) ^ tolower(*str);
 
         return hashval % HASHSIZE;
 }
