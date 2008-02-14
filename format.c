@@ -9,20 +9,16 @@
 */
 
 /*
-   Currently the output format string is stored as a binary tree
+   Currently the output format string is stored as a hash table 
    with all of the nodes additionally chained together as a linked
    list. This allows insert_value() to utilize the more efficient
-   tree structure to find nodes, while print_values() that needs to
+   hash structure to find nodes, while print_values() that needs to
    traverse all nodes in insertion order can do so. Functions that
-   need to traverse the entire tree can use the linked list as well,
-   so as to avoid recursion. The tree structure should help this
-   scale relatively well to longer format strings.
+   need to traverse the entire hash can use the linked list as well.
 
-   TODO: We could squeeze out a little more efficiency if we implement
-   this as a balanced binary tree. Right now, worst case behavior
-   means the whole thing behaves as a linked list, which is how it
-   was implemented previously anyway. In the future we should convert
-   this, since a _lot_ of time is spent searching the tree.
+   The hash structure causes some wasted space as the table tends to
+   be rather sparse, but the efficiency amortizes nicely on longer
+   runs and it scales well to longer format strings.
 */
 
 #include <ctype.h>
@@ -32,20 +28,24 @@
 #include "error.h"
 #include "format.h"
 
-char *strip_whitespace(char *str);
-int insert_name(char *str);
-int strcmp_name(const char *s1, const char *s2);
+#define HASHSIZE 100
 
 typedef struct node NODE;
 struct node {
         char *name, *value;
-        NODE *left, *right, *next;
+        NODE *next;
 };
 
-/* Head of tree/list structure storing name/value pairs */
-static NODE *output_fields = NULL;
+NODE *insert_node(char *str);
+NODE *lookup(char *s);
+unsigned hash(char *s);
+char *strip_whitespace(char *str);
+int strcmp_name(const char *s1, const char *s2);
 
-/* Parse format string to configure output fields */
+static NODE *output_fields[HASHSIZE];
+static NODE *head = NULL;
+
+/* Parse format string to find and insert output fields */
 void parse_format_string(char *str) {
         char *name, *tmp, *i, *c;
         int num_nodes = 0;
@@ -70,7 +70,7 @@ void parse_format_string(char *str) {
                 }
 
                 if (strlen(name) == 0) continue;
-                if (insert_name(name) == 1) num_nodes++;
+                if (insert_node(name)) num_nodes++;
         }
 
         free(tmp);
@@ -81,53 +81,46 @@ void parse_format_string(char *str) {
         return;
 }
 
-/* Insert a new node into the format tree structure */
-int insert_name(char *name) {
-        NODE **node = &output_fields;
+/* Insert a new node into the hash table */
+NODE *insert_node(char *name) {
+        NODE *node;
         static NODE *prev = NULL;
-        int cmp;
+        unsigned hashval;
 
 #ifdef DEBUG
         ASSERT(name);
         ASSERT(strlen(name) > 0);
 #endif
 
-        /* Find the insertion point while checking for an existing node */
-        while (*node) {
-                cmp = strcmp_name(name, (*node)->name);
-                if (cmp > 0) {
-                        node = &(*node)->right;
-                } else if (cmp < 0) {
-                        node = &(*node)->left;
-                } else {
-                        WARN("Format name '%s' already provided", name);
+        if ((node = lookup(name)) == NULL) {
+                if ((node = (NODE *) malloc(sizeof(NODE))) == NULL)
+                        LOG_DIE("Cannot allocate memory for new node");
 
-                        return 0;
-                }
+                hashval = hash(name);
+                node->next = output_fields[hashval];
+                output_fields[hashval] = node;
+        } else {
+                WARN("Format name '%s' already provided", name);
+                return NULL;
         }
 
-        /* No node found so create a new one */
-        if (((*node) = (NODE *) malloc(sizeof(NODE))) == NULL)
-                LOG_DIE("Cannot allocate memory for new node");
-
-        if (((*node)->name = (char *) malloc(strlen(name) + 1)) == NULL)
+        if ((node->name = (char *) malloc(strlen(name) + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for node name");
         
-        strcpy((*node)->name, name);
-        (*node)->value = NULL;
-        (*node)->left = (*node)->right = (*node)->next = NULL;
+        strcpy(node->name, name);
+        node->value = NULL;
 
-        /* Update the linked list pointers within the tree */
-        if (prev) prev->next = (*node);
-        prev = (*node);
+        /* Update the linked list pointers */
+        if (prev) prev->next = node;
+        prev = node;
+        if (!head) head = node;
 
-        return 1;
+        return node;
 }
 
 /* If the node exists, update its value field */
 void insert_value(char *name, char *value) {
-        NODE *node = output_fields;
-        int cmp;
+        NODE *node;
 
 #ifdef DEBUG
         ASSERT(output_fields);
@@ -138,25 +131,15 @@ void insert_value(char *name, char *value) {
 
         if (strlen(value) == 0) return;
 
-        while (node) {
-                cmp = strcmp_name(name, node->name);
-                if (cmp > 0) {
-                        node = node->right;
-                } else if (cmp < 0) {
-                        node = node->left;
-                } else {
-                        node->value = value;
-
-                        return;
-                }
-        }
+        if ((node = lookup(name)))
+                node->value = value;
 
         return;
 }
 
-/* Print a list of all field names contained in the format structure */
+/* Print a list of all field names contained in the output format */
 void print_header_line() {
-        NODE *node = output_fields;
+        NODE *node = head;
 
 #ifdef DEBUG
         ASSERT(output_fields);
@@ -177,7 +160,7 @@ void print_header_line() {
 /* Destructively print each node value; once printed, each existing
    value is assigned to NULL to clear it for the next packet */
 void print_values() {
-        NODE *node = output_fields;
+        NODE *node = head;
 
 #ifdef DEBUG
         ASSERT(output_fields);
@@ -205,7 +188,7 @@ void free_format() {
 
         if (!output_fields) return;
 
-        curr = output_fields;
+        curr = head;
         while (curr) {
                 prev = curr;
                 curr = curr->next;
@@ -215,6 +198,28 @@ void free_format() {
         }
 
         return;
+}
+
+/* Lookup a particular node in hash; return pointer to node
+   if found, NULL otherwise */
+NODE *lookup(char *s) {
+        NODE *node;
+
+        for (node = output_fields[hash(s)]; node != NULL; node = node->next)
+                if (strcmp_name(s, node->name) == 0)
+                        return node;
+
+        return NULL;
+}
+
+/* Use the djb2 hash function, supposed to be pretty good for strings */
+unsigned hash(char *s) {
+        unsigned hashval;
+
+        for (hashval = 5381; *s != '\0'; s++)
+                hashval = (hashval * 33) ^ *s;
+
+        return hashval % HASHSIZE;
 }
 
 /* Strip leading and trailing spaces from parameter string, modifying
