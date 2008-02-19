@@ -18,10 +18,6 @@ use Time::Local qw(timelocal);
 # -----------------------------------------------------------------------------
 my $FLOW_TIMEOUT = 300; # In seconds
 
-my $HOST_WEIGHT = 1.0;
-my $PATH_WEIGHT = 1.5;
-my $QUERY_WEIGHT = 2.0;
-
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
@@ -33,10 +29,10 @@ my $flow_max_len = 0;
 my $max_concurrent = 0;
 
 # Data structures
-my %active_flow = ();       # Holds metadata about each active flow
-my %active_flow_data = ();  # Holds individual flow data lines
+my %active_flow = ();       # Metadata about each active flow
+my %active_flow_data = ();  # Individual flow data lines
 my %scored_flow = ();
-my %terms = ();             # Dictionary of terms and corresponding weights
+my %terms = ();             # Terms and corresponding weights
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -201,7 +197,7 @@ sub load_terms {
                                 $weight = 1;
                         }
 
-                        $terms{$term} = 1 + $weight;
+                        $terms{$term} = $weight;
                 }
         close(TERMS);
 
@@ -209,36 +205,56 @@ sub load_terms {
 }
 
 # -----------------------------------------------------------------------------
-# Search for specified terms in each line, scoring according to term and
-# positional weights
+# Search for specified terms in each line, scoring according to rules based
+# on the position and context of each term
 # -----------------------------------------------------------------------------
 sub content_check {
         my $uri = shift;
         my $ip = shift;
         my $term;
 
-        $uri =~ /^([^\/?#]*)?([^?#]*)(\?([^#]*))?(#(.*))?/;
-
-        my $host = $1;
-        my $path = $2;
-        my $query = $4;
+        my $path_offset = index($uri, '/');
+        my $query_offset = index($uri, '?', $path_offset);
+        my $term_offset;
+        my $num_terms = 0;
+        my $score = 0;
+        my $pos;
 
         foreach $term (keys %terms) {
-                if ($host && index($host, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $HOST_WEIGHT * $terms{$term};
-                        $active_flow{$ip}->{"terms"}->{$term}++;
-                }
+                $pos = 0;
+                while (($term_offset = index($uri, $term, $pos)) > -1) {
+                        $num_terms++;
+                        $active_flow{$ip}->{'terms'}->{$term}++;
 
-                if ($path && index($path, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $PATH_WEIGHT * $terms{$term};
-                        $active_flow{$ip}->{"terms"}->{$term}++;
-                }
+                        # Term found, so apply scoring rules
+                        # Rule 1: Apply a base score of 1 + term weight
+                        $score += 1 + $terms{$term};
 
-                if ($query && index($query, $term) != -1) {
-                        $active_flow{$ip}->{"score"} += $QUERY_WEIGHT * $terms{$term};
-                        $active_flow{$ip}->{"terms"}->{$term}++;
+                        # Rule 2: If found in query, add 2
+                        #         If found in path, add 1
+                        #         If found in hostname, add 0
+                        if (($query_offset > 0) && ($term_offset >= $query_offset)) {
+                                $score += 2;
+                        } elsif (($path_offset > 0) && ($term_offset >= $path_offset)) {
+                                $score += 1;
+                        } else {
+                                $score += 0;
+                        }
+
+                        # Rule 3: If stand-alone word (bracketed by non-alpha chars), add 2
+                        if ((substr($uri, $term_offset-1, 1) !~ /[A-Za-z]/) &&
+                            (substr($uri, $term_offset+length($term), 1) !~ /[A-Za-z]/)) {
+                                $score += 2;
+                        }
+
+                        $pos = $term_offset + length($term);
                 }
         }
+
+        # Rule 4: If more than one term found, add 1
+        $score += 1 if ($num_terms > 1);
+
+        $active_flow{$ip}->{'score'} += $score;
 
         return;
 }
@@ -381,6 +397,7 @@ sub write_summary_file {
 # -----------------------------------------------------------------------------
 sub partition_scores() {
         my $OUTLIER_THRESHOLD = 3;
+        my $ITERS = 30;
 
         my $mean = 0;
         my $std_dev = 0;
@@ -390,7 +407,8 @@ sub partition_scores() {
         my $diff;
         my $max_score = 0;
         my $new_center;
-        my $pos;
+        my $num_iters = 0;
+        my $sum;
         my $centroid;
         my @center;
         my @members;
@@ -441,19 +459,16 @@ sub partition_scores() {
                         @members = sort map { $temp_flow{$_}->{'score'} }
                                    grep { $temp_flow{$_}->{'cluster'} == $centroid } keys %temp_flow;
 
-                        $pos = int(@members / 2) - 1;
-                        if (@members == 0) {
-                                $new_center = $center[$centroid];
-                        } elsif (@members % 2 == 0) {
-                                $new_center = ($members[$pos] + $members[$pos + 1]) / 2;
-                        } else {
-                                $new_center = $members[$pos];
-                        }
+                        $sum = 0;
+                        map { $sum += $_ } @members;
+                        $new_center = @members ? $sum / @members : $center[$centroid];
 
                         $diff += abs $center[$centroid] - $new_center;
                         $center[$centroid] = $new_center;
                 }
-        } while ($diff > 0.01);
+
+                $num_iters++;
+        } while (($diff > 0.01) && ($num_iters <= $ITERS));
 
         # Update cluster membership in scored flows
         map { $scored_flow{$_}->{'cluster'} = $temp_flow{$_}->{'cluster'} } keys %temp_flow;

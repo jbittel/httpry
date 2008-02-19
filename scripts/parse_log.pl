@@ -159,12 +159,12 @@ sub process_logfiles {
                         next;
                 }
 
-                print "Processing $curr_file\n" if $VERBOSE;
+                print "Processing file $curr_file\n" if $VERBOSE;
 
                 while ($curr_line = <INFILE>) {
                         chomp $curr_line;
                         $curr_line =~ s/[^[:print:]\t]//g; # Strip unprintable characters
-                        next if $curr_line eq "";
+                        next if $curr_line =~ /^$/;
 
                         # Default header format:
                         # Fields: timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase
@@ -175,7 +175,7 @@ sub process_logfiles {
                                 $num_fields = scalar @header;
                         }
 
-                        die "Error: No field description line found; cannot proceed\n" if ($num_fields == 0);
+                        die "Error: No field description line found\n" if ($num_fields == 0);
                         @fields = split /\t/, $curr_line;
                         next if (scalar @fields != $num_fields); # Malformed fields count
 
