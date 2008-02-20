@@ -56,7 +56,7 @@ sub init {
 
         # Remove any existing text files so they don't accumulate
         opendir(DIR, $output_dir) or die "Error: Cannot open directory $output_dir: $!\n";
-                foreach (grep /^scored_.+\.txt$/, readdir(DIR)) {
+                foreach (grep /^scored_[\d\.]+\.txt$/, readdir(DIR)) {
                         unlink;
                 }
         closedir(DIR);
@@ -182,18 +182,24 @@ sub load_terms {
 
                         ($term, $weight) = split / /, $line;
 
+                        # Basic validation and error checking
                         if (!$term || !$weight) {
                                 print "Warning: Invalid data found in $terms_file, line $line_num\n";
                                 next;
                         }
 
+                        if ($weight !~ /\d+/) {
+                                print "Warning: '$term' assigned non-numeric weight '$weight', ignoring\n";
+                                next;
+                        }
+
                         if ($weight < 0) {
-                                print "Warning: '$term' assigned invalid weight '$weight', clamping to 0\n";
+                                print "Warning: '$term' assigned out of range weight '$weight', clamping to 0\n";
                                 $weight = 0;
                         }
 
                         if ($weight > 1) {
-                                print "Warning: '$term' assigned invalid weight '$weight', clamping to 1\n";
+                                print "Warning: '$term' assigned out of range weight '$weight', clamping to 1\n";
                                 $weight = 1;
                         }
 
@@ -205,8 +211,8 @@ sub load_terms {
 }
 
 # -----------------------------------------------------------------------------
-# Search for specified terms in each line, scoring according to rules based
-# on the position and context of each term
+# Search for specified terms in each URI, scoring terms according to rules
+# based on their position and context
 # -----------------------------------------------------------------------------
 sub content_check {
         my $uri = shift;
@@ -376,7 +382,7 @@ sub write_summary_file {
                 map { $term_cnt += $scored_flow{$ip}->{"terms"}->{$_} } keys %{ $scored_flow{$ip}->{"terms"} };
 
                 print OUTFILE sprintf("%.1f", $scored_flow{$ip}->{"score"}) . "\t$scored_flow{$ip}->{'num_flows'}\t$ip\t$term_cnt\t";
-                foreach $term (keys %{ $scored_flow{$ip}->{"terms"} } ) {
+                foreach $term (sort keys %{ $scored_flow{$ip}->{"terms"} } ) {
                         print OUTFILE "$term ";
                 }
                 print OUTFILE "\n";

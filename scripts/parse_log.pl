@@ -170,12 +170,12 @@ sub process_logfiles {
                         # Fields: timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase
                         if ($curr_line =~ /^#/) {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
-                                @header = map lc, split(/\,/, $1);
+                                @header = map { lc } split(/\,/, $1);
                                 %record = ();
                                 $num_fields = scalar @header;
                         }
-
                         die "Error: No field description line found\n" if ($num_fields == 0);
+
                         @fields = split /\t/, $curr_line;
                         next if (scalar @fields != $num_fields); # Malformed fields count
 
