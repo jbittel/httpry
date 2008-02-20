@@ -146,12 +146,12 @@ sub register_plugin {
 # Process all files, passing each line to all registered plugins
 # -----------------------------------------------------------------------------
 sub process_logfiles {
-        my $curr_file; # Current input file
-        my $curr_line; # Current line in input file
+        my $curr_file;
+        my $curr_line;
         my $num_fields = 0;
-        my @fields;
-        my @header = ();
+        my @header;
         my %record;
+        my $i;
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
@@ -170,16 +170,14 @@ sub process_logfiles {
                         # Fields: timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase
                         if ($curr_line =~ /^#/) {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
-                                @header = map { lc } split(/\,/, $1);
+                                @header = map { lc } split /\,/, $1;
                                 %record = ();
                                 $num_fields = scalar @header;
                         }
                         die "Error: No field description line found\n" if ($num_fields == 0);
 
-                        @fields = split /\t/, $curr_line;
-                        next if (scalar @fields != $num_fields); # Malformed fields count
-
-                        map { $record{$header[$_]} = $fields[$_] } (0..$#fields);
+                        $i = 0;
+                        map { $record{$header[$i++]} = $_ } split /\t/, $curr_line, $num_fields;
                         map { $plugins{$_}->{'callback'}->main(\%record) } keys %plugins;
                 }
 
