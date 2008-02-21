@@ -239,9 +239,9 @@ sub content_check {
                         # Rule 2: If found in query, add 2
                         #         If found in path, add 1
                         #         If found in hostname, add 0
-                        if (($query_offset > 0) && ($term_offset >= $query_offset)) {
+                        if (($query_offset > 0) && ($term_offset > $query_offset)) {
                                 $score += 2;
-                        } elsif (($path_offset > 0) && ($term_offset >= $path_offset)) {
+                        } elsif (($path_offset > 0) && ($term_offset > $path_offset)) {
                                 $score += 1;
                         } else {
                                 $score += 0;
@@ -353,7 +353,7 @@ sub write_summary_file {
                 print OUTFILE "0/0/0\n";
         }
 
-        if (scalar(keys %scored_flow) == 0) {
+        if (scalar keys %scored_flow == 0) {
                 print OUTFILE "\n\n*** No scored flows found\n";
                 close(OUTFILE);
 
@@ -460,7 +460,7 @@ sub partition_scores() {
                         $temp_flow{$ip}->{'cluster'} = $closest;
                 }
 
-                # Compute new centers based on median
+                # Compute new centers based on mean
                 foreach $centroid (0..$#center) {
                         @members = sort map { $temp_flow{$_}->{'score'} }
                                    grep { $temp_flow{$_}->{'cluster'} == $centroid } keys %temp_flow;

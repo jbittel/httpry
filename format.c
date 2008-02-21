@@ -119,7 +119,7 @@ NODE *insert_node(char *name) {
                 hashval = hash(name);
 
 #ifdef DEBUG
-        ASSERT((hashval >= 0) && (hashval <= HASHSIZE));
+        ASSERT((hashval >= 0) && (hashval < HASHSIZE));
 #endif
 
                 node->next = output_fields[hashval];
@@ -234,7 +234,7 @@ NODE *hash_lookup(char *str) {
 #ifdef DEBUG
         ASSERT(str);
         ASSERT(strlen(str) > 0);
-        ASSERT((hash(str) >= 0) && (hash(str) <= HASHSIZE));
+        ASSERT((hash(str) >= 0) && (hash(str) < HASHSIZE));
 #endif
 
         for (node = output_fields[hash(str)]; node != NULL; node = node->next)

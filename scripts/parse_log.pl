@@ -99,14 +99,14 @@ sub search_plugin_dir {
                 } elsif (-d dirname($0) . '/' . basename($DEFAULT_PLUGIN_DIR)) {
                         $plugin_dir = dirname($0) . '/' . basename($DEFAULT_PLUGIN_DIR);
                 } else {
-                        die "Error: Cannot find a '$DEFAULT_PLUGIN_DIR' directory\n";
+                        die "Error: Cannot find the default '$DEFAULT_PLUGIN_DIR' directory\n";
                 }
         }
 
         print "Using plugin directory: $plugin_dir\n" if $VERBOSE;
 
         # Extract all plugins found in directory
-        opendir PLUGINDIR, $plugin_dir or die "Error: Cannot access directory '$plugin_dir': $!\n";
+        opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot access directory '$plugin_dir': $!\n";
                 foreach (readdir(PLUGINDIR)) {
                         next if ($_ !~ /\.pm$/);
                         $p = (fileparse($_, '\.pm'))[0];
@@ -119,9 +119,10 @@ sub search_plugin_dir {
                         $plugins{$p}->{'dir'} = $plugin_dir;
                         $plugins{$p}->{'path'} = $plugin_dir.'/'.$_;
                 }
-        closedir PLUGINDIR;
+        closedir(PLUGINDIR);
 
         print "Warning: No plugins found in $plugin_dir\n" if (scalar keys %plugins == 0);
+        print int(scalar keys %plugins) . " plugin(s) found\n" if $VERBOSE;
 
         return;
 }
@@ -148,7 +149,6 @@ sub register_plugin {
 sub process_logfiles {
         my $curr_file;
         my $curr_line;
-        my $num_fields = 0;
         my @header;
         my %record;
         my $i;
@@ -172,12 +172,11 @@ sub process_logfiles {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map { lc } split /\,/, $1;
                                 %record = ();
-                                $num_fields = scalar @header;
                         }
-                        die "Error: No field description line found\n" if ($num_fields == 0);
+                        die "Error: No field description line found\n" if (scalar @header == 0);
 
                         $i = 0;
-                        map { $record{$header[$i++]} = $_ } split /\t/, $curr_line, $num_fields;
+                        map { $record{$header[$i++]} = $_ } split /\t/, $curr_line, scalar @header;
                         map { $plugins{$_}->{'callback'}->main(\%record) } keys %plugins;
                 }
 
