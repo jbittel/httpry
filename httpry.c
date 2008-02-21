@@ -446,19 +446,19 @@ void cleanup() {
 /* Display program help/usage information */
 void display_usage() {
         PRINT("%s version %s", PROG_NAME, PROG_VER);
-        PRINT("Usage: %s [-dhp] [-f filter] [-i device] [-n count] [-o file]\n"
-              "              [-r file] [-s format] [-u user]\n", PROG_NAME);
+        PRINT("Usage: %s [ -dhp ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
+              "              [ -s format ] [ -u user ] [ 'expression' ]\n", PROG_NAME);
 
         PRINT("  -d           run as daemon\n"
-              "  -f filter    libpcap style capture filter\n"
-              "  -h           print help information\n"
+              "  -h           print this help information\n"
               "  -i device    set interface to listen on\n"
               "  -n count     number of HTTP packets to parse\n"
               "  -o file      write output log file\n"
               "  -p           disable promiscuous mode\n"
               "  -r file      input file to read from\n"
               "  -s format    specify output format string\n"
-              "  -u user      set process owner\n");
+              "  -u user      set process owner\n"
+              "  expression   a bpf-style capture filter\n");
 
         PRINT("Additional information can be found at:\n"
               "    http://dumpsterventures.com/jason/httpry\n");
@@ -469,14 +469,14 @@ void display_usage() {
 int main(int argc, char **argv) {
         int opt;
         extern char *optarg;
+        extern int optind;
 
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "dhpf:i:n:o:r:s:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "dhpi:n:o:r:s:u:")) != -1) {
                 switch (opt) {
                         case 'd': daemon_mode = 1; break;
-                        case 'f': capfilter = optarg; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
                         case 'n': parse_count = atoi(optarg);
@@ -495,7 +495,11 @@ int main(int argc, char **argv) {
         if (daemon_mode && !use_outfile)
                 LOG_DIE("Daemon mode requires an output file");
 
-        if (!capfilter) capfilter = default_capfilter;
+        if (argv[optind] && *(argv[optind])) {
+                capfilter = argv[optind];
+        } else {
+                capfilter = default_capfilter;
+        }
         if (!out_format) out_format = default_format;
         parse_format_string(out_format);
 

@@ -18,7 +18,7 @@
 httpry is a tool designed for displaying and logging HTTP traffic. It is not
 intended to perform analysis itself, but instead to capture, parse and/or
 log the traffic for later analysis. It can be run in real-time displaying
-the traffic as it is parsed, or as a daemon process that logs to an output
+the live traffic on the wire, or as a daemon process that logs to an output
 file. It is written to be as lightweight and flexible as possible, so that
 it can be easily adaptable to different applications. It does not display
 the raw HTTP data transferred, but instead focuses on parsing and displaying
@@ -63,22 +63,16 @@ man page.
 --{ USAGE }--
 
 Running the program with the -h switch will print out an abbreviated
-description of the available options. However, that switch is meant for
-quick reference and not complete documentation of program behavior. This
-section describes these options in greater detail.
+description of the available options. This section describes these options
+in greater detail.
 
-httpry [-dhp] [-f filter] [-i device] [-n count]
-       [-o file] [-r file] [-s format] [-u user]
+httpry [ -dhp ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]
+       [ -s format ] [ -u user ] [ 'expression' ]
 
 -d
-Run the program as a daemon process. All program status output
-will be sent to the syslog. A pid file is created for the process in
-/var/run/httpry.pid by default. Requires an output file.
-
--f filter
-Specify a libpcap style capture filter. This is useful for narrowing
-the traffic further than the default capture filter (or perhaps
-broadening the filter depending on the situation).
+Run the program as a daemon process. All program status output will be sent
+to syslog. A pid file is created for the process in /var/run/httpry.pid by
+default. Requires an output file specified with -o.
 
 -h
 Display a brief description of these options.
@@ -112,3 +106,16 @@ options and syntax.
 Specify an alternate user to take ownership of the process and any output
 files. You will need root privileges to do this; it will switch to the new
 user after initialization.
+
+expression
+Specify a bpf-style capture filter, overriding the default. Here are a few
+examples, starting with the default filter:
+
+'tcp port 80 or 8080'
+'tcp dst port 80'
+'tcp dst port 80 and src host 192.168.1.1'
+
+These filters will capture all web traffic both directions on two common
+ports, capture only requests made to port 80, and capture requests to port
+80 by a particular host, respectively. See man tcpdump for further
+information on the syntax and available primitives.

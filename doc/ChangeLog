@@ -8,6 +8,7 @@ version 0.1.2
    * output format structure is now a hybrid hash table/linked list
    * added support for multiple ethernet packet header types
    * added support for virtual devices and interfaces without an IP address
+   * removed -f option; capture filters are now passed as the final argument
 
 version 0.1.1
    * fixed some minor format string parsing bugs

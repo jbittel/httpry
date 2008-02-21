@@ -180,7 +180,7 @@ sub load_terms {
                         $line =~ s/\s+/ /;  # Remove sequential whitespace
                         next if $line =~ /^$/;
 
-                        ($term, $weight) = split / /, $line;
+                        ($term, $weight) = split /[ \t]/, $line;
 
                         # Basic validation and error checking
                         if (!$term || !$weight) {
@@ -215,7 +215,7 @@ sub load_terms {
 # based on their position and context
 # -----------------------------------------------------------------------------
 sub content_check {
-        my $uri = shift;
+        my $uri = lc shift;
         my $ip = shift;
         my $term;
 
@@ -247,10 +247,10 @@ sub content_check {
                                 $score += 0;
                         }
 
-                        # Rule 3: If stand-alone word (bracketed by non-alpha chars), add 2
+                        # Rule 3: If stand-alone word (bracketed by non-alpha chars), add 1
                         if ((substr($uri, $term_offset-1, 1) !~ /[A-Za-z]/) &&
                             (substr($uri, $term_offset+length($term), 1) !~ /[A-Za-z]/)) {
-                                $score += 2;
+                                $score += 1;
                         }
 
                         $pos = $term_offset + length($term);

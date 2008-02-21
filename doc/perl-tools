@@ -38,8 +38,9 @@ A summary of the included Perl scripts:
  ./scripts/plugins/content_analysis.pm
         Breaks the input file into flows which are time delimited blocks of
         log lines by client IP. It then searches for specified keywords and
-        scores the flows accordingly. Requires an input file containing
-        search terms and corresponding weights.
+        scores the flows accordingly. Outputs a summary file listing all
+        scored flows, as well as flow data for each scored flow. Requires an
+        input file containing search terms and corresponding weights.
 
  ./scripts/plugins/db_dump.pm
         Dumps log file data into a previously prepared database. Useful
