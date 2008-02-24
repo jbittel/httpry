@@ -31,7 +31,7 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        if (&load_config($cfg_dir) == 0) {
+        unless (&load_config($cfg_dir)) {
                 return 0;
         }
 
@@ -51,15 +51,19 @@ sub init {
 }
 
 sub main {
-        my $self   = shift;
+        my $self = shift;
         my $record = shift;
         my $direction;
         my $request_uri;
+        my $field;
+        my $data;
 
 	print $fh "<record>";
-        foreach my $field (keys %$record) {
-                my $data = $record->{$field};
+        foreach $field (keys %$record) {
+                $data = $record->{$field};
 
+                $data =~ s/^\s+//;
+                $data =~ s/\s+$//;
                 $data =~ s/&/\&amp\;/g;
                 $data =~ s/</\&lt\;/g;
                 $data =~ s/>/\&gt\;/g;

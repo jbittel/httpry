@@ -34,11 +34,13 @@ sub init {
         my $sql;
         my $limit;
 
-        if (&load_config($cfg_dir) == 0) {
+        unless (&load_config($cfg_dir)) {
                 return 0;
         }
 
-        $dbh = &connect_db($type, $db, $host, $port, $user, $pass);
+        unless ($dbh = &connect_db($type, $db, $host, $port, $user, $pass)) {
+                return 0;
+        }
 
         # Delete data inserted $rmbefore days prior
         if ($rmbefore > 0) {
@@ -150,10 +152,12 @@ sub connect_db {
         $dsn .= ":$host" if $host;
         $dsn .= ":$port" if $port;
 
-        $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1, AutoCommit => 1 })
-                or die "Error: Cannot connect to database: " . DBI->errstr . "\n";
-
-        &execute_query($dbh, qq{ USE $db });
+        if ($dbh = DBI->connect($dsn, $user, $pass, { PrintError => 0, RaiseError => 0, AutoCommit => 1 })) {
+                &execute_query($dbh, qq{ USE $db });
+        } else {
+                print "Error: Cannot connect to database: " . DBI->errstr . "\n";
+                return;
+        }
 
         return $dbh;
 }

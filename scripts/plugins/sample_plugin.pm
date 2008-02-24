@@ -45,7 +45,7 @@ sub init {
         # Call our load configuration sub; this can be good to break out
         # into a separate sub like this, particularly if you end up with
         # many checks on the config variables
-        if (&load_config($cfg_dir) == 0) {
+        unless (&load_config($cfg_dir)) {
                 return 0;
         }
 

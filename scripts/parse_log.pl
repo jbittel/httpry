@@ -172,6 +172,7 @@ sub process_logfiles {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map { lc } split /\,/, $1;
                                 %record = ();
+                                next;
                         }
                         die "Error: No field description line found\n" if (scalar @header == 0);
 

@@ -48,11 +48,13 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        if (&load_config($cfg_dir) == 0) {
+        unless (&load_config($cfg_dir)) {
                 return 0;
         }
 
-        &load_terms();
+        unless (&load_terms()) {
+                return 0;
+        }
 
         # Remove any existing text files so they don't accumulate
         opendir(DIR, $output_dir) or die "Error: Cannot open directory $output_dir: $!\n";
@@ -169,42 +171,47 @@ sub load_terms {
         my $term;
         my $weight;
 
-        open(TERMS, "$terms_file") or die "Error: Cannot open $terms_file: $!\n";
-                while ($line = <TERMS>) {
-                        $line_num++;
-                        chomp $line;
+        unless (open(TERMS, "$terms_file")) {
+                print "Error: Cannot open $terms_file: $!\n";
+                return 0;
+        }
 
-                        $line =~ s/\#.*$//; # Remove comments
-                        $line =~ s/^\s+//;  # Remove leading whitespace
-                        $line =~ s/\s+$//;  # Remove trailing whitespace
-                        $line =~ s/\s+/ /;  # Remove sequential whitespace
-                        next if $line =~ /^$/;
+        while ($line = <TERMS>) {
+                $line_num++;
+                chomp $line;
 
-                        ($term, $weight) = split /[ \t]/, $line;
+                $line =~ s/\#.*$//; # Remove comments
+                $line =~ s/^\s+//;  # Remove leading whitespace
+                $line =~ s/\s+$//;  # Remove trailing whitespace
+                $line =~ s/\s+/ /;  # Remove sequential whitespace
+                next if $line =~ /^$/;
 
-                        # Basic validation and error checking
-                        if (!$term || !$weight) {
-                                print "Warning: Invalid data found in $terms_file, line $line_num\n";
-                                next;
-                        }
+                ($term, $weight) = split /[ \t]/, $line;
 
-                        if ($weight !~ /\d+/) {
-                                print "Warning: '$term' assigned non-numeric weight '$weight', ignoring\n";
-                                next;
-                        }
-
-                        if ($weight < 0) {
-                                print "Warning: '$term' assigned out of range weight '$weight', clamping to 0\n";
-                                $weight = 0;
-                        }
-
-                        if ($weight > 1) {
-                                print "Warning: '$term' assigned out of range weight '$weight', clamping to 1\n";
-                                $weight = 1;
-                        }
-
-                        $terms{$term} = $weight;
+                # Basic validation and error checking
+                if (!$term || !$weight) {
+                        print "Warning: Invalid data found in $terms_file, line $line_num\n";
+                        next;
                 }
+
+                if ($weight !~ /\d+/) {
+                        print "Warning: '$term' assigned non-numeric weight '$weight', ignoring\n";
+                        next;
+                }
+
+                if ($weight < 0) {
+                        print "Warning: '$term' assigned out of range weight '$weight', clamping to 0\n";
+                        $weight = 0;
+                }
+
+                if ($weight > 1) {
+                        print "Warning: '$term' assigned out of range weight '$weight', clamping to 1\n";
+                        $weight = 1;
+                }
+
+                $terms{$term} = $weight;
+        }
+
         close(TERMS);
 
         return;

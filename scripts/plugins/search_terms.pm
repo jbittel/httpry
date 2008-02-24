@@ -33,7 +33,7 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        if (&load_config($cfg_dir) == 0) {
+        unless (&load_config($cfg_dir)) {
                 return 0;
         }
 
