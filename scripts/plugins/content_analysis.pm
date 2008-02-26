@@ -187,6 +187,7 @@ sub load_terms {
                 next if $line =~ /^$/;
 
                 ($term, $weight) = split /[ \t]/, $line;
+                $term = lc $term;
 
                 # Basic validation and error checking
                 if (!$term || !$weight) {
