@@ -41,18 +41,21 @@ my @input_files;
 # -----------------------------------------------------------------------------
 sub init_plugins {
         my $p;
-        my $i = 0;
 
         foreach $p (keys %plugins) {
                 print "Loading plugin: $p\n" if $VERBOSE;
 
                 if (! -e $plugins{$p}->{'path'}) {
-                        print "Warning: Cannot locate $plugins{$p}->{'path'}\n";
+                        print "Warning: Cannot locate plugin '$p' at '$plugins{$p}->{'path'}'\n";
                         delete $plugins{$p};
                         next;
                 }
 
                 require $plugins{$p}->{'path'};
+                if (!exists $plugins{$p}->{'callback'}) {
+                        delete $plugins{$p};
+                        next;
+                }
 
                 unless ($plugins{$p}->{'callback'}->can('main')) {
                         print "Warning: Plugin '$p' does not contain a required main() function...disabling\n";
@@ -65,11 +68,10 @@ sub init_plugins {
                                 print "Warning: Plugin '$p' did not initialize properly...disabling\n";
                                 delete $plugins{$p};
                                 next;
-                        } else {
-                                print "Initialized plugin: $p\n" if $VERBOSE;
-                                $i++;
                         }
                 }
+
+                print "Initialized plugin: $p\n" if $VERBOSE;
         }
 
         die "Error: No plugins loaded\n" if (scalar keys %plugins == 0);
@@ -99,7 +101,7 @@ sub search_plugin_dir {
                 } elsif (-d dirname($0) . '/' . basename($DEFAULT_PLUGIN_DIR)) {
                         $plugin_dir = dirname($0) . '/' . basename($DEFAULT_PLUGIN_DIR);
                 } else {
-                        die "Error: Cannot find the default '$DEFAULT_PLUGIN_DIR' directory\n";
+                        die "Error: Cannot find the default '$DEFAULT_PLUGIN_DIR' plugin directory\n";
                 }
         }
 
@@ -107,22 +109,24 @@ sub search_plugin_dir {
 
         # Extract all plugins found in directory
         opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot access directory '$plugin_dir': $!\n";
-                foreach (readdir(PLUGINDIR)) {
-                        next if ($_ !~ /\.pm$/);
-                        $p = (fileparse($_, '\.pm'))[0];
 
-                        if (exists $plugins{$p}) {
-                                print "Warning: Plugin '$p' already loaded...ignoring\n";
-                                next;
-                        }
+        foreach (readdir(PLUGINDIR)) {
+                next if ($_ !~ /\.pm$/);
+                $p = (fileparse($_, '\.pm'))[0];
 
-                        $plugins{$p}->{'dir'} = $plugin_dir;
-                        $plugins{$p}->{'path'} = $plugin_dir.'/'.$_;
+                if (exists $plugins{$p}) {
+                        print "Warning: Plugin '$p' already loaded...ignoring\n";
+                        next;
                 }
+
+                $plugins{$p}->{'dir'} = $plugin_dir;
+                $plugins{$p}->{'path'} = $plugin_dir.'/'.$_;
+        }
+
         closedir(PLUGINDIR);
 
         print "Warning: No plugins found in $plugin_dir\n" if (scalar keys %plugins == 0);
-        print int(scalar keys %plugins) . " plugin(s) found\n" if $VERBOSE;
+        print int(scalar keys %plugins) . " plugin(s) found in '$plugin_dir'\n" if $VERBOSE;
 
         return;
 }
@@ -132,6 +136,12 @@ sub search_plugin_dir {
 # -----------------------------------------------------------------------------
 sub register_plugin {
         my $p = shift;
+
+        if (!exists $plugins{$p}) {
+                print "Warning: Encountered unknown package name '$p'\n";
+
+                return;
+        }
 
         if ($p->can('new')) {
                 $plugins{$p}->{'callback'} = $p->new();

@@ -56,7 +56,7 @@ sub init {
 # that the data is sent here as a single line and so must be parsed (if
 # necessary) to act on individual components of the line.
 sub main {
-        my $self   = shift;
+        my $self = shift;
         my $record = shift; # Reference to hash containing record data
 
         # Simple processing can be handled here; more complex processing

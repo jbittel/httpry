@@ -215,7 +215,7 @@ sub load_terms {
 
         close(TERMS);
 
-        return;
+        return 1;
 }
 
 # -----------------------------------------------------------------------------
@@ -389,7 +389,7 @@ sub write_summary_file {
 
                 map { $term_cnt += $scored_flow{$ip}->{"terms"}->{$_} } keys %{ $scored_flow{$ip}->{"terms"} };
 
-                print OUTFILE sprintf("%.1f", $scored_flow{$ip}->{"score"}) . "\t$scored_flow{$ip}->{'num_flows'}\t$ip\t$term_cnt\t";
+                print OUTFILE sprintf("%.1f", $scored_flow{$ip}->{"score"}) . "\t$ip\t$scored_flow{$ip}->{'num_flows'}\t$term_cnt\t";
                 foreach $term (sort keys %{ $scored_flow{$ip}->{"terms"} } ) {
                         print OUTFILE "$term ";
                 }
@@ -411,7 +411,7 @@ sub write_summary_file {
 # -----------------------------------------------------------------------------
 sub partition_scores() {
         my $OUTLIER_THRESHOLD = 3;
-        my $ITERS = 30;
+        my $MAX_ITERS = 30;
 
         my $mean = 0;
         my $std_dev = 0;
@@ -482,7 +482,7 @@ sub partition_scores() {
                 }
 
                 $num_iters++;
-        } while (($diff > 0.01) && ($num_iters <= $ITERS));
+        } while (($diff > 0.01) && ($num_iters <= $MAX_ITERS));
 
         # Update cluster membership in scored flows
         map { $scored_flow{$_}->{'cluster'} = $temp_flow{$_}->{'cluster'} } keys %temp_flow;

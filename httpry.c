@@ -479,9 +479,7 @@ int main(int argc, char **argv) {
                         case 'd': daemon_mode = 1; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
-                        case 'n': parse_count = atoi(optarg);
-                                  if (parse_count < 0) LOG_DIE("Invalid -n value");
-                                  break;
+                        case 'n': parse_count = atoi(optarg); break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
                         case 'r': use_infile = optarg; break;
@@ -494,6 +492,9 @@ int main(int argc, char **argv) {
         /* Test for argument error and warning conditions */
         if (daemon_mode && !use_outfile)
                 LOG_DIE("Daemon mode requires an output file");
+
+        if (parse_count < 0)
+                LOG_DIE("Invalid -n value, must be 0 or greater");
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];
