@@ -11,7 +11,8 @@
 # This is an example plugin for the perl parse script parse_log.pl.  It shows
 # the basic structure of a simple plugin and provides a good starting point for
 # writing a custom plugin. Some of the other included plugins will also provide
-# a good idea of how the different pieces work.
+# a good idea of how the different pieces work. Each plugin is essentially a
+# Perl module dynamically loaded at runtime.
 
 package sample_plugin;
 
@@ -28,9 +29,9 @@ package sample_plugin;
 # -----------------------------------------------------------------------------
 
 # On initialization, this call registers the plugin with the core
-&main::register_plugin(__PACKAGE__);
+&main::register_plugin();
 
-# This sub is called once at initialization to create the plugin object
+# This sub is called once at initialization to create the callback
 sub new {
         return bless {};
 }

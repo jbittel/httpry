@@ -35,7 +35,7 @@ my $end_time;
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin(__PACKAGE__);
+&main::register_plugin();
 
 sub new {
         return bless {};
@@ -55,7 +55,7 @@ sub init {
 }
 
 sub main {
-        my $self   = shift;
+        my $self = shift;
         my $record = shift;
 
         return unless exists $record->{"direction"};
@@ -100,13 +100,13 @@ sub load_config {
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                print "Error: No config file found\n";
+                warn "Error: No config file found\n";
                 return 0;
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "Error: No output file provided\n";
+                warn "Error: No output file provided\n";
                 return 0;
         }
         $summary_cap = $SUMMARY_CAP unless ($summary_cap > 0);

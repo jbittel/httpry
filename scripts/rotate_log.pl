@@ -73,7 +73,7 @@ sub compress_files {
                 if ((system "$TAR cf - $filename.log | $GZIP -9 > $output_dir/$filename.tar.gz") == 0) {
                         unlink $log_file;
                 } else {
-                        print "Error: Cannot compress log file '$log_file'\n";
+                        warn "Error: Cannot compress log file '$log_file'\n";
                 }
         }
 
@@ -91,23 +91,24 @@ sub move_file {
         my $year;
 
         if (-e $input_file) {
-                # Create destination filename
-                $mday = (localtime)[3];
-                $mon  = (localtime)[4] + 1;
-                $year = (localtime)[5] + 1900;
+                warn "Error: Input file '$input_file' does not exist\n";
+                return;
+        }
 
-                # Create destination folder
-                if (! -e $output_dir) {
-                        mkdir $output_dir;
-                }
+        # Create destination filename
+        $mday = (localtime)[3];
+        $mon = (localtime)[4] + 1;
+        $year = (localtime)[5] + 1900;
 
-                if (! -e "$output_dir/$mon-$mday-$year.log") {
-                        rename "$input_file", "$output_dir/$mon-$mday-$year.log";
-                } else {
-                        print "Error: '$output_dir/$mon-$mday-$year.log' already exists\n";
-                }
+        # Create destination folder
+        if (! -e $output_dir) {
+                mkdir $output_dir;
+        }
+
+        if (! -e "$output_dir/$mon-$mday-$year.log") {
+                rename "$input_file", "$output_dir/$mon-$mday-$year.log";
         } else {
-                print "Error: Input file '$input_file' does not exist\n";
+                warn "Error: '$output_dir/$mon-$mday-$year.log' already exists\n";
         }
 
         return;
@@ -187,7 +188,7 @@ sub get_arguments {
         $output_dir = 0 unless ($output_dir = $opts{d});
 
         if (!$output_dir) {
-                print "Error: No output directory provided\n";
+                warn "Error: No output directory provided\n";
                 &print_usage();
         }
 
@@ -199,7 +200,7 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [-ct] [-d dir] [-i file] [-m size] [-p count]
+Usage: $0 [ -ct ] [ -d dir ] [ -i file ] [ -m size ] [ -p count ]
   -c   compress old log files
   -d   set directory to move log to
   -i   input log file to process

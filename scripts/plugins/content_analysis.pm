@@ -38,7 +38,7 @@ my %terms = ();             # Terms and corresponding weights
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin(__PACKAGE__);
+&main::register_plugin();
 
 sub new {
         return bless {};
@@ -141,18 +141,18 @@ sub load_config {
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                print "Error: No config file found\n";
+                warn "Error: No config file found\n";
                 return 0;
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                print "Error: No output file provided\n";
+                warn "Error: No output file provided\n";
                 return 0;
         }
 
         if (!$terms_file) {
-                print "Error: No terms file provided\n";
+                warn "Error: No terms file provided\n";
                 return 0;
         }
 
@@ -172,7 +172,7 @@ sub load_terms {
         my $weight;
 
         unless (open(TERMS, "$terms_file")) {
-                print "Error: Cannot open $terms_file: $!\n";
+                warn "Error: Cannot open $terms_file: $!\n";
                 return 0;
         }
 
@@ -191,22 +191,22 @@ sub load_terms {
 
                 # Basic validation and error checking
                 if (!$term || !$weight) {
-                        print "Warning: Invalid data found in $terms_file, line $line_num\n";
+                        warn "Warning: Invalid data found in $terms_file, line $line_num\n";
                         next;
                 }
 
                 if ($weight !~ /\d+/) {
-                        print "Warning: '$term' assigned non-numeric weight '$weight', ignoring\n";
+                        warn "Warning: '$term' assigned non-numeric weight '$weight', ignoring\n";
                         next;
                 }
 
                 if ($weight < 0) {
-                        print "Warning: '$term' assigned out of range weight '$weight', clamping to 0\n";
+                        warn "Warning: '$term' assigned out of range weight '$weight', clamping to 0\n";
                         $weight = 0;
                 }
 
                 if ($weight > 1) {
-                        print "Warning: '$term' assigned out of range weight '$weight', clamping to 1\n";
+                        warn "Warning: '$term' assigned out of range weight '$weight', clamping to 1\n";
                         $weight = 1;
                 }
 

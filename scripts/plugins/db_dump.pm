@@ -22,7 +22,7 @@ my $dbh;
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin(__PACKAGE__);
+&main::register_plugin();
 
 sub new {
         return bless {};
@@ -58,9 +58,9 @@ sub init {
 }
 
 sub main {
-        my $self   = shift;
+        my $self = shift;
         my $record = shift;
-        my $sql    = "";
+        my $sql = "";
         my ($year, $mon, $day, $hour, $min, $sec) = (localtime)[5,4,3,2,1,0];
         my $now = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
         my $timestamp;
@@ -113,21 +113,21 @@ sub load_config {
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                print "Error: No config file found\n";
+                warn "Error: No config file found\n";
                 return 0;
         }
 
         # Check for required options and combinations
         if (!$type) {
-                print "Error: No database type provided\n";
+                warn "Error: No database type provided\n";
                 return 0;
         }
         if (!$db) {
-                print "Error: No database name provided\n";
+                warn "Error: No database name provided\n";
                 return 0;
         }
         if (!$host) {
-                print "Error: No database hostname provided\n";
+                warn "Error: No database hostname provided\n";
                 return 0;
         }
         $port = '3306' unless ($port);
@@ -140,7 +140,7 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub connect_db {
         my $type = shift;
-        my $db   = shift;
+        my $db = shift;
         my $host = shift;
         my $port = shift;
         my $user = shift;
@@ -155,7 +155,7 @@ sub connect_db {
         if ($dbh = DBI->connect($dsn, $user, $pass, { PrintError => 0, RaiseError => 0, AutoCommit => 1 })) {
                 &execute_query($dbh, qq{ USE $db });
         } else {
-                print "Error: Cannot connect to database: " . DBI->errstr . "\n";
+                warn "Error: Cannot connect to database: " . DBI->errstr . "\n";
                 return;
         }
 
