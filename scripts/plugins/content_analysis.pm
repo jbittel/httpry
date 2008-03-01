@@ -306,7 +306,9 @@ sub timeout_flows {
                 if ($active_flow{$ip}->{'score'} > 0) {
                         $scored_flow{$ip}->{'num_flows'}++;
                         $scored_flow{$ip}->{'score'} += $active_flow{$ip}->{'score'};
-                        map { $scored_flow{$ip}->{"terms"}->{$_} += $active_flow{$ip}->{"terms"}->{$_} } keys %{ $active_flow{$ip}->{"terms"} };
+                        foreach (keys %{ $active_flow{$ip}->{"terms"} }) {
+                                $scored_flow{$ip}->{"terms"}->{$_} += $active_flow{$ip}->{"terms"}->{$_};
+                        }
 
                         &append_scored_file($ip);
                 }
@@ -378,7 +380,9 @@ sub write_summary_file {
                 }
         }
 
-        map { $scored_flows_cnt += $scored_flow{$_}->{"num_flows"} } keys %scored_flow;
+        foreach (keys %scored_flow) {
+                $scored_flows_cnt += $scored_flow{$_}->{"num_flows"};
+        }
 
         print OUTFILE "\nTerms file:     $terms_file\n";
         print OUTFILE "Scored IPs:     " . (keys %scored_flow) . "\n";
@@ -387,7 +391,9 @@ sub write_summary_file {
         foreach $ip (sort { $scored_flow{$b}->{"score"} <=> $scored_flow{$a}->{"score"} } keys %scored_flow) {
                 $term_cnt = 0;
 
-                map { $term_cnt += $scored_flow{$ip}->{"terms"}->{$_} } keys %{ $scored_flow{$ip}->{"terms"} };
+                foreach (keys %{ $scored_flow{$ip}->{"terms"} }) {
+                        $term_cnt += $scored_flow{$ip}->{"terms"}->{$_};
+                }
 
                 print OUTFILE sprintf("%.1f", $scored_flow{$ip}->{"score"}) . "\t$ip\t$scored_flow{$ip}->{'num_flows'}\t$term_cnt\t";
                 foreach $term (sort keys %{ $scored_flow{$ip}->{"terms"} } ) {
@@ -419,6 +425,8 @@ sub partition_scores() {
 
         my $ip;
         my $diff;
+        my $closest;
+        my $dist;
         my $max_score = 0;
         my $new_center;
         my $num_iters = 0;
@@ -428,10 +436,14 @@ sub partition_scores() {
         my @members;
 
         # Calculate mean and standard deviation
-        map { $mean += $scored_flow{$_}->{'score'} } keys %scored_flow;
+        foreach (keys %scored_flow) {
+                $mean += $scored_flow{$_}->{'score'};
+        }
         $mean = $mean / (scalar keys %scored_flow);
 
-        map { $std_dev += $scored_flow{$_}->{'score'} * $scored_flow{$_}->{'score'} } keys %scored_flow;
+        foreach (keys %scored_flow) {
+                $std_dev += $scored_flow{$_}->{'score'} * $scored_flow{$_}->{'score'};
+        }
         $std_dev = sqrt($std_dev / (scalar keys %scored_flow));
 
         # Build hash of scores to partition, pruning set outliers that are more than
@@ -455,8 +467,8 @@ sub partition_scores() {
 
                 # Assign points to nearest center
                 foreach $ip (keys %temp_flow) {
-                        my $closest = 0;
-                        my $dist = abs $temp_flow{$ip}->{'score'} - $center[$closest];
+                        $closest = 0;
+                        $dist = abs $temp_flow{$ip}->{'score'} - $center[$closest];
  
                         foreach (1..$#center) {
                                 if (abs $temp_flow{$ip}->{'score'} - $center[$_] < $dist) {
@@ -474,7 +486,9 @@ sub partition_scores() {
                                    grep { $temp_flow{$_}->{'cluster'} == $centroid } keys %temp_flow;
 
                         $sum = 0;
-                        map { $sum += $_ } @members;
+                        foreach (@members) {
+                                $sum += $_;
+                        }
                         $new_center = @members ? $sum / @members : $center[$centroid];
 
                         $diff += abs $center[$centroid] - $new_center;
@@ -485,7 +499,9 @@ sub partition_scores() {
         } while (($diff > 0.01) && ($num_iters <= $MAX_ITERS));
 
         # Update cluster membership in scored flows
-        map { $scored_flow{$_}->{'cluster'} = $temp_flow{$_}->{'cluster'} } keys %temp_flow;
+        foreach (keys %temp_flow) {
+                $scored_flow{$_}->{'cluster'} = $temp_flow{$_}->{'cluster'};
+        }
 
         return;
 }

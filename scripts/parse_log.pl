@@ -122,9 +122,14 @@ sub load_plugin {
                 return;
         }
 
+        if (exists $callbacks{$p}) {
+                warn "Warning: Plugin '$p' is already registered\n";
+                return;
+        }
+
         eval 'require $path';
         if ($@) {
-                warn $@ if $VERBOSE;
+                warn "Warning: $@" if $VERBOSE;
                 warn "Warning: Plugin '$p' failed to load...disabling\n";
                 delete $callbacks{$p};
                 return;
@@ -158,11 +163,6 @@ sub register_plugin {
 
         if ($package ne $p) {
                 warn "Warning: Package '$package' does not match filename in plugin '$p'\n";
-                die;
-        }
-
-        if (exists $callbacks{$p}) {
-                warn "Warning: Plugin '$p' is already registered\n";
                 die;
         }
 
@@ -210,8 +210,13 @@ sub process_logfiles {
                         die "Error: No field description line found\n" if (scalar @header == 0);
 
                         $i = 0;
-                        map { $record{$header[$i++]} = $_ } split /\t/, $curr_line, scalar @header;
-                        map { $callbacks{$_}->main(\%record) } keys %callbacks;
+                        foreach (split /\t/, $curr_line, scalar @header) {
+                                $record{$header[$i++]} = $_;
+                        }
+
+                        foreach (keys %callbacks) {
+                                $callbacks{$_}->main(\%record);
+                        }
                 }
 
                 close(INFILE);
