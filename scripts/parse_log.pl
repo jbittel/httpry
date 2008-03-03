@@ -51,6 +51,7 @@ print int(keys %callbacks) . " plugin(s) loaded\n" if $VERBOSE;
 # -----------------------------------------------------------------------------
 sub read_plugin_line {
         my $plugin_list = shift;
+        my $i = 0;
 
         foreach (split /,/, $plugin_list) {
                 $_ =~ s/^\s+//;
@@ -59,7 +60,11 @@ sub read_plugin_line {
                 next if ($_ =~ /^$/);
 
                 &load_plugin($_);
+                $i++;
         }
+
+        warn "Warning: No plugins found in plugin list\n" if ($i == 0);
+        print "$i plugin(s) found in plugin list\n" if $VERBOSE;
 
         return;
 }
@@ -95,7 +100,7 @@ sub read_plugin_dir {
         opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot find or access '$plugin_dir': $!\n";
 
         foreach (grep /\.pm$/, readdir(PLUGINDIR)) {
-                &load_plugin($plugin_dir.'/'.$_);
+                &load_plugin($plugin_dir . '/' . $_);
                 $i++;
         }
 
