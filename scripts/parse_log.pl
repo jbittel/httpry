@@ -16,17 +16,17 @@ use File::Basename;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $VERBOSE = 0;
 my $DEFAULT_PLUGIN_DIR = "plugins";
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 my %callbacks = ();
-my $plugin_dir;
-my $plugin_list;
 
 # Command line arguments
+my $verbose = 0;
+my $plugin_dir;
+my $plugin_list;
 my %opts;
 my @input_files;
 
@@ -40,7 +40,7 @@ my @input_files;
 &read_plugin_dir() if (!$plugin_list && !$plugin_dir);
 
 die "Error: No plugins loaded\n" if (keys %callbacks == 0);
-print int(keys %callbacks) . " plugin(s) loaded\n" if $VERBOSE;
+print int(keys %callbacks) . " plugin(s) loaded\n" if $verbose;
 
 &process_logfiles();
 
@@ -64,7 +64,7 @@ sub read_plugin_line {
         }
 
         warn "Warning: No plugins found in plugin list\n" if ($i == 0);
-        print "$i plugin(s) found in plugin list\n" if $VERBOSE;
+        print "$i plugin(s) found in plugin list\n" if $verbose;
 
         return;
 }
@@ -94,7 +94,7 @@ sub read_plugin_dir {
                 }
         }
 
-        print "Using plugin directory '$plugin_dir'\n" if $VERBOSE;
+        print "Using plugin directory '$plugin_dir'\n" if $verbose;
 
         # Extract all plugins found in directory
         opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot find or access '$plugin_dir': $!\n";
@@ -107,7 +107,7 @@ sub read_plugin_dir {
         closedir(PLUGINDIR);
 
         warn "Warning: No plugins found in $plugin_dir\n" if ($i == 0);
-        print "$i plugin(s) found in '$plugin_dir' directory\n" if $VERBOSE;
+        print "$i plugin(s) found in '$plugin_dir' directory\n" if $verbose;
 
         return;
 }
@@ -120,7 +120,7 @@ sub load_plugin {
         my $p = (fileparse($path, '\.pm'))[0];
         my $dir = dirname($path);
 
-        print "Loading plugin file '$path'\n" if $VERBOSE;
+        print "Loading plugin file '$path'\n" if $verbose;
 
         if (! -e $path) {
                 warn "Warning: Cannot find or access '$path'\n";
@@ -134,7 +134,7 @@ sub load_plugin {
 
         eval 'require $path';
         if ($@) {
-                warn "Warning: $@" if $VERBOSE;
+                warn "Warning: $@" if $verbose;
                 warn "Warning: Plugin '$p' failed to load...disabling\n";
                 delete $callbacks{$p};
                 return;
@@ -154,7 +154,7 @@ sub load_plugin {
                 }
         }
 
-        print "Initialized plugin '$p'\n" if $VERBOSE;
+        print "Initialized plugin '$p'\n" if $verbose;
 
         return;
 }
@@ -197,7 +197,7 @@ sub process_logfiles {
                         next;
                 }
 
-                print "Processing file '$curr_file'\n" if $VERBOSE;
+                print "Processing file '$curr_file'\n" if $verbose;
 
                 while ($curr_line = <INFILE>) {
                         chomp $curr_line;
@@ -247,7 +247,7 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('d:hp:', \%opts) or &print_usage();
+        getopts('d:hp:v', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
@@ -260,6 +260,7 @@ sub get_arguments {
         @input_files = @ARGV;
         $plugin_list = $opts{p} if ($opts{p});
         $plugin_dir = $opts{d} if ($opts{d});
+        $verbose = 1 if ($opts{v});
 
         return;
 }
@@ -269,10 +270,11 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [ -h ] [ -d dir ] [ -p plugins ] file1 [ file2 ... ]
+Usage: $0 [ -hv ] [ -d dir ] [ -p plugins ] file1 [ file2 ... ]
   -d  load plugins from specified directory
   -h  print this help information and exit
   -p  load plugins from comma-delimited list
+  -v  print verbose run-time information
 
 USAGE
 }

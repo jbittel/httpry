@@ -5,12 +5,13 @@ that perform assorted processing duties. It is straightforward to create or
 modify the plugins to customize processing.
 
 *** IMPORTANT! ***
-By default, the log parser will attempt to use all plugins that it finds in
-the plugin directory. To override this behavior, use the -p switch to specify
-plugins by path and name. If the plugin requires a configuration file, it
-must be located in the same directory as the plugin and named as
-'<plugin name>.cfg'. Additionally, any input log file needs to be a valid
-httpry log file with the field specifier at the start of the file.
+The log parser will attempt to use all plugins that it finds in the default
+plugin directory. To override this behavior, use the -p switch to specify
+plugins by path and name or use -d to specify an alternate directory to use.
+If the plugin requires a configuration file, it must be located in the same
+directory as the plugin and named as '<plugin name>.cfg'. Additionally, any
+input log file needs to be a valid httpry log with the field specifier at the
+start of the file.
 
 The following non-core Perl modules must be installed to run all included
 plugins:
