@@ -134,7 +134,7 @@ sub write_output_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSEARCH TERMS SUMMARY\n\n";
-        print OUTFILE "Generated: " . localtime() . "\n";
+        print OUTFILE "Generated:        " . localtime() . "\n";
 
         if ((keys %search_terms) == 0) {
                 print OUTFILE "\n\n*** No search terms found\n";
@@ -143,9 +143,9 @@ sub write_output_file {
                 return;
         }
 
-        print OUTFILE "Num of terms:        $num_terms\n";
-        print OUTFILE "Num of queries:      $num_queries\n";
-        print OUTFILE "Avg terms per query: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
+        print OUTFILE "Num of terms:     $num_terms\n";
+        print OUTFILE "Num of queries:   $num_queries\n";
+        print OUTFILE "Avg num of terms: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
         
         foreach $hostname (sort keys %search_terms) {
                 print OUTFILE "$hostname\n";
