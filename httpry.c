@@ -9,6 +9,9 @@
 */
 
 #define MAX_TIME_LEN 20
+#ifndef IPPROTO_TCP
+#define IPPROTO_TCP 0x6
+#endif
 
 #include <ctype.h>
 #include <fcntl.h>

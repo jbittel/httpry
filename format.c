@@ -81,7 +81,7 @@ void parse_format_string(char *str) {
         int j, num_buckets = 0, num_chain, max_chain = 0;
         NODE *node;
 
-        for (j = 0; j <= HASHSIZE; j++) {
+        for (j = 0; j < HASHSIZE; j++) {
                 if (output_fields[j]) num_buckets++;
 
                 num_chain = 0;

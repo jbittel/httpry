@@ -12,7 +12,6 @@
 #define _HAVE_TCP_H
 
 #include <arpa/inet.h>
-#include <netinet/tcp.h>
 #ifdef OpenBSD
 #include <netinet/in.h>
 #endif
