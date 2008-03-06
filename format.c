@@ -149,7 +149,6 @@ void insert_value(char *name, char *value) {
         NODE *node;
 
 #ifdef DEBUG
-        ASSERT(output_fields);
         ASSERT(name);
         ASSERT(strlen(name) > 0);
         ASSERT(value);

@@ -12,11 +12,7 @@
 #define _HAVE_TCP_H
 
 #include <arpa/inet.h>
-#ifdef OpenBSD
 #include <netinet/in.h>
-#endif
-
-#define ETHER_ADDR_LEN 6
 
 /* These TP and TCP structs/macros are taken from sniffex.c and
    are released under the following license: */
