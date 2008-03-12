@@ -349,8 +349,12 @@ int parse_client_request(char *header_line) {
 
         if ((request_uri = strchr(method, ' ')) == NULL) return 0;
         *request_uri++ = '\0';
+        while (isspace(*request_uri)) request_uri++;
+
         if ((http_version = strchr(request_uri, ' ')) == NULL) return 0;
         *http_version++ = '\0';
+        while (isspace(*http_version)) http_version++;
+
         if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 0;
 
         insert_value("method", method);
@@ -368,10 +372,14 @@ int parse_server_response(char *header_line) {
         http_version = header_line;
 
         if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 0;
+
         if ((status_code = strchr(http_version, ' ')) == NULL) return 0;
         *status_code++ = '\0';
+        while (isspace(*status_code)) status_code++;
+
         if ((reason_phrase = strchr(status_code, ' ')) == NULL) return 0;
         *reason_phrase++ = '\0';
+        while (isspace(*reason_phrase)) reason_phrase++;
 
         insert_value("http-version", http_version);
         insert_value("status-code", status_code);
