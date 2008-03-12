@@ -14,8 +14,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-/* These TP and TCP structs/macros are taken from sniffex.c and
-   are released under the following license: */
+/* These IP and TCP structs/macros are from sniffex.c and
+   were released under the following license: */
 
 /*
  * sniffex.c

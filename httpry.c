@@ -40,6 +40,7 @@ int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
 void handle_signal(int sig);
 void cleanup();
+void print_stats();
 void display_usage();
 
 /* Program flags/options, set by arguments or config file */
@@ -316,10 +317,8 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         print_values();
 
         num_parsed++;
-        if (parse_count && (num_parsed >= parse_count)) {
-                cleanup();
-                exit(EXIT_SUCCESS);
-        }
+        if (parse_count && (num_parsed >= parse_count))
+                pcap_breakloop(pcap_hnd);
 
         return;
 }
@@ -403,32 +402,15 @@ void handle_signal(int sig) {
 
 /* Perform end of run tasks and prepare to exit gracefully */
 void cleanup() {
-        struct pcap_stat pkt_stats;
-        float run_time;
+        /* This may have already been called, but might not
+           have depending on how we got here */
+        if (pcap_hnd)
+                pcap_breakloop(pcap_hnd);
 
-#ifdef PCAP_BREAKLOOP
-        pcap_breakloop(pcap_hnd);
-#endif
+        if (use_outfile)
+                fflush(stdout);
 
-        /* Print capture/parsing statistics when available */
-        if (pcap_hnd && !use_infile) {
-                if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
-                        WARN("Cannot obtain packet capture statistics: %s", pcap_geterr(pcap_hnd));
-                } else {
-                        run_time = (float) (time(0) - start_time);
-
-#ifdef DEBUG
-        ASSERT(run_time > 0);
-#endif
-
-                        LOG_PRINT("%d packets received, %d packets dropped, %d http packets parsed", \
-                             pkt_stats.ps_recv, pkt_stats.ps_drop, num_parsed);
-                        LOG_PRINT("%0.1f packets/min, %0.1f http packets/min", \
-                             ((pkt_stats.ps_recv * 60) / run_time), ((num_parsed * 60) / run_time));
-                }
-        } else if (pcap_hnd) {
-                PRINT("%d http packets parsed", num_parsed);
-        }
+        print_stats();
 
         fflush(NULL);
 
@@ -439,6 +421,32 @@ void cleanup() {
            user that doesn't have permission to delete the file */
         if (daemon_mode) remove(PID_FILE);
         if (pcap_hnd) pcap_close(pcap_hnd);
+
+        return;
+}
+
+/* Print packet capture statistics */
+void print_stats() {
+        struct pcap_stat pkt_stats;
+        float run_time;
+
+        if (pcap_hnd && !use_infile) {
+                if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
+                        WARN("Cannot obtain packet capture statistics: %s", pcap_geterr(pcap_hnd));
+                        return;
+                }
+
+                LOG_PRINT("%d packets received, %d packets dropped, %d http packets parsed", \
+                     pkt_stats.ps_recv, pkt_stats.ps_drop, num_parsed);
+
+                run_time = (float) (time(0) - start_time);
+                if (run_time > 0) {
+                        LOG_PRINT("%0.1f packets/min, %0.1f http packets/min", \
+                             ((pkt_stats.ps_recv * 60) / run_time), ((num_parsed * 60) / run_time));
+                }
+        } else if (pcap_hnd) {
+                PRINT("%d http packets parsed", num_parsed);
+        }
 
         return;
 }
@@ -470,6 +478,7 @@ int main(int argc, char **argv) {
         int opt;
         extern char *optarg;
         extern int optind;
+        int loop_status;
 
         signal(SIGINT, &handle_signal);
 
@@ -522,10 +531,14 @@ int main(int argc, char **argv) {
                 LOG_DIE("Cannot allocate memory for packet data buffer");
 
         start_time = time(0);
-        if (pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL) < 0)
-                LOG_DIE("Cannot read packets from interface: %s", pcap_geterr(pcap_hnd));
+        loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);
+        if (loop_status == -1) {
+                LOG_DIE("Cannot process packets from interface: %s", pcap_geterr(pcap_hnd));
+        } else if (loop_status == -2) {
+                PRINT("Loop halted, shutting down...");
+        }
 
         cleanup();
 
-        return EXIT_SUCCESS;
+        return loop_status == -1 ? EXIT_FAILURE : EXIT_SUCCESS;
 }
