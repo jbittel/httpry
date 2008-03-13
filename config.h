@@ -29,7 +29,6 @@
 #define NULL_FILE "/dev/null"
 
 /* HTTP specific constants; should never change! */
-#define HEADER_DELIM "\n"
 #define GET_STRING "GET "
 #define HEAD_STRING "HEAD "
 #define HTTP_STRING "HTTP/"

@@ -331,12 +331,19 @@ char *parse_header_line(char *header_line) {
 
         if (header_line) pos = header_line;
 
-        if ((tmp = strstr(pos, HEADER_DELIM)) == NULL) return NULL;
+        tmp = strchr(pos, '\r');
+        if (!tmp) {
+                /* We might have non-standard line endings */
+                tmp = strchr(pos, '\n');
+                if (!tmp) return NULL;
+        }
+
         if (tmp == pos) return NULL; /* Reached the end of the header */
 
         *tmp = '\0';
         header_line = pos;
-        pos = tmp + strlen(HEADER_DELIM);
+        pos = tmp + 1;
+        while (*pos == '\n') pos++;
 
         return header_line;
 }
