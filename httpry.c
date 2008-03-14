@@ -343,7 +343,7 @@ char *parse_header_line(char *header_line) {
         *tmp = '\0';
         header_line = pos;
         pos = tmp + 1;
-        while (*pos == '\n') pos++;
+        if (*pos == '\n') pos++;
 
         return header_line;
 }

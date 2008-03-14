@@ -4,6 +4,13 @@ often updated significantly between releases as well. It only lists notable
 changes and fixes to the core httpry program.
 
 
+version 0.1.3
+   * improved parsing of non-standard spacing and line terminators
+   * fixed compiling under FreeBSD
+   * fixed broken defines that caused pcap_breakloop to not be used
+   * fixed the program returning success even if the capture loop failed
+   * fixed a potential crash if the program was running in debug mode
+
 version 0.1.2
    * added support for multiple datalink packet header types
    * added support for virtual devices and interfaces without an IP address
