@@ -112,6 +112,7 @@ sub main {
 
                 $active_flow{$record->{"source-ip"}}->{"length"} = 0;
                 $active_flow{$record->{"source-ip"}}->{"score"} = 0;
+                $active_flow{$record->{"source-ip"}}->{"streak"} = 0;
         }
 
         $active_flow{$record->{"source-ip"}}->{"end_epoch"} = $epochstamp;
@@ -267,6 +268,17 @@ sub content_check {
 
         # Rule 4: If more than one term found, add 1
         $score += 1 if ($num_terms > 1);
+
+        # Rule 5: If a streak (more than 1 successive lines containing
+        #         terms) is found, add the length of the streak
+        if ($num_terms == 0) {
+                if ($active_flow{$ip}->{'streak'} > 1) {
+                        $score += $active_flow{$ip}->{'streak'};
+                        $active_flow{$ip}->{'streak'} = 0;
+                }
+        } else {
+                $active_flow{$ip}->{'streak'}++;
+        }
 
         $active_flow{$ip}->{'score'} += $score;
 
