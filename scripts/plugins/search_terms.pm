@@ -1,5 +1,3 @@
-#!/usr/bin/perl -w
-
 #
 #  ----------------------------------------------------
 #  httpry - HTTP logging and information retrieval tool
