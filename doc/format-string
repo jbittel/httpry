@@ -1,10 +1,10 @@
 The -s switch allows the user to provide a format string that tells httpry
 which fields to print from each HTTP packet. This string is a comma-
 delimited list of elements, examples of which are provided below. The format
-strings can have spaces between elements and are not case sensitive.
+strings can have spaces between elements and are _not_ case sensitive.
 Duplicate field names are ignored.
 
-How about an example. The default format string consists of:
+An example, you say? The default format string looks like:
 
    timestamp,source-ip,dest-ip,direction,method,host,request-uri,
       http-version,status-code,reason-phrase

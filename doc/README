@@ -44,12 +44,14 @@ in the doc/perl-tools file.
 
 --{ INSTALLATION }--
 
-Simply run these commands in the base httpry directory:
+httpry should compile with any relatively recent version of libpcap
+(specifically tested against 0.9.4 and newer). To compile and install, run
+these commands in the base httpry directory:
 
  $ make
  # make install
 
-which will compile the program and copy the binary and man page to their
+which compiles the program and copies the binary and man page to their
 appropriate locations. You can also run the binary from the compilation
 directory if you don't want to install it. If you ever need to uninstall
 the program run:
@@ -109,7 +111,7 @@ user after initialization.
 
 expression
 Specify a bpf-style capture filter, overriding the default. Here are a few
-examples, starting with the default filter:
+examples starting with the default filter:
 
 'tcp port 80 or 8080'
 'tcp dst port 80'

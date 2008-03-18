@@ -1,4 +1,4 @@
-A number of Perl scripts are included with the project to provide a log
+A number of Perl scripts are included with the project to provide a basic log
 parsing framework. There is a central Perl script (parse_log.pl) that handles
 all of the core log parsing duties, and a set of Perl plugins (plugins/*.pm)
 that perform assorted processing duties. It is straightforward to create or
@@ -13,7 +13,7 @@ directory as the plugin and named as '<plugin name>.cfg'. Additionally, any
 input log file needs to be a valid httpry log with the field specifier at the
 start of the file.
 
-The following non-core Perl modules must be installed to run all included
+The following non-core Perl modules must be installed to run all default
 plugins:
         DBI
 
