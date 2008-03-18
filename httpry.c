@@ -328,22 +328,24 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 char *parse_header_line(char *header_line) {
         static char *pos;
         char *tmp;
+        int skip;
 
         if (header_line) pos = header_line;
 
         tmp = strchr(pos, '\r');
+        skip = 2;
         if (!tmp) {
                 /* We might have non-standard line endings */
                 tmp = strchr(pos, '\n');
                 if (!tmp) return NULL;
+                skip = 1;
         }
 
         if (tmp == pos) return NULL; /* Reached the end of the header */
 
         *tmp = '\0';
         header_line = pos;
-        pos = tmp + 1;
-        if (*pos == '\n') pos++;
+        pos = tmp + skip;
 
         return header_line;
 }
@@ -351,6 +353,11 @@ char *parse_header_line(char *header_line) {
 /* Parse a HTTP client request; bail at first sign of an invalid request */
 int parse_client_request(char *header_line) {
         char *method, *request_uri, *http_version;
+
+#ifdef DEBUG
+        ASSERT(header_line);
+        ASSERT(strlen(header_line) > 0);
+#endif
 
         method = header_line;
 
@@ -375,6 +382,11 @@ int parse_client_request(char *header_line) {
 /* Parse a HTTP server response; bail at first sign of an invalid response */
 int parse_server_response(char *header_line) {
         char *http_version, *status_code, *reason_phrase;
+
+#ifdef DEBUG
+        ASSERT(header_line);
+        ASSERT(strlen(header_line) > 0);
+#endif
 
         http_version = header_line;
 
