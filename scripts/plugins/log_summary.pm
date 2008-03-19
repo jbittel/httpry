@@ -19,13 +19,13 @@ my $SUMMARY_CAP = 10;
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %top_hosts      = ();
-my %top_talkers    = ();
-my %filetypes      = ();
+my %top_hosts = ();
+my %top_talkers = ();
+my %filetypes = ();
 my %response_codes = ();
 my $total_line_cnt = 0;
-my $ext_cnt        = 0;
-my $srv_responses  = 0;
+my $ext_cnt = 0;
+my $srv_responses = 0;
 my $start_time;
 my $end_time;
 
@@ -43,13 +43,13 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        unless (&load_config($cfg_dir)) {
-                return 0;
+        if (&load_config($cfg_dir)) {
+                return 1;
         }
 
         $start_time = (times)[0];
         
-        return 1;
+        return 0;
 }
 
 sub main {
@@ -99,17 +99,17 @@ sub load_config {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
                 warn "Error: No config file found\n";
-                return 0;
+                return 1;
         }
 
         # Check for required options and combinations
         if (!$output_file) {
                 warn "Error: No output file provided\n";
-                return 0;
+                return 1;
         }
         $summary_cap = $SUMMARY_CAP unless ($summary_cap > 0);
 
-        return 1;
+        return 0;
 }
 
 # -----------------------------------------------------------------------------

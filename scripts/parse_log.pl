@@ -147,7 +147,7 @@ sub load_plugin {
         }
 
         if ($callbacks{$p}->can('init')) {
-                if ($callbacks{$p}->init($dir) == 0) {
+                if ($callbacks{$p}->init($dir)) {
                         warn "Warning: Plugin '$p' failed to initialize...disabling\n";
                         delete $callbacks{$p};
                         return;
@@ -271,10 +271,10 @@ sub get_arguments {
 sub print_usage {
         die <<USAGE;
 Usage: $0 [ -hv ] [ -d dir ] [ -p plugins ] file1 [ file2 ... ]
-  -d  load plugins from specified directory
-  -h  print this help information and exit
-  -p  load plugins from comma-delimited list
-  -v  print verbose run-time information
+  -d dir       load plugins from specified directory
+  -h           print this help information
+  -p plugins   load plugins from comma-delimited list
+  -v           print verbose run-time information
 
 USAGE
 }

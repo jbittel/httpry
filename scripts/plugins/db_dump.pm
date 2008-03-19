@@ -32,12 +32,12 @@ sub init {
         my $sql;
         my $limit;
 
-        unless (&load_config($cfg_dir)) {
-                return 0;
+        if (&load_config($cfg_dir)) {
+                return 1;
         }
 
         unless ($dbh = &connect_db($type, $db, $host, $port, $user, $pass)) {
-                return 0;
+                return 1;
         }
 
         # Delete data inserted $rmbefore days prior
@@ -52,7 +52,7 @@ sub init {
                 &execute_query($dbh, $sql);
         }
 
-        return 1;
+        return 0;
 }
 
 sub main {
@@ -112,25 +112,25 @@ sub load_config {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
                 warn "Error: No config file found\n";
-                return 0;
+                return 1;
         }
 
         # Check for required options and combinations
         if (!$type) {
                 warn "Error: No database type provided\n";
-                return 0;
+                return 1;
         }
         if (!$db) {
                 warn "Error: No database name provided\n";
-                return 0;
+                return 1;
         }
         if (!$host) {
                 warn "Error: No database hostname provided\n";
-                return 0;
+                return 1;
         }
         $port = '3306' unless ($port);
 
-        return 1;
+        return 0;
 }
 
 # -----------------------------------------------------------------------------

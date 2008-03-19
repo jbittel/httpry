@@ -12,72 +12,69 @@ use strict;
 use warnings;
 use Getopt::Std;
 use Time::Local;
-use Cwd;
-
-# -----------------------------------------------------------------------------
-# GLOBAL CONSTANTS
-# -----------------------------------------------------------------------------
-my $TAR = "tar";
-my $GZIP = "gzip";
+use IO::Compress::Gzip qw(gzip $GzipError);
 
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
+
+# Command line parameters
 my %opts;
+my @dir;
+my $dir;
+my $file;
+my $purge_cnt;
+my $purge_size;
+
 my $compress = 0;
 my $del_text = 0;
-my $input_file;
-my $purge_limit;
-my $purge_size;
-my $output_dir;
-my @dir_list;
 
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-
-# Read contents of directory into array
-$output_dir =~ s/\/$//; # Remove trailing slash
-opendir(DIR, $output_dir) or die "Error: Cannot open directory $output_dir\n";
-        @dir_list = map "$output_dir/$_", grep !/^\./, readdir(DIR);
+        
+opendir(DIR, $dir) or die "Error: Cannot open directory '$dir'\n";
+@dir = grep !/^\./, readdir(DIR);
 closedir(DIR);
 
-# Process log file/directory commands
+&move_file() if $file;
+
 &compress_files() if $compress;
-if ($del_text) {
-        foreach (grep /\.txt$/, @dir_list) {
-                unlink;
-        }
-}
-&move_file() if $input_file;
-&purge_dir_by_count() if $purge_limit;
+&delete_text_files() if $del_text;
+
+&purge_dir_by_count() if $purge_cnt;
 &purge_dir_by_size() if $purge_size;
 
 # -----------------------------------------------------------------------------
-# Iterate through log files, compressing them in tar.gz format
+# Compress all raw log files in the target directory
 # -----------------------------------------------------------------------------
 sub compress_files {
         my $log_file;
-        my $filename;
-        my $curr_dir;
 
-        $curr_dir = cwd;
-        chdir($output_dir); # Must be in local dir for relative paths in tar file
+        foreach $log_file (grep /\.log$/, @dir) {
+                if (-e "$dir/$log_file.gz") {
+                        warn "Error: File '$dir/$log_file.gz' already exists\n";
+                        next;
+                }
 
-        foreach $log_file (grep /\.log$/, @dir_list) {
-                # Compress log file
-                $log_file =~ /.*\/(.+?)\.log$/;
-                $filename = $1;
-
-                if ((system "$TAR cf - $filename.log | $GZIP -9 > $output_dir/$filename.tar.gz") == 0) {
-                        unlink $log_file;
+                if (gzip "$dir/$log_file" => "$dir/$log_file.gz") {
+                        unlink "$dir/$log_file";
                 } else {
-                        warn "Error: Cannot compress log file '$log_file'\n";
+                        warn "Error: Cannot compress log file '$log_file': $GzipError\n";
                 }
         }
 
-        chdir($curr_dir);
+        return;
+}
+
+# -----------------------------------------------------------------------------
+# Delete all text files in the target directory
+# -----------------------------------------------------------------------------
+sub delete_text_files {
+        foreach (grep /\.txt$/, @dir) {
+                unlink;
+        }
 
         return;
 }
@@ -86,29 +83,14 @@ sub compress_files {
 # Move current log file to archive directory and rename according to date
 # -----------------------------------------------------------------------------
 sub move_file {
-        my $mday;
-        my $mon;
-        my $year;
+        my $mday = (localtime)[3];
+        my $mon = (localtime)[4] + 1;
+        my $year = (localtime)[5] + 1900;
 
-        if (-e $input_file) {
-                warn "Error: Input file '$input_file' does not exist\n";
-                return;
-        }
-
-        # Create destination filename
-        $mday = (localtime)[3];
-        $mon = (localtime)[4] + 1;
-        $year = (localtime)[5] + 1900;
-
-        # Create destination folder
-        if (! -e $output_dir) {
-                mkdir $output_dir;
-        }
-
-        if (! -e "$output_dir/$mon-$mday-$year.log") {
-                rename "$input_file", "$output_dir/$mon-$mday-$year.log";
+        if (! -e "$dir/$mon-$mday-$year.log") {
+                rename "$file", "$dir/$mon-$mday-$year.log";
         } else {
-                warn "Error: '$output_dir/$mon-$mday-$year.log' already exists\n";
+                warn "Error: File '$dir/$mon-$mday-$year.log' already exists\n";
         }
 
         return;
@@ -119,22 +101,21 @@ sub move_file {
 # -----------------------------------------------------------------------------
 sub purge_dir_by_count {
         my @logs;
-        my $del_count;
-
-        # Sort all compressed archives in the directory according
-        # to the date in the filename
+        my $cnt;
+ 
         @logs = map $_->[0],
                 sort {
                         $a->[3] <=> $b->[3] or # Sort by year...
                         $a->[1] <=> $b->[1] or # ...then by month...
                         $a->[2] <=> $b->[2]    # ...and finally day
                 }
-                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /(\.tar\.gz$|\.log$)/, @dir_list;
+                map [ $_, /^(\d+)-(\d+)-(\d+)/ ], grep /(\.gz|\.log)$/, @dir;
 
-        if (scalar @logs > $purge_limit) {
-                $del_count = scalar @logs - $purge_limit;
-                for (my $i = 0; $i < $del_count; $i++) {
-                        unlink $logs[$i];
+        if (scalar @logs > $purge_cnt) {
+                $cnt = scalar @logs - $purge_cnt;
+                for (my $i = 0; $i < $cnt; $i++) {
+                        #unlink $logs[$i];
+                        print "unlink $logs[$i]\n";
                 }
         }
 
@@ -147,23 +128,22 @@ sub purge_dir_by_count {
 sub purge_dir_by_size {
         my @logs;
         my $log_file;
-        my $file_size;
-
-        # Sort all compressed archives in the directory according
-        # to the date in the filename
+        my $size;
+ 
         @logs = map $_->[0],
                 sort {
                         $a->[3] <=> $b->[3] or # Sort by year...
                         $a->[1] <=> $b->[1] or # ...then by month...
                         $a->[2] <=> $b->[2]    # ...and finally day
                 }
-                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /(\.tar\.gz$|\.log$)/, @dir_list;
+                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /(\.gz|\.log)$/, @dir;
 
         foreach $log_file (reverse @logs) {
-                $file_size += int((stat($log_file))[7] / 1000000);
+                $size += int((stat($log_file))[7] / 1000000);
 
-                if ($file_size > $purge_size) {
-                        unlink $log_file;
+                if ($size > $purge_size) {
+                        #unlink $log_file;
+                        print "unlink $log_file\n";
                 }
         }
 
@@ -174,22 +154,33 @@ sub purge_dir_by_size {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('cd:hi:m:p:t', \%opts) or &print_usage();
+        getopts('c:d:f:hs:tz', \%opts) or &print_usage();
 
         # Print help/usage information to the screen if necessary
         &print_usage() if ($opts{h});
 
         # Copy command line arguments to internal variables
-        $compress = 1 if ($opts{c});
-        $del_text = 1 if ($opts{t});
-        $input_file = 0 unless ($input_file = $opts{i});
-        $purge_limit = 0 unless ($purge_limit = $opts{p});
-        $purge_size = 0 unless ($purge_size = $opts{m});
-        $output_dir = 0 unless ($output_dir = $opts{d});
+        $dir = $opts{d};
+        $file = $opts{f};
+        $purge_cnt = $opts{c};
+        $purge_size = $opts{s};
 
-        if (!$output_dir) {
+        $compress = 1 if ($opts{z});
+        $del_text = 1 if ($opts{t});
+
+        if (!$dir) {
                 warn "Error: No output directory provided\n";
                 &print_usage();
+        }
+        $dir =~ s/\/$//;
+
+        if (! -e $dir) {
+                print "Creating output directory '$dir'\n";
+                mkdir $dir;
+        }
+
+        if (! -e $file) {
+                die "Error: File '$file' does not exist\n";
         }
 
         return;
@@ -200,13 +191,14 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [ -ct ] [ -d dir ] [ -i file ] [ -m size ] [ -p count ]
-  -c   compress old log files
-  -d   set directory to move log to
-  -i   input log file to process
-  -m   purge old log files that exceed this size threshold (in MB)
-  -p   purge old log files that exceed this count threshold
-  -t   delete all text files in target directory
+Usage: $0 [ -htz ] [ -c count ] [ -d dir ] [ -f file ] [ -s size ]
+  -c count   delete oldest log files above this number
+  -d dir     set output directory
+  -f file    set input logfile
+  -h         print this help information
+  -s size    delete oldest log files above this cumulative size (in MB)
+  -t         delete text files in target directory
+  -z         compress log files
 
 USAGE
 }

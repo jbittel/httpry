@@ -45,7 +45,7 @@ fi
 /etc/rc.d/rc.httpry stop
 
 # Move log file into folder and compress/remove old logs as necessary
-perl ${tools_dir}/rotate_log.pl -ct -i ${logs_dir}/${log_fn} -d ${logs_dir}
+perl ${tools_dir}/rotate_log.pl -zt -f ${logs_dir}/${log_fn} -d ${logs_dir}
 
 # Restart the httpry service
 /etc/rc.d/rc.httpry start

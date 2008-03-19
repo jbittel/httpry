@@ -289,9 +289,9 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         if ((header_line = parse_header_line(buf)) == NULL) return;
 
         if (is_request) {
-                if (parse_client_request(header_line) == 0) return;
+                if (parse_client_request(header_line)) return;
         } else if (is_response) {
-                if (parse_server_response(header_line) == 0) return;
+                if (parse_server_response(header_line)) return;
         }
 
         /* Iterate through request/entity header fields */
@@ -361,22 +361,22 @@ int parse_client_request(char *header_line) {
 
         method = header_line;
 
-        if ((request_uri = strchr(method, ' ')) == NULL) return 0;
+        if ((request_uri = strchr(method, ' ')) == NULL) return 1;
         *request_uri++ = '\0';
         while (isspace(*request_uri)) request_uri++;
 
-        if ((http_version = strchr(request_uri, ' ')) == NULL) return 0;
+        if ((http_version = strchr(request_uri, ' ')) == NULL) return 1;
         *http_version++ = '\0';
         while (isspace(*http_version)) http_version++;
 
-        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 0;
+        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 1;
 
         insert_value("method", method);
         insert_value("request-uri", request_uri);
         insert_value("http-version", http_version);
         insert_value("direction", ">");
 
-        return 1;
+        return 0;
 }
 
 /* Parse a HTTP server response; bail at first sign of an invalid response */
@@ -390,13 +390,13 @@ int parse_server_response(char *header_line) {
 
         http_version = header_line;
 
-        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 0;
+        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 1;
 
-        if ((status_code = strchr(http_version, ' ')) == NULL) return 0;
+        if ((status_code = strchr(http_version, ' ')) == NULL) return 1;
         *status_code++ = '\0';
         while (isspace(*status_code)) status_code++;
 
-        if ((reason_phrase = strchr(status_code, ' ')) == NULL) return 0;
+        if ((reason_phrase = strchr(status_code, ' ')) == NULL) return 1;
         *reason_phrase++ = '\0';
         while (isspace(*reason_phrase)) reason_phrase++;
 
@@ -405,7 +405,7 @@ int parse_server_response(char *header_line) {
         insert_value("reason-phrase", reason_phrase);
         insert_value("direction", "<");
 
-        return 1;
+        return 0;
 }
 
 /* Perform clean shutdown if proper signal received */
@@ -478,7 +478,7 @@ void print_stats() {
         return;
 }
 
-/* Display program help/usage information */
+/* Print program usage information */
 void display_usage() {
         PRINT("%s version %s", PROG_NAME, PROG_VER);
         PRINT("Usage: %s [ -dhp ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
@@ -486,14 +486,14 @@ void display_usage() {
 
         PRINT("  -d           run as daemon\n"
               "  -h           print this help information\n"
-              "  -i device    set interface to listen on\n"
-              "  -n count     number of HTTP packets to parse\n"
-              "  -o file      write output log file\n"
+              "  -i device    listen on this interface\n"
+              "  -n count     set number of HTTP packets to parse\n"
+              "  -o file      write output to a file\n"
               "  -p           disable promiscuous mode\n"
-              "  -r file      input file to read from\n"
+              "  -r file      read packets from input file\n"
               "  -s format    specify output format string\n"
               "  -u user      set process owner\n"
-              "  expression   a bpf-style capture filter\n");
+              "  expression   specify a bpf-style capture filter\n");
 
         PRINT("Additional information can be found at:\n"
               "    http://dumpsterventures.com/jason/httpry\n");
@@ -560,7 +560,7 @@ int main(int argc, char **argv) {
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);
         if (loop_status == -1) {
-                LOG_DIE("Cannot process packets from interface: %s", pcap_geterr(pcap_hnd));
+                LOG_DIE("Problem reading packets from interface: %s", pcap_geterr(pcap_hnd));
         } else if (loop_status == -2) {
                 PRINT("Loop halted, shutting down...");
         }

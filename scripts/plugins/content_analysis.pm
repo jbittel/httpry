@@ -46,12 +46,12 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        unless (&load_config($cfg_dir)) {
-                return 0;
+        if (&load_config($cfg_dir)) {
+                return 1;
         }
 
-        unless (&load_terms()) {
-                return 0;
+        if (&load_terms()) {
+                return 1;
         }
 
         # Remove any existing text files so they don't accumulate
@@ -61,7 +61,7 @@ sub init {
                 }
         closedir(DIR);
 
-        return 1;
+        return 0;
 }
 
 sub main {
@@ -141,24 +141,24 @@ sub load_config {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
                 warn "Error: No config file found\n";
-                return 0;
+                return 1;
         }
 
         # Check for required options and combinations
         if (!$output_file) {
                 warn "Error: No output file provided\n";
-                return 0;
+                return 1;
         }
 
         if (!$terms_file) {
                 warn "Error: No terms file provided\n";
-                return 0;
+                return 1;
         }
 
         $output_dir = "." if (!$output_dir);
         $output_dir =~ s/\/$//; # Remove trailing slash
 
-        return 1;
+        return 0;
 }
 
 # -----------------------------------------------------------------------------
@@ -172,7 +172,7 @@ sub load_terms {
 
         unless (open(TERMS, "$terms_file")) {
                 warn "Error: Cannot open $terms_file: $!\n";
-                return 0;
+                return 1;
         }
 
         while ($line = <TERMS>) {
@@ -214,7 +214,7 @@ sub load_terms {
 
         close(TERMS);
 
-        return 1;
+        return 0;
 }
 
 # -----------------------------------------------------------------------------
