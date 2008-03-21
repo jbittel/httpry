@@ -545,6 +545,7 @@ int main(int argc, char **argv) {
                 if (freopen(use_outfile, "a", stdout) == NULL)
                         LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
 
+                PRINT("Writing output to file: %s", use_outfile);
                 printf("# %s version %s\n", PROG_NAME, PROG_VER);
                 print_header_line();
         }

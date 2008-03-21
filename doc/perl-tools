@@ -13,9 +13,9 @@ directory as the plugin and named as '<plugin name>.cfg'. Additionally, any
 input log file needs to be a valid httpry log with the field specifier at the
 start of the file.
 
-The following non-core Perl modules must be installed to run all default
-plugins:
+The following Perl modules must be installed to run all scripts: 
         DBI
+        IO::Compress::Gzip
 
 A summary of the included Perl scripts:
 

@@ -59,9 +59,9 @@ these commands in the base httpry directory:
  # make install
 
 which compiles the program and copies the binary and man page to their
-appropriate locations. You can also run the binary from the compilation
-directory if you don't want to install it. If you ever need to uninstall
-the program run:
+appropriate locations. You can run the binary from the compilation directory
+if you don't want to install it. If you ever need to uninstall the program
+run:
 
  # make uninstall
 

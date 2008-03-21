@@ -1,7 +1,8 @@
 #!/bin/sh
 
-exec 3>&1
-eval valgrind --tool=callgrind "$@" 2>&1 1>&3 3>&-
+eval valgrind --tool=callgrind \
+     "$@" 2>&1 1>/dev/null |
+     sed 's/^==[0-9]*==/callgrind:/'
 callgrind_annotate callgrind.out.* > callgrind.log
 rm -f callgrind.out.*
 
