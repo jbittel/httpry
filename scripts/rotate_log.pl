@@ -47,6 +47,23 @@ closedir(DIR);
 &purge_dir_by_size() if $purge_size;
 
 # -----------------------------------------------------------------------------
+# Move current log file to archive directory and rename according to date
+# -----------------------------------------------------------------------------
+sub move_file {
+        my $mday = (localtime)[3];
+        my $mon = (localtime)[4] + 1;
+        my $year = (localtime)[5] + 1900;
+
+        if (! -e "$dir/$mon-$mday-$year.log") {
+                rename "$file", "$dir/$mon-$mday-$year.log";
+        } else {
+                warn "Error: File '$dir/$mon-$mday-$year.log' already exists\n";
+        }
+
+        return;
+}
+
+# -----------------------------------------------------------------------------
 # Compress all raw log files in the target directory
 # -----------------------------------------------------------------------------
 sub compress_files {
@@ -72,25 +89,10 @@ sub compress_files {
 # Delete all text files in the target directory
 # -----------------------------------------------------------------------------
 sub delete_text_files {
-        foreach (grep /\.txt$/, @dir) {
-                unlink;
-        }
+        my $txt_file;
 
-        return;
-}
-
-# -----------------------------------------------------------------------------
-# Move current log file to archive directory and rename according to date
-# -----------------------------------------------------------------------------
-sub move_file {
-        my $mday = (localtime)[3];
-        my $mon = (localtime)[4] + 1;
-        my $year = (localtime)[5] + 1900;
-
-        if (! -e "$dir/$mon-$mday-$year.log") {
-                rename "$file", "$dir/$mon-$mday-$year.log";
-        } else {
-                warn "Error: File '$dir/$mon-$mday-$year.log' already exists\n";
+        foreach $txt_file (grep /\.txt$/, @dir) {
+                unlink $dir/$txt_file;
         }
 
         return;
@@ -103,19 +105,19 @@ sub purge_dir_by_count {
         my @logs;
         my $cnt;
  
-        @logs = map $_->[0],
+        @logs = map { $_->[0] }
                 sort {
                         $a->[3] <=> $b->[3] or # Sort by year...
                         $a->[1] <=> $b->[1] or # ...then by month...
                         $a->[2] <=> $b->[2]    # ...and finally day
                 }
-                map [ $_, /^(\d+)-(\d+)-(\d+)/ ], grep /(\.gz|\.log)$/, @dir;
+                map { [ $_, /^(\d+)-(\d+)-(\d+)/ ] }
+                grep /^\d+-\d+-\d+.*\.(?:gz|log)$/, @dir;
 
         if (scalar @logs > $purge_cnt) {
                 $cnt = scalar @logs - $purge_cnt;
                 for (my $i = 0; $i < $cnt; $i++) {
-                        #unlink $logs[$i];
-                        print "unlink $logs[$i]\n";
+                        unlink $logs[$i];
                 }
         }
 
@@ -130,20 +132,20 @@ sub purge_dir_by_size {
         my $log_file;
         my $size;
  
-        @logs = map $_->[0],
+        @logs = map { $_->[0] }
                 sort {
                         $a->[3] <=> $b->[3] or # Sort by year...
                         $a->[1] <=> $b->[1] or # ...then by month...
                         $a->[2] <=> $b->[2]    # ...and finally day
                 }
-                map [ $_, /(\d+)-(\d+)-(\d+)/ ], grep /(\.gz|\.log)$/, @dir;
+                map { [ $_, /^(\d+)-(\d+)-(\d+)/ ] }
+                grep /^\d+-\d+-\d+.*\.(?:gz|log)$/, @dir;
 
         foreach $log_file (reverse @logs) {
                 $size += int((stat($log_file))[7] / 1000000);
 
                 if ($size > $purge_size) {
-                        #unlink $log_file;
-                        print "unlink $log_file\n";
+                        unlink $log_file;
                 }
         }
 
@@ -177,10 +179,6 @@ sub get_arguments {
         if (! -e $dir) {
                 print "Creating output directory '$dir'\n";
                 mkdir $dir;
-        }
-
-        if (! -e $file) {
-                die "Error: File '$file' does not exist\n";
         }
 
         return;
