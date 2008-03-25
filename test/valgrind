@@ -7,5 +7,3 @@ eval valgrind --tool=memcheck \
               --show-reachable=yes \
      "$@" 2>&1 1>/dev/null |
      sed 's/^==[0-9]*==/valgrind:/'
-
-exit 0

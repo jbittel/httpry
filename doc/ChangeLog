@@ -10,6 +10,7 @@ version 0.1.3
    * fixed broken defines that caused pcap_breakloop to not be used
    * fixed the program returning success even if the capture loop failed
    * fixed a potential crash if the program was running in debug mode
+   * added a quiet option (-q) to skip non-critical output
 
 version 0.1.2
    * added support for multiple datalink packet header types

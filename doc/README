@@ -75,7 +75,7 @@ Running the program with the -h switch will print out an abbreviated
 description of the available options. This section describes these options
 in greater detail.
 
-httpry [ -dhp ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]
+httpry [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]
        [ -s format ] [ -u user ] [ 'expression' ]
 
 -d
@@ -101,6 +101,9 @@ Specify an output file for writing parsed packet data.
 -p
 Do not put the NIC in promiscuous mode on startup. Note that the NIC could
 already be in that mode for another reason.
+
+-q
+Hide non-critical output (startup banner, statistics, etc.).
 
 -r file
 Provide an input capture file to read from instead of performing

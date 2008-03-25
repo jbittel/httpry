@@ -193,9 +193,9 @@ sub get_arguments {
 # -----------------------------------------------------------------------------
 sub print_usage {
         die <<USAGE;
-Usage: $0 [ -htz ] [ -c count ] [ -d dir ] [ -f file ] [ -s size ]
+Usage: $0 [ -htz ] [ -c count ] [ -s size ] [ -f file ] -d dir
   -c count   delete oldest log files above this number
-  -d dir     set output directory
+  -d dir     set target directory
   -f file    set input logfile
   -h         print this help information
   -s size    delete oldest log files above this cumulative size (in MB)

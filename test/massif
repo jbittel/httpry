@@ -5,5 +5,3 @@ eval valgrind --tool=massif \
      sed 's/^==[0-9]*==/massif:/'
 ms_print massif.out.* > massif.log
 rm -f massif.out.*
-
-exit 0

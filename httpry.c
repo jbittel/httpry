@@ -53,6 +53,7 @@ static char *use_outfile = NULL;
 static int set_promisc = 1;
 static char *new_user = NULL;
 static char *out_format = NULL;
+static int quiet_mode = 0;
 
 static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
 static char *buf = NULL;
@@ -437,7 +438,8 @@ void cleanup() {
         if (use_outfile)
                 fflush(stdout);
 
-        print_stats();
+        if (!quiet_mode)
+                print_stats();
 
         fflush(NULL);
 
@@ -481,7 +483,7 @@ void print_stats() {
 /* Print program usage information */
 void display_usage() {
         PRINT("%s version %s", PROG_NAME, PROG_VER);
-        PRINT("Usage: %s [ -dhp ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
+        PRINT("Usage: %s [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
               "              [ -s format ] [ -u user ] [ 'expression' ]\n", PROG_NAME);
 
         PRINT("  -d           run as daemon\n"
@@ -490,6 +492,7 @@ void display_usage() {
               "  -n count     set number of HTTP packets to parse\n"
               "  -o file      write output to a file\n"
               "  -p           disable promiscuous mode\n"
+              "  -q           hide non-critical output\n"
               "  -r file      read packets from input file\n"
               "  -s format    specify output format string\n"
               "  -u user      set process owner\n"
@@ -510,7 +513,7 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "dhpi:n:o:r:s:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "dhpqi:n:o:r:s:u:")) != -1) {
                 switch (opt) {
                         case 'd': daemon_mode = 1; break;
                         case 'h': display_usage(); break;
@@ -518,6 +521,7 @@ int main(int argc, char **argv) {
                         case 'n': parse_count = atoi(optarg); break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
+                        case 'q': quiet_mode = 1; break;
                         case 'r': use_infile = optarg; break;
                         case 's': out_format = optarg; break;
                         case 'u': new_user = optarg; break;
@@ -525,12 +529,18 @@ int main(int argc, char **argv) {
                 }
         }
 
-        /* Test for argument error and warning conditions */
         if (daemon_mode && !use_outfile)
                 LOG_DIE("Daemon mode requires an output file");
 
         if (parse_count < 0)
                 LOG_DIE("Invalid -n value, must be 0 or greater");
+
+        /* Print startup banner */
+        if (!quiet_mode) {
+                PRINT("%s version %s -- "
+                      "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
+                PRINT("Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>");
+        }
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];
@@ -544,8 +554,8 @@ int main(int argc, char **argv) {
         if (use_outfile) {
                 if (freopen(use_outfile, "a", stdout) == NULL)
                         LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
-
                 PRINT("Writing output to file: %s", use_outfile);
+
                 printf("# %s version %s\n", PROG_NAME, PROG_VER);
                 print_header_line();
         }

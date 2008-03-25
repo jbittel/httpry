@@ -8,13 +8,16 @@
 #  Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>
 #
 
+#
 # Start/stop/restart httpry as a daemon process. This script
 # was written for use under Slackware Linux, but should be
 # easily modifiable for a different system.
-
+#
 # You will need to add an output file here for httpry to write
 # to while in daemon mode. If there are any additional arguments
 # that need to be passed to httpry, add them to httpry_args.
+#
+
 output_file=""
 httpry_args=""
 
