@@ -78,7 +78,7 @@ sub compress_files {
                 if (gzip "$dir/$log_file" => "$dir/$log_file.gz") {
                         unlink "$dir/$log_file";
                 } else {
-                        warn "Error: Cannot compress log file '$log_file': $GzipError\n";
+                        warn "Error: Cannot compress log file '$dir/$log_file': $GzipError\n";
                 }
         }
 
@@ -92,7 +92,7 @@ sub delete_text_files {
         my $txt_file;
 
         foreach $txt_file (grep /\.txt$/, @dir) {
-                unlink $dir/$txt_file;
+                unlink "$dir/$txt_file";
         }
 
         return;
@@ -117,7 +117,7 @@ sub purge_dir_by_count {
         if (scalar @logs > $purge_cnt) {
                 $cnt = scalar @logs - $purge_cnt;
                 for (my $i = 0; $i < $cnt; $i++) {
-                        unlink $logs[$i];
+                        unlink "$dir/$logs[$i]";
                 }
         }
 
@@ -142,10 +142,10 @@ sub purge_dir_by_size {
                 grep /^\d+-\d+-\d+.*\.(?:gz|log)$/, @dir;
 
         foreach $log_file (reverse @logs) {
-                $size += int((stat($log_file))[7] / 1000000);
+                $size += int((stat($dir/$log_file))[7] / 1000000);
 
                 if ($size > $purge_size) {
-                        unlink $log_file;
+                        unlink "$dir/$log_file";
                 }
         }
 
@@ -179,6 +179,10 @@ sub get_arguments {
         if (! -e $dir) {
                 print "Creating output directory '$dir'\n";
                 mkdir $dir;
+        }
+
+        if ($file && (! -e $file)) {
+                die "Error: File '$file' does not exist\n";
         }
 
         return;
