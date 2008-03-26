@@ -53,12 +53,12 @@ static char *use_outfile = NULL;
 static int set_promisc = 1;
 static char *new_user = NULL;
 static char *out_format = NULL;
-static int quiet_mode = 0;
+int quiet_mode = 0;               /* Defined as extern in error.h */
 
-static pcap_t *pcap_hnd = NULL; /* Opened pcap device handle */
+static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
-static unsigned num_parsed = 0; /* Count of fully parsed HTTP packets */
-static unsigned start_time = 0; /* Start tick for statistics calculations */
+static unsigned num_parsed = 0;   /* Count of fully parsed HTTP packets */
+static unsigned start_time = 0;   /* Start tick for statistics calculations */
 static int header_offset = 0;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
@@ -438,8 +438,7 @@ void cleanup() {
         if (use_outfile)
                 fflush(stdout);
 
-        if (!quiet_mode)
-                print_stats();
+        print_stats();
 
         fflush(NULL);
 
@@ -536,11 +535,9 @@ int main(int argc, char **argv) {
                 LOG_DIE("Invalid -n value, must be 0 or greater");
 
         /* Print startup banner */
-        if (!quiet_mode) {
-                PRINT("%s version %s -- "
-                      "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
-                PRINT("Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>");
-        }
+        PRINT("%s version %s -- "
+              "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
+        PRINT("Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>");
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];

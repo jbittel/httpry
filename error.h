@@ -15,8 +15,10 @@
 #include <syslog.h>
 #include "config.h"
 
+extern int quiet_mode;
+
 /* Macros for logging/displaying status messages */
-#define PRINT(x...) { fprintf(stderr, x); fprintf(stderr, "\n"); }
+#define PRINT(x...) { if (!quiet_mode) { fprintf(stderr, x); fprintf(stderr, "\n"); } }
 #define WARN(x...) { fprintf(stderr, "Warning: " x); fprintf(stderr, "\n"); }
 #define LOG(x...) { openlog(PROG_NAME, LOG_PID, LOG_DAEMON); syslog(LOG_ERR, x); closelog(); }
 #define DIE(x...) { fprintf(stderr, "Error: " x); fprintf(stderr, "\n"); raise(SIGINT); }
