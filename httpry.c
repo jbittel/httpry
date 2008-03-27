@@ -41,6 +41,7 @@ int parse_server_response(char *header_line);
 void handle_signal(int sig);
 void cleanup();
 void print_stats();
+void display_banner();
 void display_usage();
 
 /* Program flags/options, set by arguments or config file */
@@ -479,26 +480,36 @@ void print_stats() {
         return;
 }
 
+/* Display startup/informational banner */
+void display_banner() {
+        PRINT("%s version %s -- "
+              "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
+        PRINT("Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>");
+
+        return;
+}
+
 /* Print program usage information */
 void display_usage() {
-        PRINT("%s version %s", PROG_NAME, PROG_VER);
+        display_banner();
+
         PRINT("Usage: %s [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
               "              [ -s format ] [ -u user ] [ 'expression' ]\n", PROG_NAME);
 
-        PRINT("  -d           run as daemon\n"
-              "  -h           print this help information\n"
-              "  -i device    listen on this interface\n"
-              "  -n count     set number of HTTP packets to parse\n"
-              "  -o file      write output to a file\n"
-              "  -p           disable promiscuous mode\n"
-              "  -q           hide non-critical output\n"
-              "  -r file      read packets from input file\n"
-              "  -s format    specify output format string\n"
-              "  -u user      set process owner\n"
-              "  expression   specify a bpf-style capture filter\n");
+        PRINT("   -d           run as daemon\n"
+              "   -h           print this help information\n"
+              "   -i device    listen on this interface\n"
+              "   -n count     set number of HTTP packets to parse\n"
+              "   -o file      write output to a file\n"
+              "   -p           disable promiscuous mode\n"
+              "   -q           hide non-critical output\n"
+              "   -r file      read packets from input file\n"
+              "   -s format    specify output format string\n"
+              "   -u user      set process owner\n"
+              "   expression   specify a bpf-style capture filter\n");
 
         PRINT("Additional information can be found at:\n"
-              "    http://dumpsterventures.com/jason/httpry\n");
+              "   http://dumpsterventures.com/jason/httpry\n");
 
         exit(EXIT_SUCCESS);
 }
@@ -534,10 +545,7 @@ int main(int argc, char **argv) {
         if (parse_count < 0)
                 LOG_DIE("Invalid -n value, must be 0 or greater");
 
-        /* Print startup banner */
-        PRINT("%s version %s -- "
-              "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
-        PRINT("Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>");
+        display_banner();
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];

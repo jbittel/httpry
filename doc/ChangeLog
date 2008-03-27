@@ -10,7 +10,7 @@ version 0.1.3
    * fixed broken defines that caused pcap_breakloop to not be used
    * fixed the program returning success even if the capture loop failed
    * fixed a potential crash if the program was running in debug mode
-   * added a quiet option (-q) to skip non-critical output
+   * added a quiet option (-q) to suppress non-critical output
 
 version 0.1.2
    * added support for multiple datalink packet header types
@@ -56,7 +56,7 @@ version 0.0.9
    * '-' can be specified for the filename to force STDOUT
 
 version 0.0.8
-   * crash on exit when reading from an input file
+   * fixed crash on exit when reading from an input file
    * handle whitespace properly in config file lines
    * allow user to specify fields to output
    * removed extended options switch (-x)
@@ -71,8 +71,8 @@ version 0.0.7
    * fixed bug in packet count check
    * cleaned up initialization logic in main()
    * added config.h for setting compile time program defaults
-   * option to display extended packet information (-x)
-   * option to dump binary capture output file (-b)
+   * added option to display extended packet information (-x)
+   * added option to dump binary capture output file (-b)
    * basic packet capture/parsing stats at program termination
    * program now compiles cleanly as strict ANSI C
 

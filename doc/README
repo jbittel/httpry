@@ -103,7 +103,7 @@ Do not put the NIC in promiscuous mode on startup. Note that the NIC could
 already be in that mode for another reason.
 
 -q
-Hide non-critical output (startup banner, statistics, etc.).
+Suppress non-critical output (startup banner, statistics, etc.).
 
 -r file
 Provide an input capture file to read from instead of performing
