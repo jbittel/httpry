@@ -489,10 +489,8 @@ void display_banner() {
         return;
 }
 
-/* Print program usage information */
+/* Display program usage information */
 void display_usage() {
-        display_banner();
-
         PRINT("Usage: %s [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
               "              [ -s format ] [ -u user ] [ 'expression' ]\n", PROG_NAME);
 
@@ -522,6 +520,8 @@ int main(int argc, char **argv) {
 
         signal(SIGINT, &handle_signal);
 
+        display_banner();
+
         /* Process command line arguments */
         while ((opt = getopt(argc, argv, "dhpqi:n:o:r:s:u:")) != -1) {
                 switch (opt) {
@@ -544,8 +544,6 @@ int main(int argc, char **argv) {
 
         if (parse_count < 0)
                 LOG_DIE("Invalid -n value, must be 0 or greater");
-
-        display_banner();
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];
