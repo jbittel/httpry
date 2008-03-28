@@ -491,23 +491,25 @@ void display_banner() {
 
 /* Display program usage information */
 void display_usage() {
-        PRINT("Usage: %s [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
-              "              [ -s format ] [ -u user ] [ 'expression' ]\n", PROG_NAME);
+        display_banner();
 
-        PRINT("   -d           run as daemon\n"
-              "   -h           print this help information\n"
-              "   -i device    listen on this interface\n"
-              "   -n count     set number of HTTP packets to parse\n"
-              "   -o file      write output to a file\n"
-              "   -p           disable promiscuous mode\n"
-              "   -q           hide non-critical output\n"
-              "   -r file      read packets from input file\n"
-              "   -s format    specify output format string\n"
-              "   -u user      set process owner\n"
-              "   expression   specify a bpf-style capture filter\n");
+        printf("Usage: %s [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
+               "              [ -s format ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
-        PRINT("Additional information can be found at:\n"
-              "   http://dumpsterventures.com/jason/httpry\n");
+        printf("   -d           run as daemon\n"
+               "   -h           print this help information\n"
+               "   -i device    listen on this interface\n"
+               "   -n count     set number of HTTP packets to parse\n"
+               "   -o file      write output to a file\n"
+               "   -p           disable promiscuous mode\n"
+               "   -q           suppress non-critical output\n"
+               "   -r file      read packets from input file\n"
+               "   -s format    specify output format string\n"
+               "   -u user      set process owner\n"
+               "   expression   specify a bpf-style capture filter\n\n");
+
+        printf("Additional information can be found at:\n"
+               "   http://dumpsterventures.com/jason/httpry\n\n");
 
         exit(EXIT_SUCCESS);
 }
@@ -519,8 +521,6 @@ int main(int argc, char **argv) {
         int loop_status;
 
         signal(SIGINT, &handle_signal);
-
-        display_banner();
 
         /* Process command line arguments */
         while ((opt = getopt(argc, argv, "dhpqi:n:o:r:s:u:")) != -1) {
@@ -538,6 +538,8 @@ int main(int argc, char **argv) {
                         default: display_usage();
                 }
         }
+
+        display_banner();
 
         if (daemon_mode && !use_outfile)
                 LOG_DIE("Daemon mode requires an output file");
