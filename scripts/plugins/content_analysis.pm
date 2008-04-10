@@ -289,7 +289,7 @@ sub content_check {
 # epochstamp value causes all flows inactive longer than $FLOW_TIMEOUT to be
 # flushed, while passing a zero forces all active flows to be flushed
 #
-# Returns the next potential epoch value at which flows could time out
+# Returns the next epoch value at which flows could potentially time out
 # -----------------------------------------------------------------------------
 sub timeout_flows {
         my $epochstamp = shift;
@@ -362,7 +362,7 @@ sub write_summary_file {
 
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
-        print OUTFILE "\n\nCLIENT FLOWS SUMMARY\n\n";
+        print OUTFILE "\n\nCONTENT ANALYSIS SUMMARY\n\n";
         print OUTFILE "Generated:      " . localtime() . "\n";
         print OUTFILE "Flow count:     $flow_cnt\n";
         print OUTFILE "Flow lines:     $flow_line_cnt\n";
