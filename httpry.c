@@ -330,24 +330,24 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 char *parse_header_line(char *header_line) {
         static char *pos;
         char *tmp;
-        int skip;
 
         if (header_line) pos = header_line;
 
-        tmp = strchr(pos, '\r');
-        skip = 2;
-        if (!tmp) {
-                /* We might have non-standard line endings */
-                tmp = strchr(pos, '\n');
-                if (!tmp) return NULL;
-                skip = 1;
+        /* Search for a '\n' line terminator, skipping a leading
+           '\r' if it exists (per RFC2616 section 19.3) */
+        tmp = strchr(pos, '\n');
+        if (!tmp) return NULL;
+        *tmp = '\0';
+        if (*(tmp - 1) == '\r') {
+                tmp--;
+                *tmp = '\0';
         }
 
         if (tmp == pos) return NULL; /* Reached the end of the header */
 
-        *tmp = '\0';
         header_line = pos;
-        pos = tmp + skip;
+        while (*tmp == '\0') tmp++;
+        pos = tmp;
 
         return header_line;
 }
