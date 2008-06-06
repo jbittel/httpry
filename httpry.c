@@ -338,10 +338,7 @@ char *parse_header_line(char *header_line) {
         tmp = strchr(pos, '\n');
         if (!tmp) return NULL;
         *tmp = '\0';
-        if (*(tmp - 1) == '\r') {
-                tmp--;
-                *tmp = '\0';
-        }
+        if (*(tmp - 1) == '\r') *(--tmp) = '\0';
 
         if (tmp == pos) return NULL; /* Reached the end of the header */
 

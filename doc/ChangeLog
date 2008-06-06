@@ -1,8 +1,11 @@
 This is the high level list of changes for each httpry release. Note that
-this changelog does not refer to the log file parsing scripts, which are
-often updated significantly between releases as well. It only lists notable
-changes and fixes to the core httpry program.
+this changelog does not include changes to the log file parsing scripts,
+which are often updated significantly between releases as well. It only
+lists notable changes and fixes to the core httpry program.
 
+
+version 0.1.4
+   * improved efficiency of header line parsing
 
 version 0.1.3
    * improved parsing of non-standard spacing and line terminators
