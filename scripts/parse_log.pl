@@ -96,7 +96,7 @@ sub read_plugin_dir {
 
         print "Using plugin directory '$plugin_dir'\n" if $verbose;
 
-        # Extract all plugins found in directory
+        # Load all plugins found in directory
         opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot find or access '$plugin_dir': $!\n";
 
         foreach (grep /\.pm$/, readdir(PLUGINDIR)) {

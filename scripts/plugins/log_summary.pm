@@ -9,7 +9,6 @@
 package log_summary;
 
 use warnings;
-use File::Basename;
 
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
