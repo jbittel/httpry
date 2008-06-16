@@ -255,8 +255,8 @@ sub content_check {
                         }
 
                         # Rule 3: If stand-alone word (bracketed by non-alpha chars), add 1
-                        if ((substr($uri, $term_offset-1, 1) !~ /[A-Za-z]/) &&
-                            (substr($uri, $term_offset+length($term), 1) !~ /[A-Za-z]/)) {
+                        if ((substr($uri, $term_offset-1, 1) !~ /[a-z]/) &&
+                            (substr($uri, $term_offset+length($term), 1) !~ /[a-z]/)) {
                                 $score += 1;
                         }
 
