@@ -81,6 +81,9 @@ sub load_config {
         # Load config file; by default in same directory as plugin
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
+        } else {
+                warn "Error: No config file found\n";
+                return 1;
         }
 
         # Check for required options and combinations from the configuration
