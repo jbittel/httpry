@@ -30,6 +30,7 @@
 
 /* HTTP specific constants; should never change! */
 #define GET_STRING "GET "
+#define POST_STRING "POST "
 #define HEAD_STRING "HEAD "
 #define HTTP_STRING "HTTP/"
 

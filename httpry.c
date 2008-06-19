@@ -274,6 +274,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         /* Check if we appear to have a valid request or response */
         /* TODO: Add support for any request method */
         if (strncmp(data, GET_STRING, strlen(GET_STRING)) == 0 ||
+            strncmp(data, POST_STRING, strlen(POST_STRING)) == 0 ||
             strncmp(data, HEAD_STRING, strlen(HEAD_STRING)) == 0) {
                 is_request = 1;
         } else if (strncmp(data, HTTP_STRING, strlen(HTTP_STRING)) == 0) {
