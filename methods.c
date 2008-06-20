@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include "error.h"
 #include "methods.h"
+#include "utility.h"
 
 #define BLOCKSIZE 5
 
@@ -25,7 +26,6 @@ static char **methods = NULL;
 void parse_methods_string(char *str) {
         char *method, *tmp, *i, *c;
         int num_methods = 0;
-        int len;
 
 #ifdef DEBUG
         ASSERT(str);
@@ -40,10 +40,7 @@ void parse_methods_string(char *str) {
         strcpy(tmp, str);
 
         for (i = tmp; (method = strtok(i, ",")); i = NULL) {
-                while (isspace(*method)) method++;
-                len = strlen(method);
-                while (len && isspace(*(method + len - 1)))
-                        *(method + (len--) - 1) = '\0';
+                method = strip_whitespace(method);
 
                 for (c = method; *c != '\0'; c++) {
                         *c = toupper(*c);
@@ -138,11 +135,13 @@ int is_request_method(const char *str) {
 
 #ifdef DEBUG
         ASSERT(methods);
+        ASSERT(str);
 #endif
 
-        /* TODO: what if str is shorter than *i? */
+        if (strlen(str) == 0) return 0;
+
         for (i = methods; *i; i++) {
-                if (strncmp(*i, str, strlen(*i)) == 0) return 1;
+                if (strncmp(str, *i, strlen(*i)) == 0) return 1;
         }
 
         return 0;

@@ -11,7 +11,7 @@ CCFLAGS  	= -Wall -O3 -funroll-loops -I/usr/include/pcap -I/usr/local/include/pc
 DEBUGFLAGS	= -Wall -g -DDEBUG -I/usr/include/pcap -I/usr/local/include/pcap
 LIBS		= -lpcap
 PROG		= httpry
-FILES		= httpry.c format.c methods.c
+FILES		= httpry.c format.c methods.c utility.c
 
 all: $(PROG)
 
