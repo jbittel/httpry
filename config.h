@@ -22,6 +22,10 @@
    *** Can be overridden with -s */
 #define DEFAULT_FORMAT "timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase"
 
+/* Default request methods; a comma-delimited list similar to the format string
+   *** Can be overridden with -m */
+#define DEFAULT_METHODS "GET,HEAD,POST"
+
 /* Location to store the PID file when running in daemon mode */
 #define PID_FILE "/var/run/httpry.pid"
 
@@ -29,9 +33,6 @@
 #define NULL_FILE "/dev/null"
 
 /* HTTP specific constants; should never change! */
-#define GET_STRING "GET "
-#define POST_STRING "POST "
-#define HEAD_STRING "HEAD "
 #define HTTP_STRING "HTTP/"
 
 #endif /* ! _HAVE_CONFIG_H */

@@ -6,6 +6,7 @@ lists notable changes and fixes to the core httpry program.
 
 version 0.1.4
    * improved efficiency of header line parsing
+   * added support for parsing any request method (-m)
 
 version 0.1.3
    * improved parsing of non-standard spacing and line terminators

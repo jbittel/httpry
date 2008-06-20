@@ -75,8 +75,8 @@ Running the program with the -h switch will print out an abbreviated
 description of the available options. This section describes these options
 in greater detail.
 
-httpry [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]
-       [ -s format ] [ -u user ] [ 'expression' ]
+httpry [ -dhpq ] [ -i device ] [-m methods ] [ -n count ] [ -o file ]
+       [ -r file ] [ -s format ] [ -u user ] [ 'expression' ]
 
 -d
 Run the program as a daemon process. All program status output will be sent
@@ -90,6 +90,10 @@ Display a brief description of these options.
 Specify an ethernet interface for the program to listen on. If not specified,
 the program will poll the system for a list of interfaces and select the
 first one found.
+
+-m methods
+Provide a comma-delimited string that specifies the request methods to parse.
+Defaults to "GET,HEAD,POST" if this option is not specified.
 
 -n count
 Parse this number of HTTP packets and then exit. Defaults to 0, which means
@@ -109,7 +113,7 @@ Suppress non-critical output (startup banner, statistics, etc.).
 Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
 
--s string
+-s format
 Specify a comma-delimited string that defines the parsed HTTP data to output.
 See the doc/format-string file for further information regarding available
 options and syntax.

@@ -26,6 +26,7 @@
 #include "config.h"
 #include "error.h"
 #include "format.h"
+#include "methods.h"
 #include "tcp.h"
 
 /* Function declarations */
@@ -53,7 +54,8 @@ static char *capfilter = NULL;
 static char *use_outfile = NULL;
 static int set_promisc = 1;
 static char *new_user = NULL;
-static char *out_format = NULL;
+static char *format_str = NULL;
+static char *methods_str = NULL;
 int quiet_mode = 0;               /* Defined as extern in error.h */
 
 static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
@@ -63,6 +65,7 @@ static unsigned start_time = 0;   /* Start tick for statistics calculations */
 static int header_offset = 0;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
+static char default_methods[] = DEFAULT_METHODS;
 
 /* Find and prepare ethernet device for capturing */
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter) {
@@ -272,10 +275,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         if (size_data <= 0) return;
 
         /* Check if we appear to have a valid request or response */
-        /* TODO: Add support for any request method */
-        if (strncmp(data, GET_STRING, strlen(GET_STRING)) == 0 ||
-            strncmp(data, POST_STRING, strlen(POST_STRING)) == 0 ||
-            strncmp(data, HEAD_STRING, strlen(HEAD_STRING)) == 0) {
+        if (is_request_method(data)) {
                 is_request = 1;
         } else if (strncmp(data, HTTP_STRING, strlen(HTTP_STRING)) == 0) {
                 is_response = 1;
@@ -442,6 +442,7 @@ void cleanup() {
         fflush(NULL);
 
         free_format();
+        free_methods();
         if (buf) free(buf);
 
         /* Note that this won't get removed if we've switched to a
@@ -491,12 +492,13 @@ void display_banner() {
 void display_usage() {
         display_banner();
 
-        printf("Usage: %s [ -dhpq ] [ -i device ] [ -n count ] [ -o file ] [ -r file ]\n"
-               "              [ -s format ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
+        printf("Usage: %s [ -dhpq ] [ -i device ] [ -m methods ] [ -n count ] [ -o file ]\n"
+                             "[ -r file ] [ -s format ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
         printf("   -d           run as daemon\n"
                "   -h           print this help information\n"
                "   -i device    listen on this interface\n"
+               "   -m methods   specify request methods to parse\n"
                "   -n count     set number of HTTP packets to parse\n"
                "   -o file      write output to a file\n"
                "   -p           disable promiscuous mode\n"
@@ -521,17 +523,18 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "dhpqi:n:o:r:s:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "dhpqi:m:n:o:r:s:u:")) != -1) {
                 switch (opt) {
                         case 'd': daemon_mode = 1; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
+                        case 'm': methods_str = optarg; break;
                         case 'n': parse_count = atoi(optarg); break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
                         case 'q': quiet_mode = 1; break;
                         case 'r': use_infile = optarg; break;
-                        case 's': out_format = optarg; break;
+                        case 's': format_str = optarg; break;
                         case 'u': new_user = optarg; break;
                         default: display_usage();
                 }
@@ -550,8 +553,12 @@ int main(int argc, char **argv) {
         } else {
                 capfilter = default_capfilter;
         }
-        if (!out_format) out_format = default_format;
-        parse_format_string(out_format);
+
+        if (!format_str) format_str = default_format;
+        parse_format_string(format_str);
+
+        if (!methods_str) methods_str = default_methods;
+        parse_methods_string(methods_str);
 
         /* Prepare output file as necessary */
         if (use_outfile) {
