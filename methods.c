@@ -16,7 +16,7 @@
 #include "methods.h"
 #include "utility.h"
 
-#define BLOCKSIZE 5
+#define BLOCKSIZE 4
 
 int insert_method(char *str);
 
@@ -63,10 +63,11 @@ void parse_methods_string(char *str) {
                 if (methods_cnt > (BLOCKSIZE * blocks_cnt)) blocks_cnt++;
         }
 
+        PRINT("----------------------------");
         PRINT("Block size:         %d", BLOCKSIZE);
         PRINT("Block count:        %d", blocks_cnt);
         PRINT("Total slots:        %d", (BLOCKSIZE * blocks_cnt));
-        PRINT("Terms inserted:     %d", methods_cnt);
+        PRINT("Methods inserted:   %d", methods_cnt);
         PRINT("Empty slots:        %d", (BLOCKSIZE * blocks_cnt) - methods_cnt);
         PRINT("----------------------------");
 #endif
@@ -120,6 +121,8 @@ int insert_method(char *method) {
                 mv = methods + size - 1;
         }
 
+        /* One NULL slot is required at the end of the list
+           for use as a loop terminator */
         mv++;
         *mv = NULL;
 

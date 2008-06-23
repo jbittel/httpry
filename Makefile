@@ -20,22 +20,22 @@ $(PROG): $(FILES)
 
 debug: $(FILES)
 	@echo "--------------------------------------------------"
-	@echo " Compiling $(PROG) in debug mode"
+	@echo "Compiling $(PROG) in debug mode"
 	@echo ""
-	@echo " This will cause the program to run slightly"
-	@echo " slower, but enables additional data verification"
-	@echo " and sanity checks. Recommended for testing, not"
-	@echo " production usage."
+	@echo "This will cause the program to run slightly"
+	@echo "slower, but enables additional data verification"
+	@echo "and sanity checks. Recommended for testing, not"
+	@echo "production usage."
 	@echo "--------------------------------------------------"
 	@echo ""
 	$(CC) $(DEBUGFLAGS) -o $(PROG) $(FILES) $(LIBS)
 
 install: $(PROG)
 	@echo "--------------------------------------------------"
-	@echo " Installing $(PROG) into /usr/sbin/"
+	@echo "Installing $(PROG) into /usr/sbin/"
 	@echo ""
-	@echo " You will need to move the Perl scripts and other"
-	@echo " tools to a location of your choosing manually"
+	@echo "You will need to move the Perl scripts and other"
+	@echo "tools to a location of your choosing manually"
 	@echo "--------------------------------------------------"
 	@echo ""
 	cp -f $(PROG) /usr/sbin/
