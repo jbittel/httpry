@@ -24,7 +24,7 @@ static char **methods = NULL;
 
 /* Parse and insert methods from input string */
 void parse_methods_string(char *str) {
-        char *method, *tmp, *i, *c;
+        char *method, *tmp, *i;
         int num_methods = 0;
 
 #ifdef DEBUG
@@ -41,10 +41,7 @@ void parse_methods_string(char *str) {
 
         for (i = tmp; (method = strtok(i, ",")); i = NULL) {
                 method = strip_whitespace(method);
-
-                for (c = method; *c != '\0'; c++) {
-                        *c = toupper(*c);
-                }
+                method = str_tolower(method);
 
                 if (strlen(method) == 0) continue;
                 if (insert_method(method)) num_methods++;
@@ -129,7 +126,7 @@ int insert_method(char *method) {
         return 1;
 }
 
-/* Search paramter string for a matching method */
+/* Search parameter string for a matching method */
 int is_request_method(const char *str) {
         char **i;
 
@@ -141,7 +138,7 @@ int is_request_method(const char *str) {
         if (strlen(str) == 0) return 0;
 
         for (i = methods; *i; i++) {
-                if (strncmp(str, *i, strlen(*i)) == 0) return 1;
+                if (__strncasecmp(str, *i, strlen(*i)) == 0) return 1;
         }
 
         return 0;

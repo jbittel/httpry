@@ -33,24 +33,38 @@ char *strip_whitespace(char *str) {
         return str;
 }
 
-/* Function originated as strcasecmp() from the GNU C library; modified
-   from its original format since s2 will always be lowercase
+/* Convert the paramter string to lowercase */
+char *str_tolower(char *str) {
+        char *c;
 
-   Compare s1 and s2, ignoring case of s1, returning less than, equal
-   to or greater than zero if s1 is lexiographically less than, equal
-   to or greater than s2.  */
-int strcmp_name(const char *s1, const char *s2) {
+#ifdef DEBUG
+        ASSERT(str);
+        ASSERT(strlen(str) > 0);
+#endif
+
+        for (c = str; *c != '\0'; c++) {
+                *c = tolower(*c);
+        }
+
+        return str;
+}
+
+/* Function originated as strcasecmp() from the GNU C library; modified
+   from its original format since s2 will always be lowercase, and to
+   take a max comparison length */
+int __strncasecmp(const char *s1, const char *s2, int len) {
         unsigned char c1, c2;
 
 #ifdef DEBUG
         ASSERT(s1 != s2);
+        ASSERT(len > 0);
 #endif
 
         do {
                 c1 = tolower(*s1++);
                 c2 = *s2++;
                 if (c2 == '\0') break;
-        } while (c1 == c2);
+        } while ((c1 == c2) && (--len > 0));
 
         return c1 - c2;
 }

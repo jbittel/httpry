@@ -45,7 +45,7 @@ static NODE *head = NULL;
 
 /* Parse and insert output fields from format string */
 void parse_format_string(char *str) {
-        char *name, *tmp, *i, *c;
+        char *name, *tmp, *i;
         int num_nodes = 0;
 
 #ifdef DEBUG
@@ -63,9 +63,7 @@ void parse_format_string(char *str) {
         for (i = tmp; (name = strtok(i, ",")); i = NULL) {
                 /* Normalize input field text */
                 name = strip_whitespace(name);
-                for (c = name; *c != '\0'; c++) {
-                        *c = tolower(*c);
-                }
+                name = str_tolower(name);
 
                 if (strlen(name) == 0) continue;
                 if (insert_node(name)) num_nodes++;
@@ -236,7 +234,7 @@ NODE *hash_lookup(char *str) {
 #endif
 
         for (node = output_fields[hash(str)]; node != NULL; node = node->next)
-                if (strcmp_name(str, node->name) == 0)
+                if (__strncasecmp(str, node->name, strlen(node->name)) == 0)
                         return node;
 
         return NULL;
