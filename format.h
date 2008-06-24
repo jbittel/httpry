@@ -13,8 +13,8 @@
 
 void parse_format_string(char *str);
 void insert_value(char *name, char *value);
-void print_header_line();
-void print_values();
+void print_format_list();
+void print_format_values();
 void free_format();
 
 #endif /* ! _HAVE_FORMAT_H */

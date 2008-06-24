@@ -317,7 +317,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
         insert_value("timestamp", ts);
 
-        print_values();
+        print_format_values();
 
         num_parsed++;
         if (parse_count && (num_parsed >= parse_count))
@@ -567,7 +567,7 @@ int main(int argc, char **argv) {
                 PRINT("Writing output to file: %s", use_outfile);
 
                 printf("# %s version %s\n", PROG_NAME, PROG_VER);
-                print_header_line();
+                print_format_list();
         }
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);

@@ -40,7 +40,7 @@ void parse_methods_string(char *str) {
         strcpy(tmp, str);
 
         for (i = tmp; (method = strtok(i, ",")); i = NULL) {
-                method = strip_whitespace(method);
+                method = str_strip_whitespace(method);
                 method = str_tolower(method);
 
                 if (strlen(method) == 0) continue;
@@ -141,7 +141,7 @@ int is_request_method(const char *str) {
         if (strlen(str) == 0) return 0;
 
         for (i = methods; *i; i++) {
-                if (__strncasecmp(str, *i, strlen(*i)) == 0) return 1;
+                if (str_compare(str, *i, strlen(*i)) == 0) return 1;
         }
 
         return 0;

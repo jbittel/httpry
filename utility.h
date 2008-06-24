@@ -11,8 +11,8 @@
 #ifndef _HAVE_UTILITY_H
 #define _HAVE_UTILITY_H
 
-char *strip_whitespace(char *str);
+char *str_strip_whitespace(char *str);
 char *str_tolower(char *str);
-int __strncasecmp(const char *s1, const char *s2, int len);
+int str_compare(const char *str1, const char *str2, int len);
 
 #endif /* ! _HAVE_UTILITY_H */

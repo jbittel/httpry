@@ -38,7 +38,7 @@ struct node {
 
 NODE *insert_node(char *str);
 NODE *hash_lookup(char *str);
-unsigned hash(char *str);
+unsigned hash_string(char *str);
 
 static NODE *output_fields[HASHSIZE];
 static NODE *head = NULL;
@@ -62,7 +62,7 @@ void parse_format_string(char *str) {
 
         for (i = tmp; (name = strtok(i, ",")); i = NULL) {
                 /* Normalize input field text */
-                name = strip_whitespace(name);
+                name = str_strip_whitespace(name);
                 name = str_tolower(name);
 
                 if (strlen(name) == 0) continue;
@@ -113,7 +113,7 @@ NODE *insert_node(char *name) {
                 if ((node = (NODE *) malloc(sizeof(NODE))) == NULL)
                         LOG_DIE("Cannot allocate memory for new node");
 
-                hashval = hash(name);
+                hashval = hash_string(name);
 
 #ifdef DEBUG
         ASSERT((hashval >= 0) && (hashval < HASHSIZE));
@@ -160,7 +160,7 @@ void insert_value(char *name, char *value) {
 }
 
 /* Print a list of all field names contained in the output format */
-void print_header_line() {
+void print_format_list() {
         NODE *node = head;
 
 #ifdef DEBUG
@@ -181,7 +181,7 @@ void print_header_line() {
 
 /* Destructively print each node value; once printed, each existing
    value is assigned to NULL to clear it for the next packet */
-void print_values() {
+void print_format_values() {
         NODE *node = head;
 
 #ifdef DEBUG
@@ -230,18 +230,18 @@ NODE *hash_lookup(char *str) {
 #ifdef DEBUG
         ASSERT(str);
         ASSERT(strlen(str) > 0);
-        ASSERT((hash(str) >= 0) && (hash(str) < HASHSIZE));
+        ASSERT((hash_string(str) >= 0) && (hash_string(str) < HASHSIZE));
 #endif
 
-        for (node = output_fields[hash(str)]; node != NULL; node = node->next)
-                if (__strncasecmp(str, node->name, strlen(node->name)) == 0)
+        for (node = output_fields[hash_string(str)]; node != NULL; node = node->next)
+                if (str_compare(str, node->name, strlen(node->name)) == 0)
                         return node;
 
         return NULL;
 }
 
 /* Use the djb2 hash function; supposed to be good for strings */
-unsigned hash(char *str) {
+unsigned hash_string(char *str) {
         unsigned hashval;
 
 #ifdef DEBUG
