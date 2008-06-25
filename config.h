@@ -32,7 +32,10 @@
 /* Where to send unnecessary output */
 #define NULL_FILE "/dev/null"
 
-/* HTTP specific constants; should never change! */
+/* Character to print when a field has no associated data */
+#define EMPTY_FIELD '-'
+
+/* HTTP specific constant; should never change! */
 #define HTTP_STRING "HTTP/"
 
 #endif /* ! _HAVE_CONFIG_H */

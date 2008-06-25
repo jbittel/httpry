@@ -193,7 +193,7 @@ void print_format_values() {
                         printf("%s\t", node->value);
                         node->value = NULL;
                 } else {
-                        printf("-\t");
+                        printf("%c\t", EMPTY_FIELD);
                 }
 
                 node = node->list;
