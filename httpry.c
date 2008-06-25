@@ -314,7 +314,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
-        strftime(ts, MAX_TIME_LEN, "%m/%d/%Y %H:%M:%S", pkt_time);
+        strftime(ts, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", pkt_time);
         insert_value("timestamp", ts);
 
         print_format_values();
