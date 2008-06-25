@@ -8,6 +8,17 @@
 
 */
 
+/*
+   The methods data structure is stored as a dynamic array of
+   strings. The array is allocated at run-time (in BLOCKSIZE
+   chunks) to allow the array to handle an arbitrary number of
+   methods to parse without significant wasted space. It's
+   possible that a tree or similar structure could be more
+   efficient in some circumstances, but given the low number
+   of methods used in most runs, this method is simple and
+   effective.
+*/
+
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>

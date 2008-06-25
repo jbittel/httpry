@@ -190,11 +190,12 @@ void print_format_values() {
 
         while (node) {
                 if (node->value) {
-                        printf("%s\t", node->value);
+                        printf("%s", node->value);
                         node->value = NULL;
                 } else {
-                        printf("%c\t", EMPTY_FIELD);
+                        printf("%c", EMPTY_FIELD);
                 }
+                printf("%s", FIELD_DELIM);
 
                 node = node->list;
         }

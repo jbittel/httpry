@@ -35,6 +35,9 @@
 /* Character to print when a field has no associated data */
 #define EMPTY_FIELD '-'
 
+/* Delimiter that separates output fields */
+#define FIELD_DELIM "\t"
+
 /* HTTP specific constant; should never change! */
 #define HTTP_STRING "HTTP/"
 
