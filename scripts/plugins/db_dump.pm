@@ -70,23 +70,19 @@ sub main {
         return unless exists $record->{"source-ip"};
         return unless exists $record->{"dest-ip"};
         
-        # Reformat packet date/time string
-        $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)/;
-        $timestamp = "$3-$1-$2 $4:$5:$6";
-
         if ($record->{"direction"} eq '>') {
                 return unless exists $record->{"host"};
                 return unless exists $record->{"request-uri"};
 
                 $sql = qq{ INSERT INTO client_data (timestamp, pktstamp, src_ip, dst_ip, hostname, uri)
-                           VALUES ('$now', '$timestamp', '$record->{"source-ip"}', '$record->{"dest-ip"}',
+                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}', '$record->{"dest-ip"}',
                            '$record->{"host"}', '$record->{"request_uri"}') };
         } elsif ($record->{"direction"} eq '<') {
                 return unless exists $record->{"status-code"};
                 return unless exists $record->{"reason-phrase"};
 
                 $sql = qq{ INSERT INTO server_data (timestamp, pktstamp, src_ip, dst_ip, status_code, reason_phrase)
-                           VALUES ('$now', '$timestamp', '$record->{"source-ip"}', '$record->{"dest-ip"}',
+                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}', '$record->{"dest-ip"}',
                            '$record->{"status-code"}', '$record->{"reason-phrase"}') };
         }
 

@@ -25,6 +25,7 @@ my $flow_line_cnt = 0;
 my $flow_min_len = 999999;
 my $flow_max_len = 0;
 my $max_concurrent = 0;
+my $epoch_boundary = 0;
 
 # Data structures
 my %active_flow = ();       # Metadata about each active flow
@@ -70,14 +71,6 @@ sub main {
         my $curr_line;
         my $decoded_uri;
 
-        # Retain this variable across function calls
-        BEGIN {
-                my $epoch_boundary = 0;
-
-                sub get_epoch_boundary { return $epoch_boundary; }
-                sub set_epoch_boundary { $epoch_boundary = shift; }
-        }
-
         return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
         return unless exists $record->{"timestamp"};
         return unless exists $record->{"source-ip"};
@@ -91,8 +84,8 @@ sub main {
         $curr_line = "$record->{'timestamp'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
 
         # Convert timestamp of current record to epoch seconds
-        $record->{"timestamp"} =~ /(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d)\:(\d\d)\:(\d\d)/;
-        $epochstamp = timelocal($6, $5, $4, $2, $1 - 1, $3);
+        $record->{"timestamp"} =~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
+        $epochstamp = timelocal($6, $5, $4, $3, $2-1, $1);
 
         if ((keys %active_flow) > $max_concurrent) {
                 $max_concurrent = keys %active_flow;
@@ -100,8 +93,8 @@ sub main {
 
         # Only call timeout_flows() if we've crossed a time boundary; i.e., 
         # if there's actually a chance for a flow to end
-        if (&get_epoch_boundary() <= $epochstamp) {
-                &set_epoch_boundary(&timeout_flows($epochstamp));
+        if ($epoch_boundary <= $epochstamp) {
+                $epoch_boundary = &timeout_flows($epochstamp);
         }
 
         # Begin a new flow if one doesn't exist
