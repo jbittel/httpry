@@ -53,24 +53,27 @@ sub main {
         return unless exists $record->{'direction'};
         return unless exists $record->{'source-ip'};
         return unless exists $record->{'dest-ip'};
-        return unless exists $record->{'timestamp'};
-        return unless exists $record->{'method'};
-        return unless exists $record->{'request-uri'};
-        return unless exists $record->{'http-version'};
+#        return unless exists $record->{'timestamp'};
+#        return unless exists $record->{'method'};
+#        return unless exists $record->{'request-uri'};
+#        return unless exists $record->{'http-version'};
 
         if ($record->{'direction'} eq '>') {
                 $request_num++;
                 $line = "";
 
-                # Build host field
-                if (exists $record->{'host'}) {
-                        $line .= $record->{'host'};
-                } else {
-                        $line .= $record->{'dest-ip'};
-                }
+                # Begin with client (remote host) address
+                $line .= $record->{'source-ip'};
 
                 # Append ident and authuser fields
-                $line .= " - - ";
+                # NOTE: we populate the ident field with the
+                # hostname/ip of the destination as this field
+                # appears to be used this way by some servers
+                if (exists $record->{'host'}) {
+                        $line .= " $record->{'host'} - ";
+                } else {
+                        $line .= " $record->{'dest-ip'} - ";
+                }
 
                 # Append date field
                 $record->{'timestamp'} =~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
@@ -81,11 +84,22 @@ sub main {
                 # Append request field
                 $line .= " \"$record->{'method'} $record->{'request-uri'} $record->{'http-version'}\"";
 
-#                $requests{$requests->{'source-ip'}_$requests->{'dest-ip'}}->{$request_num} = 
-
-        # TODO: match requests with responses to add the response code
+                if ($ignore_response) {
+                        print $fh "$line - -\n";
+                } else {
+                        push(@{ $requests{"$record->{'source-ip'}$record->{'dest-ip'}"} }, $line);
+                }
         } elsif ($record->{'direction'} eq '<') {
+                if (exists $requests{"$record->{'dest-ip'}$record->{'source-ip'}"}) {
+                        $line = shift(@{ $requests{"$record->{'dest-ip'}$record->{'source-ip'}"} });
+                        return unless $line;
 
+                        if (! @{ $requests{"$record->{'dest-ip'}$record->{'source-ip'}"} }) {
+                                delete $requests{"$record->{'dest-ip'}$record->{'source-ip'}"};
+                        }
+                } else {
+                        return;
+                }
 
                 # Append status code
                 if (exists $record->{'status-code'}) {
@@ -101,6 +115,8 @@ sub main {
                         $line .= " -";
                 }
 
+                # TODO: support combined log format: add referer and user-agent request headers
+
                 print $fh "$line\n";
         }
 
@@ -109,21 +125,6 @@ sub main {
 
 sub end {
         close($fh);
-
-        return;
-}
-
-sub start_request {
-
-        return;
-}
-
-sub find_request {
-
-        return;
-}
-
-sub finish_request {
 
         return;
 }
