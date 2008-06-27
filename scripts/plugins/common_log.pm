@@ -53,12 +53,13 @@ sub main {
         return unless exists $record->{'direction'};
         return unless exists $record->{'source-ip'};
         return unless exists $record->{'dest-ip'};
-#        return unless exists $record->{'timestamp'};
-#        return unless exists $record->{'method'};
-#        return unless exists $record->{'request-uri'};
-#        return unless exists $record->{'http-version'};
 
         if ($record->{'direction'} eq '>') {
+                return unless exists $record->{'timestamp'};
+                return unless exists $record->{'method'};
+                return unless exists $record->{'request-uri'};
+                return unless exists $record->{'http-version'};
+
                 $request_num++;
                 $line = "";
 
@@ -66,9 +67,8 @@ sub main {
                 $line .= $record->{'source-ip'};
 
                 # Append ident and authuser fields
-                # NOTE: we populate the ident field with the
-                # hostname/ip of the destination as this field
-                # appears to be used this way by some servers
+                # NOTE: we use the ident field to display the
+                # hostname/ip of the destination site
                 if (exists $record->{'host'}) {
                         $line .= " $record->{'host'} - ";
                 } else {
