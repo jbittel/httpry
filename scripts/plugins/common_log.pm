@@ -13,8 +13,7 @@ use POSIX qw(strftime mktime);
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-%requests = ();
-$request_num = 0;
+my %requests = ();
 my $fh;
 
 my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec); 
@@ -46,7 +45,7 @@ sub init {
 sub main {
         my $self = shift;
         my $record = shift;
-        my $line;
+        my $line = "";
         my ($sec, $min, $hour, $mday, $mon, $year);
         my $tz_offset;
 
@@ -59,9 +58,6 @@ sub main {
                 return unless exists $record->{'method'};
                 return unless exists $record->{'request-uri'};
                 return unless exists $record->{'http-version'};
-
-                $request_num++;
-                $line = "";
 
                 # Begin with client (remote host) address
                 $line .= $record->{'source-ip'};
@@ -90,6 +86,10 @@ sub main {
                         push(@{ $requests{"$record->{'source-ip'}$record->{'dest-ip'}"} }, $line);
                 }
         } elsif ($record->{'direction'} eq '<') {
+                # This is a bit naive, but functional. Basically we match a request with the
+                # next response found from that IP in the log file. This means that under busy
+                # conditions, the responses could be matched to the wrong request. Currently I
+                # don't have a more accurate way to match them.
                 if (exists $requests{"$record->{'dest-ip'}$record->{'source-ip'}"}) {
                         $line = shift(@{ $requests{"$record->{'dest-ip'}$record->{'source-ip'}"} });
                         return unless $line;

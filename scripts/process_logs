@@ -18,7 +18,7 @@
 tools_dir=""                       # Change this to the location of the perl tool scripts
 logs_dir=""                        # Change this to where you want to store your logs
 log_fn="out.log"                   # Default file name for active log file
-parse_fn="`date +%-m-%-d-%Y`.log"  # Default date format used by rotate_log.pl
+parse_fn="`date +%Y-%-m-%-d`.log"  # Default date format used by rotate_log.pl
 
 # Generalized error sub; useful if you want to add additional error handling
 die() {
@@ -61,5 +61,3 @@ else
                 die "Parse file is not set"
         fi
 fi
-
-exit 0

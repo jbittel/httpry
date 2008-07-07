@@ -93,7 +93,8 @@ first one found.
 
 -m methods
 Provide a comma-delimited string that specifies the request methods to parse.
-Defaults to "GET,HEAD,POST" if this option is not specified.
+Defaults to parsing GET, HEAD and POST requests if this option is not
+specified.
 
 -n count
 Parse this number of HTTP packets and then exit. Defaults to 0, which means
@@ -123,7 +124,7 @@ Specify an alternate user to take ownership of the process and any output
 files. You will need root privileges to do this; it will switch to the new
 user after initialization.
 
-expression
+'expression'
 Specify a bpf-style capture filter, overriding the default. Here are a few
 examples starting with the default filter:
 
@@ -133,5 +134,5 @@ examples starting with the default filter:
 
 These filters will capture all web traffic both directions on two common
 ports, capture only requests made to port 80, and capture requests to port
-80 by a particular host, respectively. See man tcpdump for further
+80 by a particular host, respectively. See 'man tcpdump' for further
 information on the syntax and available primitives.

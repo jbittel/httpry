@@ -13,11 +13,13 @@ directory as the plugin and named as '<plugin name>.cfg'. Additionally, any
 input log file needs to be a valid httpry log with the field specifier at the
 start of the file.
 
-The following Perl modules must be installed to run all scripts: 
+These non-core Perl modules must be installed to run all scripts: 
         DBI
         IO::Compress::Gzip
 
-A summary of the included Perl scripts:
+
+Included Perl scripts:
+---------------------
 
  ./scripts/rotate_log.pl
         Moves an active log file into a specified directory. Also offers
@@ -36,8 +38,17 @@ A summary of the included Perl scripts:
         plugins to load. Most included plugins require a config file, which
         must be located in the same directory as the plugin.
 
+
+Included plugins for parse_log.pl:
+---------------------------------
+
+ ./scripts/plugins/common_log.pm
+        Outputs the log data in the standard common logfile format. This
+        allows webserver log analysis tools to be applied to the captured
+        data.
+
  ./scripts/plugins/content_analysis.pm
-        Breaks the input file into flows which are time delimited blocks of
+        Breaks the input file into flows, which are time delimited blocks of
         log lines by client IP. It then searches for specified keywords and
         scores the flows accordingly. Outputs a summary file listing all
         scored flows, as well as flow data for each scored flow. Requires an
@@ -58,19 +69,21 @@ A summary of the included Perl scripts:
         pointless without 'host' as one of your output fields).
 
  ./scripts/plugins/log_summary.pm
-        Provides extensive information regarding the input files including
+        Provides summary information regarding the input files including
         visited hosts, top talkers and file extensions, along with other
         assorted data. Useful for a high-level overview of the input files.
 
  ./scripts/plugins/sample_plugin.pm
-        An example plugin with no functionality designed as an easy way to
-        see how the plugins are structured and to provide a foundation for
-        writing new plugins.
+        An example plugin with no functionality designed to demonstrate how
+        plugins are structured and to provide a start for new plugins.
 
  ./scripts/plugins/search_terms.pm
         Outputs a raw dump of all entered search terms for a number of the
         major search services. It also calculates the average length of
         extracted search queries.
+
+ ./scripts/plugins/tokenize.pm
+        Outputs a set of tokens grouped by the source IP address.
 
  ./scripts/plugins/xml_format.pm
         Outputs the input log data in XML format.

@@ -23,8 +23,14 @@ httpry_args=""
 
 httpry_start() {
         echo "Starting httpry..."
-        if [ -r /var/run/httpry.pid ] ; then
-                if ps acx | grep -q httpry ; then
+
+        if [ ! -n "${output_file}" ] ; then
+                echo "Error: No output file provided; edit ${0} accordingly"
+                exit 1
+        fi
+
+        if [ -r "/var/run/httpry.pid" ] ; then
+                if [ ps acx | grep -q httpry ] ; then
                         echo "Error: httpry already running with PID `cat /var/run/httpry.pid`"
                         exit 1
                 else
@@ -37,7 +43,7 @@ httpry_start() {
 
 httpry_stop() {
         echo "Stopping httpry..."
-        if [ -r /var/run/httpry.pid ] ; then
+        if [ -r "/var/run/httpry.pid" ] ; then
                 kill `cat /var/run/httpry.pid`
                 rm -f /var/run/httpry.pid
         else

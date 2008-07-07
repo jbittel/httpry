@@ -67,6 +67,7 @@ sub end {
         my $term;
         my $i;
 
+        # TODO: This could use more control over the output style and format
         foreach $ip (keys %terms) {
                 open(OUT, ">$output_dir/terms_$ip.txt") or
                         die "Error: Cannot open $output_dir/terms_$ip.txt: $!\n";

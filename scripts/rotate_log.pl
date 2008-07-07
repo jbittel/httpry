@@ -55,9 +55,9 @@ sub move_file {
         my $year = (localtime)[5] + 1900;
 
         if (! -e "$dir/$mon-$mday-$year.log") {
-                rename "$file", "$dir/$mon-$mday-$year.log";
+                rename "$file", "$dir/$year-$mon-$mday.log";
         } else {
-                warn "Error: File '$dir/$mon-$mday-$year.log' already exists\n";
+                warn "Error: File '$dir/$year-$mon-$mday.log' already exists\n";
         }
 
         return;

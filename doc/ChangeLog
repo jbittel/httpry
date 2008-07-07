@@ -7,11 +7,12 @@ lists notable changes and fixes to the core httpry program.
 version 0.1.4
    * improved efficiency of header line parsing
    * added support for parsing any request method (-m)
+   * modified date/time stamp to be more consistent with ISO 8601
 
 version 0.1.3
    * improved parsing of non-standard spacing and line terminators
    * fixed compiling under FreeBSD
-   * fixed broken defines that caused pcap_breakloop to not be used
+   * removed broken conditionals that caused pcap_breakloop to not be used
    * fixed the program returning success even if the capture loop failed
    * fixed a potential crash if the program was running in debug mode
    * added a quiet option (-q) to suppress non-critical output

@@ -2,7 +2,7 @@
 .SH NAME
 httpry \- HTTP logging and information retrieval tool
 .SH SYNOPSIS
-.B httpry [ -dp ] [ -i device ] [ -n count ] [ -o file ] [ -r file ] [ -s format ] [ -u user ] [ 'expression' ]
+.B httpry [ -dpq ] [ -i device ] [ -m methods ] [ -n count ] [ -o file ] [ -r file ] [ -s format ] [ -u user ] [ 'expression' ]
 .br
 .B httpry -h
 .br
@@ -24,6 +24,10 @@ Display a brief description of these options.
 Specify an ethernet interface for the program to listen on. If not specified,
 the program will poll the system for a list of interfaces and select the
 first one found.
+.IP "-m \fImethods\fP"
+Provide a comma-delimited string that specifies the request methods to parse.
+Defaults to parsing GET, HEAD and POST requests if this option is not
+specified.
 .IP "-n \fIcount\fP"
 Parse this number of HTTP packets and then exit. Defaults to 0, which means
 loop forever.
@@ -45,7 +49,7 @@ options and syntax.
 Specify an alternate user to take ownership of the process and any output
 files. You will need root privileges to do this; it will switch to the new
 user after initialization.
-.IP "expression"
+.IP "'expression'"
 Specify a bpf-style capture filter, overriding the default. Here are a few
 examples starting with the default filter:
 
