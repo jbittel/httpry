@@ -1,16 +1,16 @@
 The -s switch allows the user to provide a format string that tells httpry
-which fields to print from each HTTP packet. This string is a comma-
+which fields to print from each HTTP packet. The string is a comma-
 delimited list of elements, examples of which are provided below. The format
 strings can have spaces between elements and are _not_ case sensitive.
 Duplicate field names are ignored.
 
-An example, you say? The default format string looks like:
+An example, you say? The default format string looks like this:
 
    timestamp,source-ip,dest-ip,direction,method,host,request-uri,
       http-version,status-code,reason-phrase
 
-The output string string will look something like this for both a request
-and a response (a '-' character indicates no data for that field):
+The output will look something like this for a request and a response (a '-'
+character indicates no data for that field):
 
    06/05/2006 15:32:31 192.168.0.15 66.102.7.104 > GET www.google.com /
       HTTP/1.1 - -
@@ -18,7 +18,7 @@ and a response (a '-' character indicates no data for that field):
 
 In these two example lines the fields are space delimited for readability,
 but the standard output from httpry is tab delimited. There are nine special
-fields (i.e. outside the body of the HTTP request) that can be specified in
+(i.e. outside the body of the HTTP request) fields that can be specified in
 the format string:
 
    Timestamp        Request-URI
@@ -28,7 +28,7 @@ the format string:
    Method
 
 Most of these are fields from the header line of each request or response.
-The Direction field will print a chevron with '>' indicating a client request
+The direction field will print a chevron with '>' indicating a client request
 and '<' indicating a server response.
 
 The program can parse any header field found in the packet, even custom
@@ -54,9 +54,8 @@ point. Here are some example format strings:
    source-ip,user-agent
    timestamp,source-ip,dest-ip,direction,host,request-uri
    status-code,reason-phrase,my-custom-header-field
-   ...etc...
 
 There is no limit on the length of the format string. This provides a
 reasonably flexible method for specifying the output string, while still
-supporting custom fields. Input order is maintained so you can specify
-the position of the fields in the output string.
+supporting custom fields. Input order is maintained so you can position the
+fields in the output string.

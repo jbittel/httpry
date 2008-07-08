@@ -88,8 +88,9 @@ void parse_methods_string(char *str) {
 
 /* Insert a new method into the array */
 int insert_method(char *method) {
-        static char **mv, **tmp;
+        static char **mv;
         static int size = 0;
+        char **tmp;
 
 #ifdef DEBUG
         ASSERT(method);

@@ -147,10 +147,10 @@ void insert_value(char *name, char *value) {
 
 #ifdef DEBUG
         ASSERT(name);
-        ASSERT(strlen(name) > 0);
         ASSERT(value);
 #endif
 
+        if (strlen(name) == 0) return;
         if (strlen(value) == 0) return;
 
         if ((node = hash_lookup(name)))
@@ -164,7 +164,7 @@ void print_format_list() {
         NODE *node = head;
 
 #ifdef DEBUG
-        ASSERT(head);
+        ASSERT(node);
 #endif
 
         printf("# Fields: ");
@@ -185,7 +185,7 @@ void print_format_values() {
         NODE *node = head;
 
 #ifdef DEBUG
-        ASSERT(head);
+        ASSERT(node);
 #endif
 
         while (node) {
