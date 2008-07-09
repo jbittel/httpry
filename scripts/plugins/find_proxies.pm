@@ -11,13 +11,9 @@ package find_proxies;
 use warnings;
 
 # -----------------------------------------------------------------------------
-# GLOBAL CONSTANTS
-# -----------------------------------------------------------------------------
-my $PRUNE_LIMIT = 20;
-
-# -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
+my $PRUNE_LIMIT = 20;
 my %proxy_lines = ();
 
 # -----------------------------------------------------------------------------
@@ -43,48 +39,6 @@ sub init {
 
 sub main {
         my $self = shift;
-        my $record = shift;
-
-        &process_data($record);
-
-        return;
-}
-
-sub end {
-        &prune_hits();
-        &write_output_file();
-
-        return;
-}
-
-# -----------------------------------------------------------------------------
-# Load config file and check for required options
-# -----------------------------------------------------------------------------
-sub load_config {
-        my $cfg_dir = shift;
-
-        # Load config file; by default in same directory as plugin
-        if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
-                require "$cfg_dir/" . __PACKAGE__ . ".cfg";
-        } else {
-                warn "Error: No config file found\n";
-                return 1;
-        }
-
-        # Check for required options and combinations
-        if (!$output_file) {
-                warn "Error: No output file provided\n";
-                return 1;
-        }
-        $prune_limit = $PRUNE_LIMIT unless ($prune_limit > 0);
-
-        return 0;
-}
-
-# -----------------------------------------------------------------------------
-# Handle each line of data
-# -----------------------------------------------------------------------------
-sub process_data {
         my $record = shift;
         my $word;
         my $len;
@@ -145,6 +99,37 @@ sub process_data {
         }
 
         return;
+}
+
+sub end {
+        &prune_hits();
+        &write_output_file();
+
+        return;
+}
+
+# -----------------------------------------------------------------------------
+# Load config file and check for required options
+# -----------------------------------------------------------------------------
+sub load_config {
+        my $cfg_dir = shift;
+
+        # Load config file; by default in same directory as plugin
+        if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
+                require "$cfg_dir/" . __PACKAGE__ . ".cfg";
+        } else {
+                warn "Error: No config file found\n";
+                return 1;
+        }
+
+        # Check for required options and combinations
+        if (!$output_file) {
+                warn "Error: No output file provided\n";
+                return 1;
+        }
+        $prune_limit = $PRUNE_LIMIT unless ($prune_limit > 0);
+
+        return 0;
 }
 
 # -----------------------------------------------------------------------------

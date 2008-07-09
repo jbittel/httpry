@@ -46,22 +46,18 @@ sub main {
         my $name;
         
         # Make sure we really want to be here
-        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
-        return unless exists $record->{"request-uri"};
-        return unless exists $record->{"host"};
+        return unless (exists $record->{'direction'} && ($record->{'direction'} eq '>'));
+        return unless exists $record->{'request-uri'};
+        return unless exists $record->{'host'};
 
         # These results can end up being a little messy, but it seems
         # most useful to simply dump out all search terms and let the user
-        # parse through what they find interesting. It's hard to strike a
-        # balance that cleans up the results and applies to all users. If
-        # you can do it better, knock yourself out (oh, and send me the code).
+        # sift through what they deem interesting.
         foreach $domain (keys %domains) {
                 $name = $domains{$domain};
 
-                if ($record->{"host"} =~ /$domain$/) {
-                        # Here we use the encoded URI to ensure that '&' chars in the search term
-                        # don't break the regexp; we'll clean them out if we have a valid search term
-                        return unless $record->{"request-uri"} =~ /[\?\&]$name=([^\&]+?)(?:\&|\Z)/;
+                if ($record->{'host'} =~ /$domain$/) {
+                        return unless $record->{'request-uri'} =~ /[\?\&]$name=([^\&]+)/;
                         $search_term = $1;
                         last;
                 }
@@ -80,7 +76,7 @@ sub main {
         return if ($search_term =~ /^http:/); # ...
         return if ($search_term =~ /^music\/image/);   # Unnecessary Froogle hits
 
-        $search_terms{$record->{"host"}}->{$search_term}++;
+        $search_terms{$record->{'host'}}->{$search_term}++;
 
         # Count the number of terms in the query, treating quoted strings as a single term
         $num_terms += ($search_term =~ s/\".*?\"//g);
