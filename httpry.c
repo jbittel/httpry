@@ -251,7 +251,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         /* Position pointers within packet stream and do sanity checks */
         ip = (struct ip_header *) (pkt + header_offset);
-	size_ip = IP_HL(ip)*4;
+        size_ip = IP_HL(ip)*4;
         if (size_ip < 20) {
 #ifdef DEBUG
 		PRINT("Invalid IP header length: %u bytes", size_ip);
@@ -335,7 +335,7 @@ char *parse_header_line(char *header_line) {
 
         if (header_line) pos = header_line;
 
-        /* Search for a '\n' line terminator, skipping a leading
+        /* Search for a '\n' line terminator, ignoring a leading
            '\r' if it exists (per RFC2616 section 19.3) */
         tmp = strchr(pos, '\n');
         if (!tmp) return NULL;

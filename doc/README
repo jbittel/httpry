@@ -44,9 +44,9 @@ occurred to me:
 
 In addition to the core program, there are several Perl scripts included
 for processing httpry log files. They should be useful for a number of
-generic situations, and can also serve as a useful starting point for your
-own log parsing toolset. More information about these scripts can be found
-in the doc/perl-tools file.
+generic situations, and can serve as a useful starting point for your own
+log parsing toolset. More information about these scripts can be found in
+the doc/perl-tools file.
 
 
 --{ INSTALLATION }--

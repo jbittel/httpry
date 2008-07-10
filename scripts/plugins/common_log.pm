@@ -59,7 +59,7 @@ sub main {
                 return unless exists $record->{'request-uri'};
                 return unless exists $record->{'http-version'};
 
-                # Begin with client (remote host) address
+                # Build the output line: begin with client (remote host) address
                 $line .= $record->{'source-ip'};
 
                 # Append ident and authuser fields
@@ -74,10 +74,12 @@ sub main {
                 # Append date field
                 $record->{'timestamp'} =~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
                 ($sec, $min, $hour, $mday, $mon, $year) = ($6, $5, $4, $3, $2-1, $1-1900);
+                # NOTE: We assume the current timezone here; that may not always be accurate, but
+                # timezone data is not stored in the httpry log files
                 $tz_offset = strftime("%z", localtime(mktime($sec, $min, $hour, $mday, $mon, $year)));
                 $line .= sprintf("[%02d/%3s/%04d:%02d:%02d:%02d %5s]", $mday, $months[$mon], $year+1900, $hour, $min, $sec, $tz_offset);
 
-                # Append request field
+                # Append request fields
                 $line .= " \"$record->{'method'} $record->{'request-uri'} $record->{'http-version'}\"";
 
                 if ($ignore_response) {
@@ -86,10 +88,10 @@ sub main {
                         push(@{ $requests{"$record->{'source-ip'}$record->{'dest-ip'}"} }, $line);
                 }
         } elsif ($record->{'direction'} eq '<') {
-                # This is a bit naive, but functional. Basically we match a request with the
-                # next response found from that IP in the log file. This means that under busy
-                # conditions, the responses could be matched to the wrong request. Currently I
-                # don't have a more accurate way to match them.
+                # NOTE: This is a bit naive, but functional. Basically we match a request with the
+                # next response from that IP in the log file. This means that under busy conditions
+                # the responses could be matched to the wrong request but currently there isn't a
+                # more accurate way to tie them together.
                 if (exists $requests{"$record->{'dest-ip'}$record->{'source-ip'}"}) {
                         $line = shift(@{ $requests{"$record->{'dest-ip'}$record->{'source-ip'}"} });
                         return unless $line;
@@ -115,7 +117,7 @@ sub main {
                         $line .= " -";
                 }
 
-                # TODO: support combined log format: add referer and user-agent request headers
+                # TODO: also support combined log format: add referer and user-agent request headers
 
                 print $fh "$line\n";
         }

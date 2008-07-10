@@ -40,7 +40,7 @@ my @input_files;
 &read_plugin_dir() if (!$plugin_list && !$plugin_dir);
 
 die "Error: No plugins loaded\n" if (keys %callbacks == 0);
-print int(keys %callbacks) . " plugin(s) loaded\n" if $verbose;
+print int(keys %callbacks) . " plugins loaded\n" if $verbose;
 
 &process_logfiles();
 
@@ -64,7 +64,7 @@ sub read_plugin_line {
         }
 
         warn "Warning: No plugins found in plugin list\n" if ($i == 0);
-        print "$i plugin(s) found in plugin list\n" if $verbose;
+        print "$i plugins found in plugin list\n" if $verbose;
 
         return;
 }
@@ -94,7 +94,7 @@ sub read_plugin_dir {
                 }
         }
 
-        print "Using plugin directory '$plugin_dir'\n" if $verbose;
+        print "Reading plugin directory '$plugin_dir'\n" if $verbose;
 
         # Load all plugins found in directory
         opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot find or access '$plugin_dir': $!\n";
@@ -107,7 +107,7 @@ sub read_plugin_dir {
         closedir(PLUGINDIR);
 
         warn "Warning: No plugins found in $plugin_dir\n" if ($i == 0);
-        print "$i plugin(s) found in '$plugin_dir' directory\n" if $verbose;
+        print "$i plugins found in '$plugin_dir' directory\n" if $verbose;
 
         return;
 }
@@ -237,7 +237,10 @@ sub end_plugins {
         my $p;
 
         foreach $p (keys %callbacks) {
-                $callbacks{$p}->end() if ($callbacks{$p}->can('end'));
+                if ($callbacks{$p}->can('end')) {
+                        print "Ending plugin '$p'\n" if $verbose;
+                        $callbacks{$p}->end();
+                }
         }
 
         return;
