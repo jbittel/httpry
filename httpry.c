@@ -57,6 +57,7 @@ static char *new_user = NULL;
 static char *format_str = NULL;
 static char *methods_str = NULL;
 int quiet_mode = 0;               /* Defined as extern in error.h */
+int use_syslog = 0;               /* Defined as extern in error.h */
 
 static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
@@ -525,7 +526,8 @@ int main(int argc, char **argv) {
         /* Process command line arguments */
         while ((opt = getopt(argc, argv, "dhpqi:m:n:o:r:s:u:")) != -1) {
                 switch (opt) {
-                        case 'd': daemon_mode = 1; break;
+                        case 'd': daemon_mode = 1;
+                                  use_syslog = 1; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
                         case 'm': methods_str = optarg; break;

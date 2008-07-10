@@ -8,6 +8,7 @@ version 0.1.4
    * improved efficiency of header line parsing
    * added support for parsing any request method (-m)
    * modified date/time stamp to be more consistent with ISO 8601
+   * made messages print to the syslog only when running as a daemon
 
 version 0.1.3
    * improved parsing of non-standard spacing and line terminators
