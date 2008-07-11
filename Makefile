@@ -34,8 +34,8 @@ install: $(PROG)
 	@echo "--------------------------------------------------"
 	@echo "Installing $(PROG) into /usr/sbin/"
 	@echo ""
-	@echo "You will need to move the Perl scripts and other"
-	@echo "tools to a location of your choosing manually"
+	@echo "You can move the Perl scripts and other tools to"
+	@echo "a location of your choosing manually"
 	@echo "--------------------------------------------------"
 	@echo ""
 	cp -f $(PROG) /usr/sbin/

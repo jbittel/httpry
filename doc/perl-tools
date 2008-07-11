@@ -9,8 +9,8 @@ The log parser will attempt to use all plugins that it finds in the default
 plugin directory. To override this behavior, use the -p switch to specify
 plugins by path and name or use -d to specify an alternate directory to use.
 If the plugin requires a configuration file, it must be located in the same
-directory as the plugin and named as '<plugin name>.cfg'. Additionally, any
-input log file needs to be a valid httpry log with the field specifier at the
+directory as the plugin and named '<plugin name>.cfg'. Additionally, any input
+log file needs to be a valid httpry log including the field specifier at the
 start of the file.
 
 These non-core Perl modules must be installed to run all scripts: 
@@ -35,8 +35,9 @@ Included Perl scripts:
         directory for a plugin directory followed by the base directory of
         the script. The first directory found is used. To load only specifc
         plugins, use the -p switch to provide a comma-delimited list of
-        plugins to load. Most included plugins require a config file, which
-        must be located in the same directory as the plugin.
+        plugins. Most included plugins require a config file, which must be
+        named correctly and located in the same directory as their respective
+        plugin.
 
 
 Included plugins for parse_log.pl:
@@ -62,11 +63,11 @@ Included plugins for parse_log.pl:
 
  ./scripts/plugins/find_proxies.pm
         Performs some basic tests looking for proxy usage. The tests are
-        currently rather rudimentary and quite a lot of noise is generated.
+        currently rather rudimentary and generate quite a lot of noise.
 
  ./scripts/plugins/hostnames.pm
-        Outputs a list of unique hostnames found in the log data (rather
-        pointless without 'host' as one of your output fields).
+        Outputs a list of unique hostnames with counts found in the log data
+        (rather pointless without 'host' as one of your output fields).
 
  ./scripts/plugins/log_summary.pm
         Provides summary information regarding the input files including
@@ -83,7 +84,8 @@ Included plugins for parse_log.pl:
         extracted search queries.
 
  ./scripts/plugins/tokenize.pm
-        Outputs a set of tokens grouped by the source IP address.
+        Outputs a set of tokens for each source IP address, broken into
+        separate output files.
 
  ./scripts/plugins/xml_format.pm
         Outputs the input log data in XML format.

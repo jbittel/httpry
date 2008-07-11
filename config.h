@@ -22,7 +22,7 @@
    *** Can be overridden with -s */
 #define DEFAULT_FORMAT "timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase"
 
-/* Default request methods; a comma-delimited list similar to the format string
+/* Default request methods; a comma-delimited list similar in structure to the above format string
    *** Can be overridden with -m */
 #define DEFAULT_METHODS "GET,HEAD,POST"
 
@@ -32,7 +32,7 @@
 /* Where to send unnecessary output */
 #define NULL_FILE "/dev/null"
 
-/* Character to print when a field has no associated data */
+/* Character to print when an output field has no associated data */
 #define EMPTY_FIELD '-'
 
 /* Delimiter that separates output fields */
