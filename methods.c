@@ -9,13 +9,9 @@
 */
 
 /*
-   The methods data structure is stored as a dynamic array of
-   strings. The array is allocated at run-time (in BLOCKSIZE
-   chunks) to allow the array to handle an arbitrary number of
-   methods without significant wasted space. It's possible that
-   a tree or similar structure could be more efficient in some
-   circumstances, but given the low number of methods used in
-   most runs, this method is simple and effective.
+  The methods data structure is an unbalanced binary tree. All
+  packets are checked to see if they have a method contained
+  here; any packets that do not will be ignored.
 */
 
 #include <ctype.h>
@@ -26,11 +22,18 @@
 #include "methods.h"
 #include "utility.h"
 
-#define BLOCKSIZE 4
+typedef struct method_node METHOD_NODE;
+struct method_node {
+        char *method;
+        METHOD_NODE *left, *right;
+};
+
+static METHOD_NODE *methods = NULL;
 
 int insert_method(char *str);
-
-static char **methods = NULL;
+METHOD_NODE *insert_splay(char *method, METHOD_NODE *t);
+METHOD_NODE *splay(char *method, METHOD_NODE *t);
+void free_node(METHOD_NODE *node);
 
 /* Parse and insert methods from input string */
 void parse_methods_string(char *str) {
@@ -54,122 +57,208 @@ void parse_methods_string(char *str) {
                 method = str_tolower(method);
 
                 if (strlen(method) == 0) continue;
-                if (insert_method(method)) num_methods++;
+                /*if (insert_method(method)) num_methods++;*/
+                /*if (insert_splay(method, methods)) num_methods++;*/
+                methods = insert_splay(method, methods);
         }
 
         free(tmp);
 
-        if (num_methods == 0)
-                LOG_DIE("No valid methods found in string");
+        /*if (num_methods == 0)
+                LOG_DIE("No valid methods found in string");*/
 
 #ifdef DEBUG
         int methods_cnt = 0;
-        int blocks_cnt = 1;
-        char **j;
+        int max_depth = 0;
+        int balance = 0;
 
-        for (j = methods; *j; j++) {
-                methods_cnt++;
-
-                if (methods_cnt > (BLOCKSIZE * blocks_cnt)) blocks_cnt++;
-        }
+        /* TODO: non-recursive tree traversal to calculate these values */
 
         PRINT("----------------------------");
-        PRINT("Block size:         %d", BLOCKSIZE);
-        PRINT("Block count:        %d", blocks_cnt);
-        PRINT("Total slots:        %d", (BLOCKSIZE * blocks_cnt));
         PRINT("Methods inserted:   %d", methods_cnt);
-        PRINT("Empty slots:        %d", (BLOCKSIZE * blocks_cnt) - methods_cnt);
+        PRINT("Max depth:          %d", max_depth);
+        PRINT("Tree balance:       %d%%", balance);
         PRINT("----------------------------");
 #endif
 
         return;
 }
 
-/* Insert a new method into the array */
+/* Insert a new method into the structure */
 int insert_method(char *method) {
-        static char **mv;
-        static int size = 0;
-        char **tmp;
+        METHOD_NODE **node = &methods;
+        int cmp;
 
 #ifdef DEBUG
         ASSERT(method);
         ASSERT(strlen(method) > 0);
 #endif
-
-        /* Initialize the methods array if necessary */
-        if (!methods) {
-                if ((methods = (char **) malloc(BLOCKSIZE * sizeof(char *))) == NULL) {
-                        LOG_DIE("Cannot malloc memory for methods array");
+        
+        while (*node) {
+                cmp = str_compare(method, (*node)->method, strlen((*node)->method));
+                if (cmp > 0) {
+                        node = &(*node)->right;
+                } else if (cmp < 0) {
+                        node = &(*node)->left;
+                } else {
+                        WARN("Method '%s' already provided", method);
+                        
+                        return 0;
                 }
-
-                mv = methods;
-                *mv = NULL;
         }
-
-        /* Check if method has already been inserted */
-        if (is_request_method(method)) {
-                WARN("Method '%s' already provided", method);
-                return 0;
+        
+        if ((*node = (METHOD_NODE *) malloc(sizeof(METHOD_NODE))) == NULL) {
+                LOG_DIE("Cannot allocate memory for method node");
         }
-
-        /* Insert new method into array */
-        if ((*mv = (char *) malloc(strlen(method) + 1)) == NULL) {
-                *mv = NULL;
-                free_methods();
-                LOG_DIE("Cannot malloc memory for method");
+        
+        if (((*node)->method = (char *) malloc(strlen(method) + 1)) == NULL) {
+                LOG_DIE("Cannot allocate memory for method string");
         }
-        strcpy(*mv, method);
-
-        /* Resize the methods array as necessary */
-        if (++size % BLOCKSIZE == 0) {
-                tmp = realloc(methods, ((size + BLOCKSIZE) * sizeof(char *)));
-                if (!tmp) {
-                        *mv = NULL;
-                        free_methods();
-                        LOG_DIE("Cannot realloc memory for methods array");
-                }
-                methods = tmp;
-                mv = methods + size - 1;
-        }
-
-        /* One NULL slot is required at the end of the list
-           for use as a loop terminator */
-        mv++;
-        *mv = NULL;
+        
+        strcpy((*node)->method, method);
+        (*node)->left = (*node)->right = NULL;
 
         return 1;
 }
 
+METHOD_NODE *insert_splay(char *method, METHOD_NODE *t) {
+        METHOD_NODE *new;
+        int cmp;
+        
+        if ((new = (METHOD_NODE *) malloc(sizeof(METHOD_NODE))) == NULL) {
+                LOG_DIE("Cannot allocate memory for method node");
+        }
+        
+        if ((new->method = (char *) malloc(strlen(method) + 1)) == NULL) {
+                LOG_DIE("Cannot allocate memory for method string");
+        }
+        
+        strcpy(new->method, method);
+        
+        if (t == NULL) {
+                new->left = new->right = NULL;
+
+                return new;
+        }
+        
+        t = splay(method, t);
+        
+        cmp = str_compare(method, t->method, strlen(t->method));
+        if (cmp < 0) {
+                new->left = t->left;
+                new->right = t;
+                t->left = NULL;
+                
+                return new;
+        } else if (cmp > 0) {
+                new->right = t->right;
+                new->left = t;
+                t->right = NULL;
+                
+                return new;
+        } else {
+                free(new->method);
+                free(new);
+                
+                return t;
+        }
+}
+
+METHOD_NODE *splay(char *method, METHOD_NODE *t) {
+        METHOD_NODE N, *l, *r, *y;
+        int cmp;
+        
+        if (t == NULL) return t;
+        
+        N.left = N.right = NULL;
+        l = r = &N;
+        
+        for (;;) {
+                cmp = str_compare(method, t->method, strlen(t->method));
+                if (cmp < 0) {
+                        if (t->left == NULL) break;
+                        if (str_compare(method, t->left->method, strlen(method)) < 0) {
+                                y = t->left;
+                                t->left = y->right;
+                                y->right = t;
+                                t = y;
+                                if (t->left == NULL) break;
+                        }
+                        r->left = t;
+                        r = t;
+                        t = t->left;
+                } else if (cmp > 0) {
+                        if (t->right == NULL) break;
+                        if (str_compare(method, t->right->method, strlen(method)) > 0) {
+                                y = t->right;
+                                t->right = y->left;
+                                y->left = t;
+                                t = y;
+                                if (t->right == NULL) break;
+                        }
+                        l->right = t;
+                        l = t;
+                        t = t->right;
+                } else {
+                        break;
+                }
+        }
+        
+        l->right = t->left;
+        r->left = t->right;
+        t->left = N.right;
+        t->right = N.left;
+        
+        return t;
+}
+
 /* Search parameter string for a matching method */
 int is_request_method(const char *str) {
-        char **i;
+        /*METHOD_NODE *node = methods;*/
 
 #ifdef DEBUG
-        ASSERT(methods);
         ASSERT(str);
 #endif
 
         if (strlen(str) == 0) return 0;
-
-        for (i = methods; *i; i++) {
-                if (str_compare(str, *i, strlen(*i)) == 0) return 1;
+        
+/*        while (node) {
+                cmp = str_compare(str, node->method, strlen(node->method));
+                if (cmp > 0) {
+                        node = node->right;
+                } else if (cmp < 0) {
+                        node = node->left;
+                } else {
+                        return 1;
+                }
         }
 
+        return 0;*/
+        
+        methods = splay(str, methods);
+        if (str_compare(str, methods->method, strlen(methods->method)) == 0) {
+                return 1;
+        }
+        
         return 0;
 }
 
-/* Free all allocated memory for array; only called at
-   program termination */
+/* Wrapper function to free allocated memory at program termination */
 void free_methods() {
-        char **i;
+        free_node(methods);
+        
+        return;
+}
 
-        if (!methods) return;
-
-        for (i = methods; *i; i++) {
-                free(*i);
-        }
-
-        free(methods);
+/* Recursively free all children of the parameter node */
+void free_node(METHOD_NODE *node) {
+        if (!node) return;
+        
+        free_node(node->left);
+        free_node(node->right);
+        
+        free(node->method);
+        free(node);
 
         return;
 }

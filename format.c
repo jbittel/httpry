@@ -9,17 +9,17 @@
 */
 
 /*
-   Currently the output format string is stored as a hash table 
-   with all of the nodes additionally chained together as a linked
-   list. This allows insert_value() to utilize the more efficient
-   hash structure to find nodes, while functions that need to
-   traverse all nodes in insertion order can use the linked list.
-   A separate head pointer is maintained for the start of the
-   linked list.
+  The output format data structure is stored as a hash table 
+  with all of the nodes additionally chained together as a linked
+  list. This allows insert_value() to utilize the more efficient
+  hash structure to find nodes, while functions that need to
+  traverse all nodes in insertion order can use the linked list.
+  A separate head pointer is maintained for the start of the
+  linked list.
 
-   The hash table creates some wasted space as the table tends to
-   be rather sparse, but the efficiency amortizes on longer runs
-   and it scales well to longer format strings.
+  The hash table creates some wasted space as the table tends to
+  be rather sparse, but the efficiency amortizes on longer runs
+  and it scales well to longer format strings.
 */
 
 #include <ctype.h>

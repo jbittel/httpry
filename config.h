@@ -24,7 +24,7 @@
 
 /* Default request methods; a comma-delimited list similar in structure to the above format string
    *** Can be overridden with -m */
-#define DEFAULT_METHODS "GET,HEAD,POST"
+#define DEFAULT_METHODS "OPTIONS,GET,HEAD,POST,PUT,DELETE,TRACE,CONNECT"
 
 /* Location to store the PID file when running in daemon mode */
 #define PID_FILE "/var/run/httpry.pid"
