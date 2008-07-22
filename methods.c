@@ -9,9 +9,22 @@
 */
 
 /*
-  The methods data structure is an unbalanced binary tree. All
-  packets are checked to see if they have a method contained
-  here; any packets that do not will be ignored.
+  The methods data structure is a binary tree. All packets are
+  checked to see if they have a method contained here; any
+  packets that do not will be ignored.
+ 
+  The tree is built as an unbalanced binary tree. Once created,
+  each search of the tree checks the depth at which each node is
+  found. If the node is located and is below a specific depth,
+  the tree is splayed to put the node at the root of the tree.
+  This keeps the tree optimized for lookups, while limiting the
+  number of splay operations performed.
+
+  The splay() function code was originally obtained from:
+     http://www.link.cs.cmu.edu/link/ftp-site/splaying/top-down-splay.c
+  
+  Many alterations and modifications have been made to the
+  original code.
 */
 
 #include <ctype.h>
@@ -31,8 +44,8 @@ struct method_node {
 static METHOD_NODE *methods = NULL;
 
 int insert_method(char *str);
-METHOD_NODE *insert_splay(char *method, METHOD_NODE *t);
-METHOD_NODE *splay(char *method, METHOD_NODE *t);
+METHOD_NODE *splay(const char *method, METHOD_NODE *t);
+int print_tree(METHOD_NODE *node, int depth);
 void free_node(METHOD_NODE *node);
 
 /* Parse and insert methods from input string */
@@ -57,29 +70,27 @@ void parse_methods_string(char *str) {
                 method = str_tolower(method);
 
                 if (strlen(method) == 0) continue;
-                /*if (insert_method(method)) num_methods++;*/
-                /*if (insert_splay(method, methods)) num_methods++;*/
-                methods = insert_splay(method, methods);
+                if (insert_method(method)) num_methods++;
         }
 
         free(tmp);
 
-        /*if (num_methods == 0)
-                LOG_DIE("No valid methods found in string");*/
+        if (num_methods == 0)
+                LOG_DIE("No valid methods found in string");
+        
+        print_tree(methods, 0);
 
-#ifdef DEBUG
+/*#ifdef DEBUG
         int methods_cnt = 0;
         int max_depth = 0;
         int balance = 0;
-
-        /* TODO: non-recursive tree traversal to calculate these values */
 
         PRINT("----------------------------");
         PRINT("Methods inserted:   %d", methods_cnt);
         PRINT("Max depth:          %d", max_depth);
         PRINT("Tree balance:       %d%%", balance);
         PRINT("----------------------------");
-#endif
+#endif*/
 
         return;
 }
@@ -121,126 +132,105 @@ int insert_method(char *method) {
         return 1;
 }
 
-METHOD_NODE *insert_splay(char *method, METHOD_NODE *t) {
-        METHOD_NODE *new;
-        int cmp;
-        
-        if ((new = (METHOD_NODE *) malloc(sizeof(METHOD_NODE))) == NULL) {
-                LOG_DIE("Cannot allocate memory for method node");
-        }
-        
-        if ((new->method = (char *) malloc(strlen(method) + 1)) == NULL) {
-                LOG_DIE("Cannot allocate memory for method string");
-        }
-        
-        strcpy(new->method, method);
-        
-        if (t == NULL) {
-                new->left = new->right = NULL;
-
-                return new;
-        }
-        
-        t = splay(method, t);
-        
-        cmp = str_compare(method, t->method, strlen(t->method));
-        if (cmp < 0) {
-                new->left = t->left;
-                new->right = t;
-                t->left = NULL;
-                
-                return new;
-        } else if (cmp > 0) {
-                new->right = t->right;
-                new->left = t;
-                t->right = NULL;
-                
-                return new;
-        } else {
-                free(new->method);
-                free(new);
-                
-                return t;
-        }
-}
-
-METHOD_NODE *splay(char *method, METHOD_NODE *t) {
-        METHOD_NODE N, *l, *r, *y;
-        int cmp;
-        
-        if (t == NULL) return t;
-        
-        N.left = N.right = NULL;
-        l = r = &N;
-        
-        for (;;) {
-                cmp = str_compare(method, t->method, strlen(t->method));
-                if (cmp < 0) {
-                        if (t->left == NULL) break;
-                        if (str_compare(method, t->left->method, strlen(method)) < 0) {
-                                y = t->left;
-                                t->left = y->right;
-                                y->right = t;
-                                t = y;
-                                if (t->left == NULL) break;
-                        }
-                        r->left = t;
-                        r = t;
-                        t = t->left;
-                } else if (cmp > 0) {
-                        if (t->right == NULL) break;
-                        if (str_compare(method, t->right->method, strlen(method)) > 0) {
-                                y = t->right;
-                                t->right = y->left;
-                                y->left = t;
-                                t = y;
-                                if (t->right == NULL) break;
-                        }
-                        l->right = t;
-                        l = t;
-                        t = t->right;
-                } else {
-                        break;
-                }
-        }
-        
-        l->right = t->left;
-        r->left = t->right;
-        t->left = N.right;
-        t->right = N.left;
-        
-        return t;
-}
-
 /* Search parameter string for a matching method */
 int is_request_method(const char *str) {
-        /*METHOD_NODE *node = methods;*/
+        METHOD_NODE *node = methods;
+        int cmp, depth = 0;
 
 #ifdef DEBUG
         ASSERT(str);
 #endif
 
         if (strlen(str) == 0) return 0;
-        
-/*        while (node) {
+
+        while (node) {
+                depth++;
                 cmp = str_compare(str, node->method, strlen(node->method));
                 if (cmp > 0) {
                         node = node->right;
                 } else if (cmp < 0) {
                         node = node->left;
                 } else {
+                        PRINT("Found node at depth %d", depth);
+                        if (depth > 2)
+                                methods = splay(str, methods);
+
                         return 1;
                 }
         }
 
-        return 0;*/
+        return 0;
+}
+
+/* Search for specified method in tree rooted at t */
+METHOD_NODE *splay(const char *method, METHOD_NODE *t) {
+        METHOD_NODE N, *l, *r, *y;
+        int cmp;
+
+#ifdef DEBUG
+        ASSERT(method);
+        ASSERT(strlen(method) > 0);
+        ASSERT(t);
+#endif
         
-        methods = splay(str, methods);
-        if (str_compare(str, methods->method, strlen(methods->method)) == 0) {
-                return 1;
+        N.left = N.right = NULL;
+        l = r = &N;
+
+        for (;;) {
+                cmp = str_compare(method, t->method, strlen(method));
+                if (cmp < 0) {
+                        if (t->left == NULL) break;
+                        if (str_compare(method, t->left->method, strlen(method)) < 0) {
+                                PRINT("Rotating right"); 
+                                y = t->left;
+                                t->left = y->right;
+                                y->right = t;
+                                t = y;
+                                if (t->left == NULL) break;
+                        }
+                        PRINT("Linking right");
+                        r->left = t;
+                        r = t;
+                        t = t->left;
+                } else if (cmp > 0) {
+                        if (t->right == NULL) break;
+                        if (str_compare(method, t->right->method, strlen(method)) > 0) {
+                                PRINT("Rotating left");
+                                y = t->right;
+                                t->right = y->left;
+                                y->left = t;
+                                t = y;
+                                if (t->right == NULL) break;
+                        }
+                        PRINT("Linking left");
+                        l->right = t;
+                        l = t;
+                        t = t->right;
+                } else {
+                        PRINT("Matched node");
+                        break;
+                }
         }
         
-        return 0;
+        PRINT("Assembling");
+        l->right = t->left;
+        r->left = t->right;
+        t->left = N.right;
+        t->right = N.left;
+        
+        print_tree(t, 0);
+        
+        return t;
+}
+
+int print_tree(METHOD_NODE *node, int depth) {
+        if (!node) return depth;
+        
+        print_tree(node->left, ++depth);
+        PRINT("method: %s at depth %d", node->method, depth);
+        print_tree(node->right, ++depth);
+        
+        return --depth;
 }
 
 /* Wrapper function to free allocated memory at program termination */
