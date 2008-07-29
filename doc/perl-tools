@@ -53,7 +53,7 @@ Included plugins for parse_log.pl:
         log lines by client IP. It then searches for specified keywords and
         scores the flows accordingly. Outputs a summary file listing all
         scored flows, as well as flow data for each scored flow. Requires an
-        input file containing search terms and corresponding weights.
+        input file containing search terms.
 
  ./scripts/plugins/db_dump.pm
         Dumps log file data into a previously prepared database. Useful

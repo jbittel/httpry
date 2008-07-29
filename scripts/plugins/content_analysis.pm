@@ -31,7 +31,7 @@ my $epoch_boundary = 0;
 my %active_flow = ();       # Metadata about each active flow
 my %active_flow_data = ();  # Individual flow data lines
 my %scored_flow = ();
-my %terms = ();             # Terms and corresponding weights
+my @terms = ();
 
 # -----------------------------------------------------------------------------
 # Plugin core
@@ -159,9 +159,7 @@ sub load_config {
 # -----------------------------------------------------------------------------
 sub load_terms {
         my $line;
-        my $line_num;
         my $term;
-        my $weight;
 
         unless (open(TERMS, "$terms_file")) {
                 warn "Error: Cannot open $terms_file: $!\n";
@@ -169,7 +167,6 @@ sub load_terms {
         }
 
         while ($line = <TERMS>) {
-                $line_num++;
                 chomp $line;
 
                 $line =~ s/\#.*$//; # Remove comments
@@ -178,31 +175,9 @@ sub load_terms {
                 $line =~ s/\s+/ /;  # Remove sequential whitespace
                 next if $line =~ /^$/;
 
-                ($term, $weight) = split /[ \t]/, $line;
-                $term = lc $term;
-
-                # Basic validation and error checking
-                if (!$term || !$weight) {
-                        warn "Warning: Invalid data found in $terms_file, line $line_num\n";
-                        next;
+                foreach $term (split(/\s+/, $line)) {
+                        push(@terms, lc $term) if $term;
                 }
-
-                if ($weight !~ /\d+/) {
-                        warn "Warning: '$term' assigned non-numeric weight '$weight', ignoring\n";
-                        next;
-                }
-
-                if ($weight < 0) {
-                        warn "Warning: '$term' assigned out of range weight '$weight', clamping to 0\n";
-                        $weight = 0;
-                }
-
-                if ($weight > 1) {
-                        warn "Warning: '$term' assigned out of range weight '$weight', clamping to 1\n";
-                        $weight = 1;
-                }
-
-                $terms{$term} = $weight;
         }
 
         close(TERMS);
@@ -223,18 +198,18 @@ sub content_check {
         my $query_offset = index($uri, '?', $path_offset);
         my $term_offset;
         my $num_terms = 0;
-        my $score = 0;
+        my $score;
         my $pos;
 
-        foreach $term (keys %terms) {
+        foreach $term (@terms) {
                 $pos = 0;
                 while (($term_offset = index($uri, $term, $pos)) > -1) {
                         $num_terms++;
                         $active_flow{$ip}->{'terms'}->{$term}++;
 
                         # Term found, so apply scoring rules
-                        # Rule 1: Apply a base score of 1 + term weight
-                        $score += 1 + $terms{$term};
+                        # Rule 1: Apply a base score of 1
+                        $score = 1;
 
                         # Rule 2: If found in query, add 2
                         #         If found in path, add 1
