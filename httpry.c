@@ -391,8 +391,6 @@ int parse_server_response(char *header_line) {
 
         http_version = header_line;
 
-        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 1;
-
         if ((status_code = strchr(http_version, ' ')) == NULL) return 1;
         *status_code++ = '\0';
         while (isspace(*status_code)) status_code++;

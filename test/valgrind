@@ -5,5 +5,5 @@ eval valgrind --tool=memcheck \
               --leak-check=yes \
               --leak-resolution=high \
               --show-reachable=yes \
-     "$@" 2>&1 1>/dev/null |
+     "$@ -q" 2>&1 1>/dev/null |
      sed 's/^==[0-9]*==/valgrind:/'

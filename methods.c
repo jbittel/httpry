@@ -9,22 +9,6 @@
 */
 
 /*
-  The methods data structure is a binary tree. All packets are
-  checked to see if they have a method contained here; any
-  packets that do not will be ignored.
- 
-  The tree is built as an unbalanced binary tree. Once created,
-  each search of the tree checks the depth at which each node is
-  found. If the node is located and is below a specific depth,
-  the tree is splayed to put the node at the root of the tree.
-  This keeps the tree optimized for lookups, while limiting the
-  number of splay operations performed.
-
-  The splay() function code was originally obtained from:
-     http://www.link.cs.cmu.edu/link/ftp-site/splaying/top-down-splay.c
-  
-  Many alterations and modifications have been made to the
-  original code.
 */
 
 #include <ctype.h>
@@ -35,18 +19,22 @@
 #include "methods.h"
 #include "utility.h"
 
-typedef struct method_node METHOD_NODE;
-struct method_node {
-        char *method;
-        METHOD_NODE *left, *right;
+#define HASHSIZE 20
+
+typedef struct node NODE;
+struct node {
+        char *name;
+        NODE *next, *list;
 };
 
-static METHOD_NODE *methods = NULL;
+static NODE *methods[HASHSIZE];
+static NODE *head = NULL;
 
-int insert_method(char *str);
-METHOD_NODE *splay(const char *method, METHOD_NODE *t);
-int print_tree(METHOD_NODE *node, int depth);
-void free_node(METHOD_NODE *node);
+NODE *insert_method(char *str);
+void free_node(NODE *node);
+NODE *method_lookup(const char *str, int len);
+unsigned hash_method_string(const char *str, int len);
+void free_methods();
 
 /* Parse and insert methods from input string */
 void parse_methods_string(char *str) {
@@ -77,65 +65,77 @@ void parse_methods_string(char *str) {
 
         if (num_methods == 0)
                 LOG_DIE("No valid methods found in string");
-        
-        print_tree(methods, 0);
 
-/*#ifdef DEBUG
-        int methods_cnt = 0;
-        int max_depth = 0;
-        int balance = 0;
+#ifdef DEBUG
+        int j, num_buckets = 0, num_chain, max_chain = 0;
+        NODE *node;
+
+        for (j = 0; j < HASHSIZE; j++) {
+                if (methods[j]) num_buckets++;
+
+                num_chain = 0;
+                for (node = methods[j]; node != NULL; node = node->next) num_chain++;
+                if (num_chain > max_chain) max_chain = num_chain;
+        }
 
         PRINT("----------------------------");
-        PRINT("Methods inserted:   %d", methods_cnt);
-        PRINT("Max depth:          %d", max_depth);
-        PRINT("Tree balance:       %d%%", balance);
+        PRINT("Hash buckets:       %d", HASHSIZE);
+        PRINT("Nodes inserted:     %d", num_methods);
+        PRINT("Buckets in use:     %d", num_buckets);
+        PRINT("Hash collisions:    %d", num_methods - num_buckets);
+        PRINT("Longest hash chain: %d", max_chain);
         PRINT("----------------------------");
-#endif*/
+#endif
 
         return;
 }
 
 /* Insert a new method into the structure */
-int insert_method(char *method) {
-        METHOD_NODE **node = &methods;
-        int cmp;
+NODE *insert_method(char *method) {
+        NODE *node;
+        static NODE *prev = NULL;
+        unsigned hashval;
 
 #ifdef DEBUG
         ASSERT(method);
         ASSERT(strlen(method) > 0);
 #endif
-        
-        while (*node) {
-                cmp = str_compare(method, (*node)->method, strlen((*node)->method));
-                if (cmp > 0) {
-                        node = &(*node)->right;
-                } else if (cmp < 0) {
-                        node = &(*node)->left;
-                } else {
-                        WARN("Method '%s' already provided", method);
-                        
-                        return 0;
-                }
+ 
+        if ((node = method_lookup(method, strlen(method))) == NULL) {
+                if ((node = (NODE *) malloc(sizeof(NODE))) == NULL)
+                        LOG_DIE("Cannot allocate memory for method node");
+
+                hashval = hash_method_string(method, strlen(method));
+
+#ifdef DEBUG
+        ASSERT((hashval >= 0) && (hashval < HASHSIZE));
+#endif
+
+                node->next = methods[hashval];
+                methods[hashval] = node;
+        } else {
+                WARN("Method '%s' already provided", method);
+                return NULL;
         }
-        
-        if ((*node = (METHOD_NODE *) malloc(sizeof(METHOD_NODE))) == NULL) {
-                LOG_DIE("Cannot allocate memory for method node");
-        }
-        
-        if (((*node)->method = (char *) malloc(strlen(method) + 1)) == NULL) {
+
+        if ((node->name = (char *) malloc(strlen(method) + 1)) == NULL) {
                 LOG_DIE("Cannot allocate memory for method string");
         }
-        
-        strcpy((*node)->method, method);
-        (*node)->left = (*node)->right = NULL;
+        strcpy(node->name, method);
 
-        return 1;
+        /* Update the linked list pointers */
+        if (prev) prev->list = node;
+        prev = node;
+        if (!head) head = node;
+
+        return node;
 }
 
 /* Search parameter string for a matching method */
 int is_request_method(const char *str) {
-        METHOD_NODE *node = methods;
-        int cmp, depth = 0;
+        NODE *node;
+        int len;
+        char *c;
 
 #ifdef DEBUG
         ASSERT(str);
@@ -143,112 +143,64 @@ int is_request_method(const char *str) {
 
         if (strlen(str) == 0) return 0;
 
-        while (node) {
-                depth++;
-                cmp = str_compare(str, node->method, strlen(node->method));
-                if (cmp > 0) {
-                        node = node->right;
-                } else if (cmp < 0) {
-                        node = node->left;
-                } else {
-                        PRINT("Found node at depth %d", depth);
-                        if (depth > 2)
-                                methods = splay(str, methods);
+        c = strchr(str, ' ');
+        if (!c) return 0;
+        len = c - str;
 
-                        return 1;
-                }
-        }
+        if ((node = method_lookup(str, len))) return 1;
 
         return 0;
 }
 
-/* Search for specified method in tree rooted at t */
-METHOD_NODE *splay(const char *method, METHOD_NODE *t) {
-        METHOD_NODE N, *l, *r, *y;
-        int cmp;
+/* Lookup a particular node in hash; return pointer to node
+   if found, NULL otherwise */
+NODE *method_lookup(const char *str, int len) {
+        NODE *node;
 
 #ifdef DEBUG
-        ASSERT(method);
-        ASSERT(strlen(method) > 0);
-        ASSERT(t);
+        ASSERT(str);
+        ASSERT(strlen(str) > 0);
+        ASSERT(len);
+        ASSERT((hash_method_string(str, len) >= 0) && (hash_method_string(str, len) < HASHSIZE));
 #endif
-        
-        N.left = N.right = NULL;
-        l = r = &N;
 
-        for (;;) {
-                cmp = str_compare(method, t->method, strlen(method));
-                if (cmp < 0) {
-                        if (t->left == NULL) break;
-                        if (str_compare(method, t->left->method, strlen(method)) < 0) {
-                                PRINT("Rotating right"); 
-                                y = t->left;
-                                t->left = y->right;
-                                y->right = t;
-                                t = y;
-                                if (t->left == NULL) break;
-                        }
-                        PRINT("Linking right");
-                        r->left = t;
-                        r = t;
-                        t = t->left;
-                } else if (cmp > 0) {
-                        if (t->right == NULL) break;
-                        if (str_compare(method, t->right->method, strlen(method)) > 0) {
-                                PRINT("Rotating left");
-                                y = t->right;
-                                t->right = y->left;
-                                y->left = t;
-                                t = y;
-                                if (t->right == NULL) break;
-                        }
-                        PRINT("Linking left");
-                        l->right = t;
-                        l = t;
-                        t = t->right;
-                } else {
-                        PRINT("Matched node");
-                        break;
-                }
-        }
-        
-        PRINT("Assembling");
-        l->right = t->left;
-        r->left = t->right;
-        t->left = N.right;
-        t->right = N.left;
-        
-        print_tree(t, 0);
-        
-        return t;
+        for (node = methods[hash_method_string(str, len)]; node != NULL; node = node->next)
+                if (str_compare(str, node->name, strlen(node->name)) == 0)
+                        return node;
+
+        return NULL;
 }
 
-int print_tree(METHOD_NODE *node, int depth) {
-        if (!node) return depth;
-        
-        print_tree(node->left, ++depth);
-        PRINT("method: %s at depth %d", node->method, depth);
-        print_tree(node->right, ++depth);
-        
-        return --depth;
+/* Use the djb2 hash function; supposed to be good for strings */
+unsigned hash_method_string(const char *str, int len) {
+        unsigned hashval;
+
+#ifdef DEBUG
+        ASSERT(str);
+        ASSERT(strlen(str) > 0);
+        ASSERT(len);
+#endif
+
+        for (hashval = 5381; (--len > 0) && (*str != '\0'); str++)
+                hashval = (hashval * 33) ^ tolower(*str);
+
+        return hashval % HASHSIZE;
 }
 
-/* Wrapper function to free allocated memory at program termination */
+/* Free all allocated memory for methods; only called at program termination */
 void free_methods() {
-        free_node(methods);
-        
-        return;
-}
+        NODE *prev, *curr;
 
-/* Recursively free all children of the parameter node */
-void free_node(METHOD_NODE *node) {
-        if (!node) return;
-        
-        free_node(node->left);
-        free_node(node->right);
-        
-        free(node->method);
-        free(node);
+        if (!head) return;
+
+        curr = head;
+        while (curr) {
+                prev = curr;
+                curr = curr->list;
+
+                free(prev->name);
+                free(prev);
+        }
 
         return;
 }

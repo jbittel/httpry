@@ -175,7 +175,7 @@ sub load_terms {
                 $line =~ s/\s+/ /;  # Remove sequential whitespace
                 next if $line =~ /^$/;
 
-                foreach $term (split(/\s+/, $line)) {
+                foreach $term (split(/\s/, $line)) {
                         push(@terms, lc $term) if $term;
                 }
         }

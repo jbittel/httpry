@@ -30,7 +30,7 @@
 #include "format.h"
 #include "utility.h"
 
-#define HASHSIZE 50
+#define HASHSIZE 30
 
 typedef struct node NODE;
 struct node {
