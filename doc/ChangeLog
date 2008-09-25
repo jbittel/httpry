@@ -7,9 +7,9 @@ lists notable changes and fixes to the core httpry program.
 version 0.1.4
    * improved efficiency of header line parsing
    * added support for parsing any request method (-m)
-   * default to capturing all HTTP packets with a standard method
+   * default to capturing all HTTP packets with a standard RFC2616 method
    * modified date/time stamp to be more consistent with ISO 8601
-   * made messages print to the syslog only when running as a daemon
+   * messages now print to the syslog only when running as a daemon
 
 version 0.1.3
    * improved parsing of non-standard spacing and line terminators

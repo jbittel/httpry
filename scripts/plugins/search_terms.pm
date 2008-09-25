@@ -68,6 +68,8 @@ sub main {
         $search_term =~ s/%25/%/g; # Sometimes '%' chars are double encoded
         $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
         $search_term =~ s/\+/ /g;
+        $search_term =~ s/^\s+//;
+        $search_term =~ s/\s+$//;
 
         # Custom cleanup rules; would be nice to generalize this better, but
         # this will work for now
@@ -80,8 +82,8 @@ sub main {
 
         # Count the number of terms in the query, treating quoted strings as a single term
         $num_terms += ($search_term =~ s/\".*?\"//g);
-        $search_term =~ s/^\s+//;
-        $search_term =~ s/\s+$//;
+        $search_term =~ s/^\s+//; # Strip leading/trailing spaces potentially introduced above
+        $search_term =~ s/\s+$//; # ...
         $num_terms += ($search_term =~ s/\s+//g);
         $num_terms++ if ($search_term);
         $num_queries++;

@@ -17,7 +17,7 @@
   method is not known. At this point in the main processing
   loop the packet data is still in a static buffer, so this
   gives us a simpler solution. Perhaps at some point the flow
-  of the packet processing will be improved and we can switch
+  of the packet processing will be changed and we can switch
   to a more traditional lookup table approach.
 */
 
@@ -40,7 +40,7 @@ static METHOD_NODE *methods = NULL;
 int insert_method(char *str);
 void free_node(METHOD_NODE *node);
 
-/* Parse and insert methods from input string */
+/* Parse and insert methods from methods string */
 void parse_methods_string(char *str) {
         char *method, *tmp, *i;
         int num_methods = 0;
@@ -84,7 +84,7 @@ int insert_method(char *method) {
 #endif
         
         while (*node) {
-                cmp = str_compare(method, (*node)->method, strlen((*node)->method));
+                cmp = str_compare(method, (*node)->method);
                 if (cmp > 0) {
                         node = &(*node)->right;
                 } else if (cmp < 0) {
@@ -110,7 +110,7 @@ int insert_method(char *method) {
         return 1;
 }
 
-/* Search parameter string for a matching method */
+/* Search data structure for a matching method */
 int is_request_method(const char *str) {
         METHOD_NODE *node = methods;
         int cmp;
@@ -123,7 +123,7 @@ int is_request_method(const char *str) {
         if (strlen(str) == 0) return 0;
         
         while (node) {
-                cmp = str_compare(str, node->method, strlen(node->method));
+                cmp = str_compare(str, node->method);
                 if (cmp > 0) {
                         node = node->right;
                 } else if (cmp < 0) {

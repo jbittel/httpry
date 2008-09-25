@@ -26,8 +26,8 @@ the program will poll the system for a list of interfaces and select the
 first one found.
 .IP "-m \fImethods\fP"
 Provide a comma-delimited string that specifies the request methods to parse.
-Defaults to parsing GET, HEAD and POST requests if this option is not
-specified.
+The program defaults to parsing all of the standard RFC2616 method strings if
+this option is not set.
 .IP "-n \fIcount\fP"
 Parse this number of HTTP packets and then exit. Defaults to 0, which means
 loop forever.
@@ -41,8 +41,8 @@ Suppress non-critical output (startup banner, statistics, etc.).
 .IP "-r \fIfile\fP"
 Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
-.IP "-s \fIstring\fP"
-Specify a comma-delimited string that defines the parsed HTTP data to output.
+.IP "-s \fIformat\fP"
+Provide a comma-delimited string that specifies the parsed HTTP data to output.
 See the doc/format-string file for further information regarding available
 options and syntax.
 .IP "-u \fIuser\fP"
@@ -51,15 +51,15 @@ files. You will need root privileges to do this; it will switch to the new
 user after initialization.
 .IP "'expression'"
 Specify a bpf-style capture filter, overriding the default. Here are a few
-examples starting with the default filter:
+basic examples starting with the default filter:
 
-\'tcp port 80 or 8080\'
-\'tcp dst port 80\'
-\'tcp dst port 80 and src host 192.168.1.1\'
+ 'tcp port 80 or 8080'
+ 'tcp dst port 80'
+ 'tcp dst port 80 and src host 192.168.1.1'
 
 These filters will capture all web traffic both directions on two common
 ports, capture only requests made to port 80, and capture requests to port
-80 by a particular host, respectively. See man tcpdump for further
+80 by a particular host, respectively. See 'man tcpdump' for further
 information on the syntax and available primitives.
 .SH AUTHOR
 .I httpry

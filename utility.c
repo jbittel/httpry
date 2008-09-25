@@ -49,22 +49,24 @@ char *str_tolower(char *str) {
         return str;
 }
 
-/* Function originated as strcasecmp() from the GNU C library; modified
-   from its original format since s2 will always be lowercase, and to
-   take a max comparison length */
-int str_compare(const char *str1, const char *str2, int len) {
-        unsigned char c1, c2;
+/* Compare two strings, ignoring the case of str1 and
+   assuming str2 is lowercase. Break if we find a string
+   terminator in str2 and consider it a match as str1
+   will not always have a string terminator. */
+int str_compare(const char *str1, const char *str2) {
 
 #ifdef DEBUG
+        ASSERT(str1);
+        ASSERT(str2);
         ASSERT(str1 != str2);
-        ASSERT(len > 0);
+        ASSERT(strlen(str2) > 0);
 #endif
 
-        do {
-                c1 = tolower(*str1++);
-                c2 = *str2++;
-                if ((c1 == '\0') || (c2 == '\0')) break;
-        } while ((c1 == c2) && (--len > 0));
+        while (tolower(*str1) == *str2) {
+                str1++;
+                str2++;
+                if (*str2 == '\0') return 0;
+        }
 
-        return c1 - c2;
+        return tolower(*str1) - *str2;
 }

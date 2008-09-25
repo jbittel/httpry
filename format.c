@@ -237,7 +237,7 @@ NODE *hash_lookup(char *str) {
 #endif
 
         for (node = output_fields[hash_string(str)]; node != NULL; node = node->next)
-                if (str_compare(str, node->name, strlen(node->name)) == 0)
+                if (str_compare(str, node->name) == 0)
                         return node;
 
         return NULL;
