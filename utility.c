@@ -56,10 +56,9 @@ char *str_tolower(char *str) {
 int str_compare(const char *str1, const char *str2) {
 
 #ifdef DEBUG
-        ASSERT(str1);
         ASSERT(str2);
-        ASSERT(str1 != str2);
         ASSERT(strlen(str2) > 0);
+        ASSERT(str1 != str2);
 #endif
 
         while (tolower(*str1) == *str2) {

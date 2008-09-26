@@ -251,25 +251,13 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         /* Position pointers within packet stream and do sanity checks */
         ip = (struct ip_header *) (pkt + header_offset);
-        size_ip = IP_HL(ip)*4;
-        if (size_ip < 20) {
-#ifdef DEBUG
-		PRINT("Invalid IP header length: %u bytes", size_ip);
-                ASSERT(size_ip < 20);
-#endif
-		return;
-	}
+        size_ip = IP_HL(ip) * 4;
+        if (size_ip < 20) return;
         if (ip->ip_p != IPPROTO_TCP) return;
 
         tcp = (struct tcp_header *) (pkt + header_offset + size_ip);
-	size_tcp = TH_OFF(tcp)*4;
-	if (size_tcp < 20) {
-#ifdef DEBUG
-		PRINT("Invalid TCP header length: %u bytes", size_tcp);
-                ASSERT(size_tcp < 20);
-#endif
-		return;
-	}
+	size_tcp = TH_OFF(tcp) * 4;
+	if (size_tcp < 20) return;
 
         data = (char *) (pkt + header_offset + size_ip + size_tcp);
         size_data = (header->caplen - (header_offset + size_ip + size_tcp));

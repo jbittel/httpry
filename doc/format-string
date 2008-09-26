@@ -51,7 +51,7 @@ point. Here are some example format strings:
 
    host,user-agent
    referer,request-uri,http-version
-   source-ip,user-agent
+   source-ip,x-forwarded-for,user-agent
    timestamp,source-ip,dest-ip,direction,host,request-uri
    status-code,reason-phrase,my-custom-header-field
 
