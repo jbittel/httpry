@@ -32,18 +32,18 @@
 
 #define HASHSIZE 30
 
-typedef struct node NODE;
-struct node {
+typedef struct format_node FORMAT_NODE;
+struct format_node {
         char *name, *value;
-        NODE *next, *list;
+        FORMAT_NODE *next, *list;
 };
 
-NODE *insert_node(char *str);
-NODE *hash_lookup(char *str);
+FORMAT_NODE *insert_node(char *str);
+FORMAT_NODE *hash_lookup(char *str);
 unsigned hash_string(char *str);
 
-static NODE *output_fields[HASHSIZE];
-static NODE *head = NULL;
+static FORMAT_NODE *output_fields[HASHSIZE];
+static FORMAT_NODE *head = NULL;
 
 /* Parse and insert output fields from format string */
 void parse_format_string(char *str) {
@@ -78,7 +78,7 @@ void parse_format_string(char *str) {
 
 #ifdef DEBUG
         int j, num_buckets = 0, num_chain, max_chain = 0;
-        NODE *node;
+        FORMAT_NODE *node;
 
         for (j = 0; j < HASHSIZE; j++) {
                 if (output_fields[j]) num_buckets++;
@@ -101,9 +101,9 @@ void parse_format_string(char *str) {
 }
 
 /* Insert a new node into the hash table */
-NODE *insert_node(char *name) {
-        NODE *node;
-        static NODE *prev = NULL;
+FORMAT_NODE *insert_node(char *name) {
+        FORMAT_NODE *node;
+        static FORMAT_NODE *prev = NULL;
         unsigned hashval;
 
 #ifdef DEBUG
@@ -112,7 +112,7 @@ NODE *insert_node(char *name) {
 #endif
 
         if ((node = hash_lookup(name)) == NULL) {
-                if ((node = (NODE *) malloc(sizeof(NODE))) == NULL)
+                if ((node = (FORMAT_NODE *) malloc(sizeof(FORMAT_NODE))) == NULL)
                         LOG_DIE("Cannot allocate memory for new node");
 
                 hashval = hash_string(name);
@@ -145,7 +145,7 @@ NODE *insert_node(char *name) {
 
 /* If the node exists, update its value field */
 void insert_value(char *name, char *value) {
-        NODE *node;
+        FORMAT_NODE *node;
 
 #ifdef DEBUG
         ASSERT(name);
@@ -163,7 +163,7 @@ void insert_value(char *name, char *value) {
 
 /* Print a list of all field names contained in the output format */
 void print_format_list() {
-        NODE *node = head;
+        FORMAT_NODE *node = head;
 
 #ifdef DEBUG
         ASSERT(node);
@@ -184,7 +184,7 @@ void print_format_list() {
 /* Destructively print each node value; once printed, each existing
    value is assigned to NULL to clear it for the next packet */
 void print_format_values() {
-        NODE *node = head;
+        FORMAT_NODE *node = head;
 
 #ifdef DEBUG
         ASSERT(node);
@@ -209,7 +209,7 @@ void print_format_values() {
 /* Free all allocated memory for format structure; only called at
    program termination */
 void free_format() {
-        NODE *prev, *curr;
+        FORMAT_NODE *prev, *curr;
 
         if (!head) return;
 
@@ -227,8 +227,8 @@ void free_format() {
 
 /* Lookup a particular node in hash; return pointer to node
    if found, NULL otherwise */
-NODE *hash_lookup(char *str) {
-        NODE *node;
+FORMAT_NODE *hash_lookup(char *str) {
+        FORMAT_NODE *node;
 
 #ifdef DEBUG
         ASSERT(str);
