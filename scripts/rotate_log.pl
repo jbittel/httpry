@@ -34,17 +34,17 @@ my $del_text = 0;
 # -----------------------------------------------------------------------------
 &get_arguments();
 
+&move_file() if $file;
+
 opendir(DIR, $dir) or die "Error: Cannot open directory '$dir'\n";
 @dir = grep !/^\./, readdir(DIR);
 closedir(DIR);
 
-&move_file() if $file;
+&purge_dir_by_count() if $purge_cnt;
+&purge_dir_by_size() if $purge_size;
 
 &compress_files() if $compress;
 &delete_text_files() if $del_text;
-
-&purge_dir_by_count() if $purge_cnt;
-&purge_dir_by_size() if $purge_size;
 
 # -----------------------------------------------------------------------------
 # Move current log file to archive directory and rename according to date
@@ -112,8 +112,8 @@ sub purge_dir_by_count {
                         $a->[2] <=> $b->[2] or # ...then by month...
                         $a->[3] <=> $b->[3]    # ...and finally day
                 }
-                map { [ $_, /^(\d+)-(\d+)-(\d+)/ ] }
-                grep /^\d+-\d+-\d+.*\.(?:gz|log)$/, @dir;
+                map { [ $_, /^(\d{4})-(\d{1,2})-(\d{1,2})/ ] }
+                grep /^\d{4}-\d{1,2}-\d{1,2}\.(?:gz|log)$/, @dir;
 
         if (scalar @logs > $purge_cnt) {
                 $cnt = scalar @logs - $purge_cnt;
@@ -139,8 +139,8 @@ sub purge_dir_by_size {
                         $a->[2] <=> $b->[2] or # ...then by month...
                         $a->[3] <=> $b->[3]    # ...and finally day
                 }
-                map { [ $_, /^(\d+)-(\d+)-(\d+)/ ] }
-                grep /^\d+-\d+-\d+.*\.(?:gz|log)$/, @dir;
+                map { [ $_, /^(\d{4})-(\d{1,2})-(\d{1,2})/ ] }
+                grep /^\d{4}-\d{1,2}-\d{1,2}\.(?:gz|log)$/, @dir;
 
         foreach $log_file (reverse @logs) {
                 $size += int((stat($dir/$log_file))[7] / 1000000);
