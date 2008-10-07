@@ -33,7 +33,7 @@ my $del_text = 0;
 # Main Program
 # -----------------------------------------------------------------------------
 &get_arguments();
-        
+
 opendir(DIR, $dir) or die "Error: Cannot open directory '$dir'\n";
 @dir = grep !/^\./, readdir(DIR);
 closedir(DIR);
@@ -53,11 +53,12 @@ sub move_file {
         my $mday = (localtime)[3];
         my $mon = (localtime)[4] + 1;
         my $year = (localtime)[5] + 1900;
+        my $new_filename = "$dir/$year-$mon-$mday.log";
 
-        if (! -e "$dir/$mon-$mday-$year.log") {
-                rename "$file", "$dir/$year-$mon-$mday.log";
+        if (! -e $new_filename) {
+                rename "$file", "$dir/$new_filename";
         } else {
-                warn "Error: File '$dir/$year-$mon-$mday.log' already exists\n";
+                warn "Error: File '$dir/$new_filename' already exists\n";
         }
 
         return;
@@ -107,9 +108,9 @@ sub purge_dir_by_count {
  
         @logs = map { $_->[0] }
                 sort {
-                        $a->[3] <=> $b->[3] or # Sort by year...
-                        $a->[1] <=> $b->[1] or # ...then by month...
-                        $a->[2] <=> $b->[2]    # ...and finally day
+                        $a->[1] <=> $b->[1] or # Sort by year...
+                        $a->[2] <=> $b->[2] or # ...then by month...
+                        $a->[3] <=> $b->[3]    # ...and finally day
                 }
                 map { [ $_, /^(\d+)-(\d+)-(\d+)/ ] }
                 grep /^\d+-\d+-\d+.*\.(?:gz|log)$/, @dir;
@@ -134,9 +135,9 @@ sub purge_dir_by_size {
  
         @logs = map { $_->[0] }
                 sort {
-                        $a->[3] <=> $b->[3] or # Sort by year...
-                        $a->[1] <=> $b->[1] or # ...then by month...
-                        $a->[2] <=> $b->[2]    # ...and finally day
+                        $a->[1] <=> $b->[1] or # Sort by year...
+                        $a->[2] <=> $b->[2] or # ...then by month...
+                        $a->[3] <=> $b->[3]    # ...and finally day
                 }
                 map { [ $_, /^(\d+)-(\d+)-(\d+)/ ] }
                 grep /^\d+-\d+-\d+.*\.(?:gz|log)$/, @dir;
