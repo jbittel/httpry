@@ -53,7 +53,7 @@ sub move_file {
         my $mday = (localtime)[3];
         my $mon = (localtime)[4] + 1;
         my $year = (localtime)[5] + 1900;
-        my $new_filename = "$dir/$year-$mon-$mday.log";
+        my $new_filename = "$year-$mon-$mday.log";
 
         if (! -e $new_filename) {
                 rename "$file", "$dir/$new_filename";
