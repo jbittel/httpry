@@ -198,7 +198,7 @@ sub content_check {
         my $query_offset = index($uri, '?', $path_offset);
         my $term_offset;
         my $num_terms = 0;
-        my $score;
+        my $score = 0;
         my $pos;
 
         foreach $term (@terms) {
@@ -209,7 +209,7 @@ sub content_check {
 
                         # Term found, so apply scoring rules
                         # Rule 1: Apply a base score of 1
-                        $score = 1;
+                        $score += 1;
 
                         # Rule 2: If found in query, add 2
                         #         If found in path, add 1
