@@ -333,7 +333,11 @@ char *parse_header_line(char *header_line) {
         if (tmp == pos) return NULL; /* Reached the end of the header */
 
         header_line = pos;
-        while (*tmp == '\0') tmp++;
+        /* Increment past the '\0' character(s) inserted above */
+        if (*tmp == '\0') {
+                tmp++;
+                if (*tmp == '\0') tmp++;
+        }
         pos = tmp;
 
         return header_line;
