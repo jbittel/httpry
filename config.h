@@ -18,13 +18,13 @@
    *** Can be overridden */
 #define DEFAULT_CAPFILTER "tcp port 80 or 8080"
 
-/* Default output format string; see doc/format-string for more info
+/* Default output format string; see doc/format-string for more information
    *** Can be overridden with -s */
 #define DEFAULT_FORMAT "timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase"
 
-/* Default request methods; a comma-delimited list similar in structure to the above format string
+/* Default request methods to process; see doc/method-string for more information
    *** Can be overridden with -m */
-#define DEFAULT_METHODS "OPTIONS,GET,HEAD,POST,PUT,DELETE,TRACE,CONNECT"
+#define DEFAULT_METHODS "options,get,head,post,put,delete,trace,connect"
 
 /* Location to store the PID file when running in daemon mode */
 #define PID_FILE "/var/run/httpry.pid"

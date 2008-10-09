@@ -51,7 +51,7 @@ the doc/perl-tools file.
 
 --{ INSTALLATION }--
 
-httpry should compile on most *nix based OSs with any relatively recent
+httpry should compile on almost any *nix based OS with a relatively recent
 version of libpcap (specifically tested against 0.9.4 and newer). To compile
 and install, run these commands in the base httpry directory:
 
@@ -94,7 +94,7 @@ first one found.
 -m methods
 Provide a comma-delimited string that specifies the request methods to parse.
 The program defaults to parsing all of the standard RFC2616 method strings if
-this option is not set.
+this option is not set. See the doc/method-string file for more information.
 
 -n count
 Parse this number of HTTP packets and then exit. Defaults to 0, which means
@@ -115,7 +115,7 @@ Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
 
 -s format
-Provide a comma-delimited string that specifies the parsed HTTP data to output.
+Provide a comma-delimited string specifying the parsed HTTP data to output.
 See the doc/format-string file for further information regarding available
 options and syntax.
 

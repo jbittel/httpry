@@ -27,7 +27,7 @@ first one found.
 .IP "-m \fImethods\fP"
 Provide a comma-delimited string that specifies the request methods to parse.
 The program defaults to parsing all of the standard RFC2616 method strings if
-this option is not set.
+this option is not set. See the doc/method-string file for more information.
 .IP "-n \fIcount\fP"
 Parse this number of HTTP packets and then exit. Defaults to 0, which means
 loop forever.
@@ -42,7 +42,7 @@ Suppress non-critical output (startup banner, statistics, etc.).
 Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
 .IP "-s \fIformat\fP"
-Provide a comma-delimited string that specifies the parsed HTTP data to output.
+Provide a comma-delimited string specifying the parsed HTTP data to output.
 See the doc/format-string file for further information regarding available
 options and syntax.
 .IP "-u \fIuser\fP"

@@ -7,10 +7,10 @@ modify the plugins to customize processing.
 *** IMPORTANT! ***
 The log parser will attempt to use all plugins that it finds in the default
 plugin directory. To override this behavior, use the -p switch to specify
-plugins by path and name or use -d to specify an alternate directory to use.
-If the plugin requires a configuration file, it must be located in the same
-directory as the plugin and named '<plugin name>.cfg'. Additionally, any input
-log file needs to be a valid httpry log including the field specifier at the
+plugins by path and name and/or use -d to specify an alternate directory to
+use. If the plugin requires a configuration file, it must be located in the
+same directory as the plugin and named '<plugin name>.cfg'. Additionally, any
+input log file needs to be a valid httpry log with the field specifier at the
 start of the file.
 
 These non-core Perl modules must be installed to run all scripts: 
@@ -23,8 +23,8 @@ Included Perl scripts:
 
  ./scripts/rotate_log.pl
         Moves an active log file into a specified directory. Also offers
-        options for deleting text files, compressing the log files and/or
-        purging old log files by number or total size.
+        options for deleting text files, compressing the log files and
+        purging existing log files by number or total size.
 
  ./scripts/parse_log.pl
         Core script for plugins. Processes log files and delivers data to each
@@ -35,9 +35,9 @@ Included Perl scripts:
         directory for a plugin directory followed by the base directory of
         the script. The first directory found is used. To load only specifc
         plugins, use the -p switch to provide a comma-delimited list of
-        plugins. Most included plugins require a config file, which must be
-        named correctly and located in the same directory as their respective
-        plugin.
+        plugins (-d is not applied here, so specify them by their full path).
+        Most included plugins require a config file, which must be named
+        '<plugin name>.cfg' and placed in the same directory as the plugin.
 
 
 Included plugins for parse_log.pl:
@@ -56,10 +56,10 @@ Included plugins for parse_log.pl:
         input file containing search terms.
 
  ./scripts/plugins/db_dump.pm
-        Dumps log file data into a previously prepared database. Useful
+        Dumps log file data into a previously initialized database. Useful
         for more extensive data mining or adding a more user-friendly web
-        interface. Use the included db_dump.mysql to initialize the required
-        database table.
+        interface. Use the included db_dump.mysql to create the required
+        database tables.
 
  ./scripts/plugins/find_proxies.pm
         Performs some basic tests looking for proxy usage. The tests are

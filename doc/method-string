@@ -1,0 +1,29 @@
+The -m switch allows the user to specify the request methods they are 
+interested in. Any request that has a method in this list is processed, and all 
+others are ignored. The string itself is a comma-delimited list of terms. 
+Spaces are allowed between elements and the terms are not case sensitive. Any 
+duplicate field names are ignored.
+
+This is the default methods string used:
+
+   options,get,head,post,put,delete,trace,connect
+
+These are all of the default methods listed in RFC2616. If, for example, you 
+wanted to only process GET and HEAD requests (the default behavior in httpry <= 
+version 0.1.3) you would use:
+
+   httpry -m get,head
+
+You are not limited to the above list of methods. Any string can be provided 
+as a potential method, and it will be matched if it appears in a HTTP request. 
+This allows you to easily search for WebDAV methods, or anything else you're 
+interested in.
+
+Note that requests and responses are not associated within httpry, as the 
+program simply displays what it sees on the wire. If you limit the request 
+types but are capturing traffic both directions, you will still see the server 
+responses for requests that were ignored.
+
+If you find yourself frequently using a custom method string and don't want to 
+specify it every run, just modify the default method string in config.h and 
+recompile httpry.
