@@ -350,13 +350,15 @@ sub write_summary_file {
                 return;
         }
 
-        &partition_scores();
+        if ($cluster_flows) {
+                &partition_scores();
 
-        # Delete flows and associated files from the lower partition
-        foreach $ip (keys %scored_flow) {
-                if ($scored_flow{$ip}->{"cluster"} == 0) {
-                        delete $scored_flow{$ip};
-                        unlink "$output_dir/scored_$ip.txt";
+                # Delete flows and associated files from the lower partition
+                foreach $ip (keys %scored_flow) {
+                        if ($scored_flow{$ip}->{"cluster"} == 0) {
+                                delete $scored_flow{$ip};
+                                unlink "$output_dir/scored_$ip.txt";
+                        }
                 }
         }
 
