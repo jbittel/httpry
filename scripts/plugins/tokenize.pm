@@ -40,10 +40,9 @@ sub main {
         my $line;
         my $decoded_uri;
 
-        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
-        return unless exists $record->{"source-ip"};
         return unless exists $record->{"host"};
         return unless exists $record->{"request-uri"};
+        return unless (exists $record->{"source-ip"} && ($record->{'source-ip'} =~ /^(?:\d+)(?:\.\d+){3}$/));
 
         $decoded_uri = $record->{"request-uri"};
         $decoded_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
@@ -53,7 +52,8 @@ sub main {
 
         foreach my $term (split /[^A-Za-z0-9]/, $line) {
                 next if !$term;
-                next if $term =~ /\d+/; # Ignore numbers
+                next if (length($term) <= 2);
+                next if $term =~ /^\d+$/; # Ignore numbers
                 next if (exists $stopwords{$term});
 
                 $terms{$record->{'source-ip'}}->{$term}++;
