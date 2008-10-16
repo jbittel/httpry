@@ -81,7 +81,7 @@ sub main {
         $decoded_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
         $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
-        $curr_line = "$record->{'timestamp'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
+        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
 
         # Convert timestamp of current record to epoch seconds
         $record->{"timestamp"} =~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
@@ -155,7 +155,7 @@ sub load_config {
 }
 
 # -----------------------------------------------------------------------------
-# Read in query terms and weights from input file
+# Read in query terms from input file
 # -----------------------------------------------------------------------------
 sub load_terms {
         my $line;
@@ -308,11 +308,12 @@ sub append_scored_file {
 
         open(HOSTFILE, ">>$output_dir/scored_$ip.txt") or die "Error: Cannot open $output_dir/scored_$ip.txt: $!\n";
 
-        print HOSTFILE '>' x 80 . "\n";
+        print HOSTFILE '#' x 80 . "\n";
+        print HOSTFILE "# Fields: timestamp,source-ip,dest-ip,host,request-uri\n";
         foreach $line (@{ $active_flow_data{$ip} }) {
                 print HOSTFILE $line, "\n";
         }
-        print HOSTFILE '<' x 80 . "\n";
+        print HOSTFILE '#' x 80 . "\n";
 
         close(HOSTFILE);
 
