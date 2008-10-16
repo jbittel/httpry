@@ -60,13 +60,12 @@ and install, run these commands in the base httpry directory:
 
 which compiles the program and copies the binary and man page to their
 appropriate locations. You can run the binary from the compilation directory
-if you don't want to install it. If you ever need to uninstall the program
-run:
+if you don't want to install it. To uninstall the program, run:
 
  # make uninstall
 
-from the installation directory, or just manually delete the executable and
-man page.
+from the installation directory, or manually delete the executable and man
+page.
 
 
 --{ USAGE }--

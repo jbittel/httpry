@@ -146,7 +146,7 @@ sub write_output_file {
         foreach $hostname (sort keys %search_terms) {
                 print OUTFILE "$hostname\n";
                 foreach $term (sort keys %{$search_terms{$hostname}}) {
-                        print OUTFILE "\t($search_terms{$hostname}->{$term})\t$term\n";
+                        print OUTFILE "\t$search_terms{$hostname}->{$term}\t$term\n";
                 }
                 print OUTFILE "\n";
         }

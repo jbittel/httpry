@@ -152,8 +152,8 @@ void insert_value(char *name, char *value) {
         ASSERT(value);
 #endif
 
-        if (strlen(name) == 0) return;
-        if (strlen(value) == 0) return;
+        if ((strlen(name) == 0) || (strlen(value) == 0))
+                return;
 
         if ((node = hash_lookup(name)))
                 node->value = value;

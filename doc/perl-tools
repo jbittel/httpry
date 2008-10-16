@@ -66,8 +66,7 @@ Included plugins for parse_log.pl:
         currently rather rudimentary and generate quite a lot of noise.
 
  ./scripts/plugins/hostnames.pm
-        Outputs a list of unique hostnames with counts found in the log data
-        (rather pointless without 'host' as one of your output fields).
+        Outputs a list of unique hostnames with counts found in the log data.
 
  ./scripts/plugins/log_summary.pm
         Provides summary information regarding the input files including
@@ -85,7 +84,8 @@ Included plugins for parse_log.pl:
 
  ./scripts/plugins/tokenize.pm
         Outputs a set of tokens for each source IP address, broken into
-        separate output files.
+        separate output files (a token here is defined as a sequence of
+        alphanumeric characters delimited by non-alphanumeric characters).
 
  ./scripts/plugins/xml_format.pm
         Outputs the input log data in XML format.
