@@ -56,7 +56,6 @@ sub read_plugin_line {
         foreach (split /,/, $plugin_list) {
                 $_ =~ s/^\s+//;
                 $_ =~ s/\s+$//;
-                next if ($_ !~ /\.pm$/);
                 next if ($_ =~ /^$/);
 
                 &load_plugin($_);
