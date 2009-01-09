@@ -4,7 +4,7 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>
+  Copyright (c) 2005-2009 Jason Bittel <jason.bittel@gmail.com>
 
 */
 
@@ -272,7 +272,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 return;
         }
 
-        /* Copy packet data to editable buffer */
+        /* Copy packet data to editable buffer that was created in main() */
         if (size_data > BUFSIZ) size_data = BUFSIZ;
         strncpy(buf, data, size_data);
         buf[size_data] = '\0';
@@ -474,7 +474,7 @@ void print_stats() {
 void display_banner() {
         PRINT("%s version %s -- "
               "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
-        PRINT("Copyright (c) 2005-2008 Jason Bittel <jason.bittel@gmail.com>");
+        PRINT("Copyright (c) 2005-2009 Jason Bittel <jason.bittel@gmail.com>");
 
         return;
 }
