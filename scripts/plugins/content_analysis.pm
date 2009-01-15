@@ -20,11 +20,11 @@ my $FILE_PREFIX = "flows_";
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 # Counter variables
+my $line_cnt = 0;
 my $flow_cnt = 0;
 my $flow_line_cnt = 0;
 my $flow_min_len = 999999;
 my $flow_max_len = 0;
-my $max_concurrent = 0;
 
 # Data structures
 my %active_flow = ();       # Metadata about each active flow
@@ -80,11 +80,8 @@ sub main {
         $decoded_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
         $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
 
-        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t$record->{'host'}\t$decoded_uri";
-
-        if ((keys %active_flow) > $max_concurrent) {
-                $max_concurrent = keys %active_flow;
-        }
+        $line_cnt++;
+        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t>\t$record->{'host'}\t$decoded_uri";
 
         # Begin a new flow if one doesn't exist
         if (!exists $active_flow{$record->{"source-ip"}}) {
@@ -309,7 +306,7 @@ sub append_scored_file {
         open(HOSTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") or die "Error: Cannot open $output_dir/flows_$ip.txt: $!\n";
 
         print HOSTFILE '#' x 80 . "\n";
-        print HOSTFILE "# Fields: timestamp,source-ip,dest-ip,host,request-uri\n";
+        print HOSTFILE "# Fields: timestamp,source-ip,dest-ip,direction,host,request-uri\n";
 
         print HOSTFILE "# Terms: ";
         foreach $term (keys %{ $active_flow{$ip}->{"terms"} }) {
@@ -320,6 +317,7 @@ sub append_scored_file {
         foreach $line (@{ $active_flow_data{$ip} }) {
                 print HOSTFILE $line, "\n";
         }
+        print HOSTFILE "\n";
 
         close(HOSTFILE);
 
@@ -338,16 +336,17 @@ sub write_summary_file {
         open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nCONTENT ANALYSIS SUMMARY\n\n";
-        print OUTFILE "Generated:      " . localtime() . "\n";
-        print OUTFILE "Flow count:     $flow_cnt\n";
-        print OUTFILE "Flow lines:     $flow_line_cnt\n";
-        print OUTFILE "Max concurrent: $max_concurrent\n";
-        print OUTFILE "Min/max/avg:    ";
+        print OUTFILE "Generated:    " . localtime() . "\n";
+        print OUTFILE "Total lines:  $line_cnt\n";
+        print OUTFILE "Flow count:   $flow_cnt\n";
+        print OUTFILE "Flow lines:   $flow_line_cnt\n";
+        print OUTFILE "Flow length:  ";
         if ($flow_cnt > 0) {
-                print OUTFILE "$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt) . "\n";
+                print OUTFILE "$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt);
         } else {
-                print OUTFILE "0/0/0\n";
+                print OUTFILE "0/0/0";
         }
+        print OUTFILE " (min/max/avg)\n\n";
 
         if (scalar keys %scored_flow == 0) {
                 print OUTFILE "\n\n*** No scored flows found\n";
@@ -372,9 +371,9 @@ sub write_summary_file {
                 $scored_flows_cnt += $scored_flow{$_}->{"num_flows"};
         }
 
-        print OUTFILE "\nTerms file:     $terms_file\n";
-        print OUTFILE "Scored IPs:     " . (keys %scored_flow) . "\n";
-        print OUTFILE "Scored flows:   $scored_flows_cnt\n\n";
+        print OUTFILE "Terms file:   $terms_file\n";
+        print OUTFILE "Scored IPs:   " . (keys %scored_flow) . "\n";
+        print OUTFILE "Scored flows: $scored_flows_cnt\n\n";
 
         foreach $ip (sort { $scored_flow{$b}->{"score"} <=> $scored_flow{$a}->{"score"} } keys %scored_flow) {
                 $term_cnt = 0;
