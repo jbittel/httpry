@@ -27,8 +27,8 @@ my $flow_min_len = 999999;
 my $flow_max_len = 0;
 
 # Data structures
-my %active_flow = ();       # Metadata about each active flow
-my %active_flow_data = ();  # Individual flow data lines
+my %flow = ();         # Metadata about active flows
+my %flow_buffer = ();  # Individual flow data lines
 my %scored_flow = ();
 my @terms = ();
 
@@ -84,41 +84,41 @@ sub main {
         $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t>\t$record->{'host'}\t$decoded_uri";
 
         # Begin a new flow if one doesn't exist
-        if (!exists $active_flow{$record->{"source-ip"}}) {
+        if (!exists $flow{$record->{"source-ip"}}) {
                 $flow_cnt++;
 
-                $active_flow{$record->{"source-ip"}}->{"length"} = 0;
-                $active_flow{$record->{"source-ip"}}->{"score"} = 0;
-                $active_flow{$record->{"source-ip"}}->{"streak"} = 0;
-                $active_flow{$record->{"source-ip"}}->{"dirty"} = 0;
-                $active_flow{$record->{"source-ip"}}->{"count"} = 0;
+                $flow{$record->{"source-ip"}}->{"length"} = 0;
+                $flow{$record->{"source-ip"}}->{"score"} = 0;
+                $flow{$record->{"source-ip"}}->{"streak"} = 0;
+                $flow{$record->{"source-ip"}}->{"dirty"} = 0;
+                $flow{$record->{"source-ip"}}->{"count"} = 0;
         }
 
         # Insert the current line into the buffer
-        $active_flow{$record->{"source-ip"}}->{"length"}++;
-        push(@{ $active_flow_data{$record->{"source-ip"}} }, $curr_line);
+        $flow{$record->{"source-ip"}}->{"length"}++;
+        push(@{ $flow_buffer{$record->{"source-ip"}} }, $curr_line);
 
         # If a term is found, flag the buffer as dirty
         if (&content_check("$record->{'host'}$record->{'request-uri'}", $record->{"source-ip"}) > 0) {
-                $active_flow{$record->{"source-ip"}}->{"dirty"} = 1;
-                $active_flow{$record->{"source-ip"}}->{"count"} = $WINDOW_SIZE;
+                $flow{$record->{"source-ip"}}->{"dirty"} = 1;
+                $flow{$record->{"source-ip"}}->{"count"} = $WINDOW_SIZE;
         } else {
                 # Term not found, so if buffer is dirty decrement the window count
-                if ($active_flow{$record->{"source-ip"}}->{"dirty"} == 1) {
-                        $active_flow{$record->{"source-ip"}}->{"count"}--;
+                if ($flow{$record->{"source-ip"}}->{"dirty"} == 1) {
+                        $flow{$record->{"source-ip"}}->{"count"}--;
                 }
         }
 
         # If buffer is clean and full, shift it forward a line
-        if (($active_flow{$record->{"source-ip"}}->{"dirty"} == 0) &&
-            ($active_flow{$record->{"source-ip"}}->{"length"} > $WINDOW_SIZE)) {
-                $active_flow{$record->{"source-ip"}}->{"length"}--;
-                shift(@{ $active_flow_data{$record->{"source-ip"}} });
+        if (($flow{$record->{"source-ip"}}->{"dirty"} == 0) &&
+            ($flow{$record->{"source-ip"}}->{"length"} > $WINDOW_SIZE)) {
+                $flow{$record->{"source-ip"}}->{"length"}--;
+                shift(@{ $flow_buffer{$record->{"source-ip"}} });
         }
 
         # If buffer is dirty and the window count is 0, flush it
-        if (($active_flow{$record->{"source-ip"}}->{"dirty"} == 1) &&
-            ($active_flow{$record->{"source-ip"}}->{"count"} == 0)) {
+        if (($flow{$record->{"source-ip"}}->{"dirty"} == 1) &&
+            ($flow{$record->{"source-ip"}}->{"count"} == 0)) {
                 &flush_buffer($record->{"source-ip"});
         }
 
@@ -219,7 +219,7 @@ sub content_check {
                 $pos = 0;
                 while (($term_offset = index($uri, $term, $pos)) > -1) {
                         $num_terms++;
-                        $active_flow{$ip}->{"terms"}->{$term}++;
+                        $flow{$ip}->{"terms"}->{$term}++;
 
                         # Term found, so apply scoring rules
                         # Rule 1: Apply a base score of 1
@@ -252,16 +252,16 @@ sub content_check {
         # Rule 5: If a streak (more than 3 successive lines containing
         #         terms) is found, add the length of the streak
         if ($num_terms == 0) {
-                if ($active_flow{$ip}->{"streak"} > 3) {
-                        $score += $active_flow{$ip}->{"streak"};
+                if ($flow{$ip}->{"streak"} > 3) {
+                        $score += $flow{$ip}->{"streak"};
                 }
 
-                $active_flow{$ip}->{"streak"} = 0;
+                $flow{$ip}->{"streak"} = 0;
         } else {
-                $active_flow{$ip}->{"streak"}++;
+                $flow{$ip}->{"streak"}++;
         }
 
-        $active_flow{$ip}->{"score"} += $score;
+        $flow{$ip}->{"score"} += $score;
 
         return $num_terms;
 }
@@ -274,23 +274,23 @@ sub flush_buffer {
         my $ip = shift;
 
         # Update flow statistics
-        $flow_min_len = $active_flow{$ip}->{"length"} if ($active_flow{$ip}->{"length"} < $flow_min_len);
-        $flow_max_len = $active_flow{$ip}->{"length"} if ($active_flow{$ip}->{"length"} > $flow_max_len);
-        $flow_line_cnt += $active_flow{$ip}->{"length"};
+        $flow_min_len = $flow{$ip}->{"length"} if ($flow{$ip}->{"length"} < $flow_min_len);
+        $flow_max_len = $flow{$ip}->{"length"} if ($flow{$ip}->{"length"} > $flow_max_len);
+        $flow_line_cnt += $flow{$ip}->{"length"};
 
         # Save score information only if a score has been applied
-        if ($active_flow{$ip}->{"score"} > 0) {
+        if ($flow{$ip}->{"score"} > 0) {
                 $scored_flow{$ip}->{"num_flows"}++;
-                $scored_flow{$ip}->{"score"} += $active_flow{$ip}->{"score"};
-                foreach (keys %{ $active_flow{$ip}->{"terms"} }) {
-                        $scored_flow{$ip}->{"terms"}->{$_} += $active_flow{$ip}->{"terms"}->{$_};
+                $scored_flow{$ip}->{"score"} += $flow{$ip}->{"score"};
+                foreach (keys %{ $flow{$ip}->{"terms"} }) {
+                        $scored_flow{$ip}->{"terms"}->{$_} += $flow{$ip}->{"terms"}->{$_};
                 }
 
                 &append_scored_file($ip);
         }
 
-        delete $active_flow{$ip};
-        delete $active_flow_data{$ip};
+        delete $flow{$ip};
+        delete $flow_buffer{$ip};
 
         return;
 }
@@ -309,12 +309,12 @@ sub append_scored_file {
         print HOSTFILE "# Fields: timestamp,source-ip,dest-ip,direction,host,request-uri\n";
 
         print HOSTFILE "# Terms: ";
-        foreach $term (keys %{ $active_flow{$ip}->{"terms"} }) {
-                print HOSTFILE "$term (" . $active_flow{$ip}->{"terms"}->{$term} . ") ";
+        foreach $term (keys %{ $flow{$ip}->{"terms"} }) {
+                print HOSTFILE "$term (" . $flow{$ip}->{"terms"}->{$term} . ") ";
         }
         print HOSTFILE "\n";
 
-        foreach $line (@{ $active_flow_data{$ip} }) {
+        foreach $line (@{ $flow_buffer{$ip} }) {
                 print HOSTFILE $line, "\n";
         }
         print HOSTFILE "\n";
