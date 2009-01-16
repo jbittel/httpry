@@ -483,10 +483,11 @@ void display_banner() {
 void display_usage() {
         display_banner();
 
-        printf("Usage: %s [ -dhpq ] [ -i device ] [ -m methods ] [ -n count ] [ -o file ]\n"
-                             "[ -r file ] [ -s format ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
+        printf("Usage: %s [ -dhpq ] [ -f format ] [ -i device ] [ -m methods ] [ -n count ]\n"
+                             "[ -r file ] [ -o file ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
         printf("   -d           run as daemon\n"
+               "   -f format    specify output format string\n"
                "   -h           print this help information\n"
                "   -i device    listen on this interface\n"
                "   -m methods   specify request methods to parse\n"
@@ -495,7 +496,6 @@ void display_usage() {
                "   -p           disable promiscuous mode\n"
                "   -q           suppress non-critical output\n"
                "   -r file      read packets from input file\n"
-               "   -s format    specify output format string\n"
                "   -u user      set process owner\n"
                "   expression   specify a bpf-style capture filter\n\n");
 
@@ -514,10 +514,11 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "dhpqi:m:n:o:r:s:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "df:hpqi:m:n:o:r:u:")) != -1) {
                 switch (opt) {
                         case 'd': daemon_mode = 1;
                                   use_syslog = 1; break;
+                        case 'f': format_str = optarg; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
                         case 'm': methods_str = optarg; break;
@@ -526,7 +527,6 @@ int main(int argc, char **argv) {
                         case 'p': set_promisc = 0; break;
                         case 'q': quiet_mode = 1; break;
                         case 'r': use_infile = optarg; break;
-                        case 's': format_str = optarg; break;
                         case 'u': new_user = optarg; break;
                         default: display_usage();
                 }
