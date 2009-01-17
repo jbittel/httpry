@@ -203,9 +203,9 @@ sub process_logfiles {
                         $curr_line =~ s/[^[:print:]\t]//g; # Strip unprintable characters
                         next if $curr_line =~ /^$/;
 
-                        # Default header format:
-                        # Fields: timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase
+                        # Handle comment lines
                         if ($curr_line =~ /^#/) {
+                                # Check the comment for a field specifier line
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map { lc } split /\,/, $1;
                                 %record = ();

@@ -77,11 +77,12 @@ sub main {
         return unless exists $record->{"request-uri"};
 
         $decoded_uri = $record->{"request-uri"};
-        $decoded_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        $decoded_uri =~ s/%25/%/g; # TODO: these can be nested multiple times
+        $decoded_uri =~ s/%(?:0A|0D)/\./ig;
+        $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
 
         $line_cnt++;
-        $curr_line = "$record->{'timestamp'}\t$record->{'source-ip'}\t$record->{'dest-ip'}\t>\t$record->{'host'}\t$decoded_uri";
+        $curr_line = "$record->{'timestamp'}\t$record->{'host'}\t$decoded_uri\t$record->{'source-ip'}\t$record->{'dest-ip'}\t>";
 
         # Begin a new flow if one doesn't exist
         if (!exists $flow{$record->{"source-ip"}}) {
@@ -306,7 +307,7 @@ sub append_scored_file {
         open(HOSTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") or die "Error: Cannot open $output_dir/flows_$ip.txt: $!\n";
 
         print HOSTFILE '#' x 80 . "\n";
-        print HOSTFILE "# Fields: timestamp,source-ip,dest-ip,direction,host,request-uri\n";
+        print HOSTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
 
         print HOSTFILE "# Terms: ";
         foreach $term (keys %{ $flow{$ip}->{"terms"} }) {
@@ -349,7 +350,7 @@ sub write_summary_file {
         print OUTFILE " (min/max/avg)\n\n";
 
         if (scalar keys %scored_flow == 0) {
-                print OUTFILE "\n\n*** No scored flows found\n";
+                print OUTFILE "*** No scored flows found\n";
                 close(OUTFILE);
 
                 return;
