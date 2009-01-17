@@ -197,7 +197,7 @@ void print_format_values() {
                 } else {
                         printf("%c", EMPTY_FIELD);
                 }
-                printf("%s", FIELD_DELIM);
+                if (node->list != NULL) printf("%s", FIELD_DELIM);
 
                 node = node->list;
         }
