@@ -77,7 +77,7 @@ sub main {
         return unless exists $record->{"request-uri"};
 
         $decoded_uri = $record->{"request-uri"};
-        $decoded_uri =~ s/%25/%/g; # TODO: these can be nested multiple times
+        $decoded_uri =~ s/%(?:25)+/%/g;
         $decoded_uri =~ s/%(?:0A|0D)/\./ig;
         $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
 
@@ -94,6 +94,8 @@ sub main {
                 $flow{$record->{"source-ip"}}->{"dirty"} = 0;
                 $flow{$record->{"source-ip"}}->{"count"} = 0;
         }
+
+        # TODO: figure out why reprocessed flows are not always handled identically
 
         # Insert the current line into the buffer
         $flow{$record->{"source-ip"}}->{"length"}++;
@@ -339,15 +341,11 @@ sub write_summary_file {
         print OUTFILE "\n\nCONTENT ANALYSIS SUMMARY\n\n";
         print OUTFILE "Generated:    " . localtime() . "\n";
         print OUTFILE "Total lines:  $line_cnt\n";
-        print OUTFILE "Flow count:   $flow_cnt\n";
         print OUTFILE "Flow lines:   $flow_line_cnt\n";
-        print OUTFILE "Flow length:  ";
-        if ($flow_cnt > 0) {
-                print OUTFILE "$flow_min_len/$flow_max_len/" . sprintf("%d", $flow_line_cnt / $flow_cnt);
-        } else {
-                print OUTFILE "0/0/0";
-        }
-        print OUTFILE " (min/max/avg)\n\n";
+        print OUTFILE "Flow count:   $flow_cnt\n";
+        # TODO: why is $flow_min_len always 52?
+        # TODO: if no flows found, $flow_min_len will print as 999999
+        print OUTFILE "Flow length:  $flow_min_len/$flow_max_len (min/max)\n\n";
 
         if (scalar keys %scored_flow == 0) {
                 print OUTFILE "*** No scored flows found\n";
