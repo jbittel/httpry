@@ -37,7 +37,6 @@ sub init {
 sub main {
         my $self = shift;
         my $record = shift;
-        my $line;
         my $decoded_uri;
 
         return unless exists $record->{"host"};
@@ -45,12 +44,10 @@ sub main {
         return unless (exists $record->{"source-ip"} && ($record->{'source-ip'} =~ /^(?:\d+)(?:\.\d+){3}$/));
 
         $decoded_uri = $record->{"request-uri"};
-        $decoded_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        $decoded_uri =~ s/%(?:25)+/%/g;
+        $decoded_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
 
-        $line = "$record->{'host'}$decoded_uri";
-
-        foreach my $term (split /[^A-Za-z0-9]/, $line) {
+        foreach my $term (split /[^A-Za-z0-9]/, "$record->{'host'}$decoded_uri") {
                 next if !$term;
                 next if (length($term) <= 2);
                 next if $term =~ /^\d+$/; # Ignore numbers

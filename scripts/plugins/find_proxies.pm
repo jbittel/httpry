@@ -53,10 +53,10 @@ sub main {
         return unless exists $record->{"host"};
 
         $request_uri = $record->{"request-uri"};
-        $request_uri =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $request_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        $request_uri =~ s/%(?:25)+/%/g;
+        $request_uri =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
 
-        # Perform hostname and uri keyword search
+        # Perform hostname and URI keyword search
         foreach $word (@proxy_keywords) {
                 if ($record->{"host"} =~ /$word/i) {
                         $proxy_lines{$record->{"source-ip"}}->{$record->{"host"}}++;
