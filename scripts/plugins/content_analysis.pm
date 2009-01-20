@@ -95,14 +95,12 @@ sub main {
                 $flow{$record->{"source-ip"}}->{"count"} = 0;
         }
 
-        # TODO: figure out why reprocessed flows are not always handled identically
-
         # Insert the current line into the buffer
         $flow{$record->{"source-ip"}}->{"length"}++;
         push(@{ $flow_buffer{$record->{"source-ip"}} }, $curr_line);
 
         # If a term is found, flag the buffer as dirty
-        if (&content_check("$record->{'host'}$record->{'request-uri'}", $record->{"source-ip"}) > 0) {
+        if (&content_check("$record->{'host'}$decoded_uri", $record->{"source-ip"}) > 0) {
                 $flow{$record->{"source-ip"}}->{"dirty"} = 1;
                 $flow{$record->{"source-ip"}}->{"count"} = $WINDOW_SIZE;
         } else {
@@ -131,7 +129,7 @@ sub main {
 sub end {
         my $ip;
         
-        foreach $ip (keys %active_flow) {
+        foreach $ip (keys %flow) {
                 &flush_buffer($ip);
         }
 
@@ -281,7 +279,7 @@ sub flush_buffer {
         $flow_max_len = $flow{$ip}->{"length"} if ($flow{$ip}->{"length"} > $flow_max_len);
         $flow_line_cnt += $flow{$ip}->{"length"};
 
-        # Save score information only if a score has been applied
+        # We're only interested in a flow if a score has been applied
         if ($flow{$ip}->{"score"} > 0) {
                 $scored_flow{$ip}->{"num_flows"}++;
                 $scored_flow{$ip}->{"score"} += $flow{$ip}->{"score"};
@@ -289,7 +287,7 @@ sub flush_buffer {
                         $scored_flow{$ip}->{"terms"}->{$_} += $flow{$ip}->{"terms"}->{$_};
                 }
 
-                &append_scored_file($ip);
+                &write_file($ip);
         }
 
         delete $flow{$ip};
@@ -301,28 +299,29 @@ sub flush_buffer {
 # -----------------------------------------------------------------------------
 # Append flow data to a detail file based on client IP
 # -----------------------------------------------------------------------------
-sub append_scored_file {
+sub write_file {
         my $ip = shift;
         my $term;
         my $line;
 
-        open(HOSTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") or die "Error: Cannot open $output_dir/flows_$ip.txt: $!\n";
+        open(OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") or die "Error: Cannot open $output_dir/$FILE_PREFIX$ip.txt: $!\n";
 
-        print HOSTFILE '#' x 80 . "\n";
-        print HOSTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
+        print OUTFILE '#' x 80 . "\n";
+        print OUTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
+        print OUTFILE "# Length: " . $flow{$ip}->{"length"} . " lines\n";
 
-        print HOSTFILE "# Terms: ";
+        print OUTFILE "# Terms: ";
         foreach $term (keys %{ $flow{$ip}->{"terms"} }) {
-                print HOSTFILE "$term (" . $flow{$ip}->{"terms"}->{$term} . ") ";
+                print OUTFILE "$term (" . $flow{$ip}->{"terms"}->{$term} . ") ";
         }
-        print HOSTFILE "\n";
+        print OUTFILE "\n";
 
         foreach $line (@{ $flow_buffer{$ip} }) {
-                print HOSTFILE $line, "\n";
+                print OUTFILE $line, "\n";
         }
-        print HOSTFILE "\n";
+        print OUTFILE "\n";
 
-        close(HOSTFILE);
+        close(OUTFILE);
 
         return;
 }
@@ -343,9 +342,7 @@ sub write_summary_file {
         print OUTFILE "Total lines:  $line_cnt\n";
         print OUTFILE "Flow lines:   $flow_line_cnt\n";
         print OUTFILE "Flow count:   $flow_cnt\n";
-        # TODO: why is $flow_min_len always 52?
-        # TODO: if no flows found, $flow_min_len will print as 999999
-        print OUTFILE "Flow length:  $flow_min_len/$flow_max_len (min/max)\n\n";
+        print OUTFILE "Flow length:  " . ($flow_cnt > 0 ? "$flow_min_len/$flow_max_len" : "0/0") . " (min/max)\n\n";
 
         if (scalar keys %scored_flow == 0) {
                 print OUTFILE "*** No scored flows found\n";
