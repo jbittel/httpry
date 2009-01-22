@@ -311,6 +311,7 @@ sub write_file {
         print OUTFILE '#' x 80 . "\n";
         print OUTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
         print OUTFILE "# Length: $flow{$ip}->{'length'} lines (window size: $WINDOW_SIZE)\n";
+        print OUTFILE "# Score: $flow{$ip}->{'score'}\n";
 
         print OUTFILE "# Terms: ";
         foreach $term (keys %{ $flow{$ip}->{"terms"} }) {
@@ -373,6 +374,8 @@ sub write_summary_file {
         print OUTFILE "Scored IPs:   " . (keys %scored_flow) . "\n";
         print OUTFILE "Scored flows: $scored_flows_cnt\n\n";
 
+        print OUTFILE "Score\tIP\t\tFlows\tTerms\tTerm List\n";
+        print OUTFILE "-----\t--\t\t-----\t-----\t---------\n";
         foreach $ip (sort { $scored_flow{$b}->{"score"} <=> $scored_flow{$a}->{"score"} } keys %scored_flow) {
                 $term_cnt = 0;
 
@@ -380,7 +383,7 @@ sub write_summary_file {
                         $term_cnt += $scored_flow{$ip}->{"terms"}->{$_};
                 }
 
-                print OUTFILE sprintf("%.1f", $scored_flow{$ip}->{"score"}) . "\t$ip\t$scored_flow{$ip}->{'num_flows'}\t$term_cnt\t";
+                print OUTFILE "$scored_flow{$ip}->{'score'}\t$ip\t$scored_flow{$ip}->{'num_flows'}\t$term_cnt\t";
                 foreach $term (sort keys %{ $scored_flow{$ip}->{"terms"} } ) {
                         print OUTFILE "$term ";
                 }
