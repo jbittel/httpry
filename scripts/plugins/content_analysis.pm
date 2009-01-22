@@ -13,7 +13,7 @@ use warnings;
 # -----------------------------------------------------------------------------
 # GLOBAL CONSTANTS
 # -----------------------------------------------------------------------------
-my $WINDOW_SIZE = 50;
+my $WINDOW_SIZE = 60;
 my $FILE_PREFIX = "flows_";
 
 # -----------------------------------------------------------------------------
@@ -209,6 +209,8 @@ sub content_check {
         my $ip = shift;
         my $term;
 
+        # TODO: tokenize the URI and compare to query array
+
         my $path_offset = index($uri, '/');
         my $query_offset = index($uri, '?', $path_offset);
         my $term_offset;
@@ -308,7 +310,7 @@ sub write_file {
 
         print OUTFILE '#' x 80 . "\n";
         print OUTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
-        print OUTFILE "# Length: " . $flow{$ip}->{"length"} . " lines\n";
+        print OUTFILE "# Length: $flow{$ip}->{'length'} lines (window size: $WINDOW_SIZE)\n";
 
         print OUTFILE "# Terms: ";
         foreach $term (keys %{ $flow{$ip}->{"terms"} }) {
