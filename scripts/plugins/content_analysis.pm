@@ -106,7 +106,7 @@ sub main {
                 }
         }
 
-        # If buffer is clean and full, shift it forward a line
+        # If buffer is clean and full, drop the oldest line
         if (($flow{$record->{"source-ip"}}->{"dirty"} == 0) &&
             ($flow{$record->{"source-ip"}}->{"length"} > $WINDOW_SIZE)) {
                 $flow{$record->{"source-ip"}}->{"length"}--;

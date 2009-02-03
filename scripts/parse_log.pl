@@ -169,15 +169,13 @@ sub register_plugin {
         my $p = (fileparse((caller)[1], '\.pm'))[0];
 
         if ($package ne $p) {
-                warn "Warning: Package '$package' does not match filename in plugin '$p'\n";
-                die;
+                die "Warning: Package '$package' does not match filename in plugin '$p'\n";
         }
 
         if ($package->can('new')) {
                 $enabled{$p} = $package->new();
         } else {
-                warn "Warning: Plugin '$p' does not contain a required new() function\n";
-                die;
+                die "Warning: Plugin '$p' does not contain a required new() function\n";
         }
 
         return;
@@ -192,7 +190,7 @@ sub process_logfiles {
         my @header;
         my %record;
 
-        foreach $curr_file (@input_files) {
+        FILE: foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
                         warn "Error: Cannot open $curr_file: $!\n";
                         next;
@@ -209,17 +207,23 @@ sub process_logfiles {
                         if ($curr_line =~ /^#/) {
                                 # Check the comment for a field specifier line
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
-                                @header = map { lc } split /\,/, $1;
-                                # TODO: strip whitespace from around header fields
+                                @header = map { s/\s//g; lc; } split /\,/, $1;
 
                                 &check_fields(@header);
-                                die "Error: All plugins are disabled\n" if (keys %enabled == 0);
+
+                                if (keys %enabled == 0) {
+                                        warn "Error: All plugins are disabled...skipping file\n";
+                                        next FILE;
+                                }
 
                                 %record = ();
                                 next;
                         }
 
-                        die "Error: No field description line found\n" if (scalar @header == 0);
+                        if (scalar @header == 0) {
+                                warn "Error: No field description line found...skipping file\n";
+                                next FILE;
+                        }
 
                         @record{@header} = split /\t/, $curr_line;
 
@@ -267,6 +271,7 @@ sub check_fields {
                         next PLUGIN if (!exists $fields{$_});
                 }
 
+                print "Plugin '$p' has been re-enabled\n" if $verbose;
                 $enabled{$p} = $disabled{$p};
                 delete $disabled{$p};
         }
@@ -280,21 +285,16 @@ sub check_fields {
 sub end_plugins {
         my $p;
 
+        # Enable all disabled plugins so they can be properly ended
+        foreach $p (keys %disabled) {
+                $enabled{$p} = $disabled{$p};
+                delete $disabled{$p};
+        }
+
         foreach $p (keys %enabled) {
                 if ($enabled{$p}->can('end')) {
                         print "Ending plugin '$p'\n" if $verbose;
                         eval '$enabled{$p}->end()';
-                        if ($@) {
-                                warn "Warning: $@" if $verbose;
-                                warn "Warning: Plugin '$p' failed to end\n";
-                        }
-                }
-        }
-
-        foreach $p (keys %disabled) {
-                if ($disabled{$p}->can('end')) {
-                        print "Ending plugin '$p'\n" if $verbose;
-                        eval '$disabled{$p}->end()';
                         if ($@) {
                                 warn "Warning: $@" if $verbose;
                                 warn "Warning: Plugin '$p' failed to end\n";
