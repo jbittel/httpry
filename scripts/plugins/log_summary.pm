@@ -51,11 +51,13 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('direction');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
-
-        return unless exists $record->{"direction"};
 
         # Gather statistics
         $total_line_cnt++;

@@ -34,14 +34,16 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('source-ip', 'host', 'request-uri');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
         my $decoded_uri;
 
-        return unless exists $record->{"host"};
-        return unless exists $record->{"request-uri"};
-        return unless (exists $record->{"source-ip"} && ($record->{'source-ip'} =~ /^(?:\d+)(?:\.\d+){3}$/));
+        return unless $record->{'source-ip'} =~ /^(?:\d+)(?:\.\d+){3}$/;
 
         $decoded_uri = $record->{"request-uri"};
         $decoded_uri =~ s/%(?:25)+/%/g;

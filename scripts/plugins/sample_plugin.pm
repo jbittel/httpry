@@ -52,6 +52,13 @@ sub init {
         return 0;
 }
 
+# This sub returns a list of fields that the plugin requires. This list
+# is compared against the header fields, and the plugin is disabled if
+# the input file does not contain all of the required fields.
+sub list {
+        return ('');
+}
+
 # This sub is called once for each data line in the input file(s). Note
 # that the data is sent here as a single line and so must be parsed (if
 # necessary) to act on individual components of the line.

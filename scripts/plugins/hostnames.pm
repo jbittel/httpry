@@ -36,14 +36,16 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('direction', 'host');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
         my $hostname;
 
-        # Make sure we really want to be here
-        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
-        return unless exists $record->{"host"};
+        return unless $record->{"direction"} eq '>';
 
         $hostname = $record->{"host"};
         $hostname =~ s/[^\-\.:0-9A-Za-z]//g;

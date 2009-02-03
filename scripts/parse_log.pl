@@ -21,7 +21,8 @@ my $DEFAULT_PLUGIN_DIR = "plugins";
 # -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
-my %callbacks = ();
+my %enabled = ();
+my %disabled = ();
 
 # Command line arguments
 my $verbose = 0;
@@ -39,8 +40,8 @@ my @input_files;
 &read_plugin_dir($plugin_dir) if ($plugin_dir);
 &read_plugin_dir() if (!$plugin_list && !$plugin_dir);
 
-die "Error: No plugins loaded\n" if (keys %callbacks == 0);
-print int(keys %callbacks) . " plugins loaded\n" if $verbose;
+die "Error: No plugins loaded\n" if (keys %enabled == 0);
+print int(keys %enabled) . " plugins loaded\n" if $verbose;
 
 &process_logfiles();
 
@@ -126,7 +127,7 @@ sub load_plugin {
                 return;
         }
 
-        if (exists $callbacks{$p}) {
+        if (exists $enabled{$p}) {
                 warn "Warning: Plugin '$p' is already registered\n";
                 return;
         }
@@ -135,20 +136,20 @@ sub load_plugin {
         if ($@) {
                 warn "Warning: $@" if $verbose;
                 warn "Warning: Plugin '$p' failed to load...disabling\n";
-                delete $callbacks{$p};
+                delete $enabled{$p};
                 return;
         }
 
-        unless ($callbacks{$p}->can('main')) {
+        unless ($enabled{$p}->can('main')) {
                 warn "Warning: Plugin '$p' does not contain a required main() function...disabling\n";
-                delete $callbacks{$p};
+                delete $enabled{$p};
                 return;
         }
 
-        if ($callbacks{$p}->can('init')) {
-                if ($callbacks{$p}->init($dir)) {
+        if ($enabled{$p}->can('init')) {
+                if ($enabled{$p}->init($dir)) {
                         warn "Warning: Plugin '$p' failed to initialize...disabling\n";
-                        delete $callbacks{$p};
+                        delete $enabled{$p};
                         return;
                 }
         }
@@ -171,7 +172,7 @@ sub register_plugin {
         }
 
         if ($package->can('new')) {
-                $callbacks{$p} = $package->new();
+                $enabled{$p} = $package->new();
         } else {
                 warn "Warning: Plugin '$p' does not contain a required new() function\n";
                 die;
@@ -188,7 +189,6 @@ sub process_logfiles {
         my $curr_line;
         my @header;
         my %record;
-        my $i;
 
         foreach $curr_file (@input_files) {
                 unless (open(INFILE, "$curr_file")) {
@@ -208,22 +208,65 @@ sub process_logfiles {
                                 # Check the comment for a field specifier line
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map { lc } split /\,/, $1;
+                                # TODO: strip whitespace from around header fields
+
+                                &check_fields(@header);
+                                die "Error: All plugins are disabled\n" if (keys %enabled == 0);
+
                                 %record = ();
                                 next;
                         }
+
                         die "Error: No field description line found\n" if (scalar @header == 0);
 
-                        $i = 0;
-                        foreach (split /\t/, $curr_line, scalar @header) {
-                                $record{$header[$i++]} = $_;
-                        }
+                        @record{@header} = split /\t/, $curr_line;
 
-                        foreach (keys %callbacks) {
-                                $callbacks{$_}->main(\%record);
+                        foreach (keys %enabled) {
+                                $enabled{$_}->main(\%record);
                         }
                 }
 
                 close(INFILE);
+        }
+
+        return;
+}
+
+# -----------------------------------------------------------------------------
+# Check required fields for each plugin against the current header fields
+# -----------------------------------------------------------------------------
+sub check_fields {
+        my @keys = @_;
+        my %fields = map { $keys[$_] => 1 } 0..$#keys;
+        my $p;
+
+        # Check active plugins to see if they have the required fields
+        PLUGIN: foreach $p (keys %enabled) {
+                next unless $enabled{$p}->can('list');
+
+                foreach ($enabled{$p}->list()) {
+                        next if $_ eq '';
+
+                        if (!exists $fields{$_}) {
+                                warn "Warning: Plugin '$p' requires the field '$_'...disabling\n";
+                                $disabled{$p} = $enabled{$p};
+                                delete $enabled{$p};
+                                next PLUGIN;
+                        }
+                }
+        }
+
+        # Check disabled plugins to see if any should be enabled
+        PLUGIN: foreach $p (keys %disabled) {
+                next unless $disabled{$p}->can('list');
+
+                foreach ($disabled{$p}->list()) {
+                        next if $_ eq '';
+                        next PLUGIN if (!exists $fields{$_});
+                }
+
+                $enabled{$p} = $disabled{$p};
+                delete $disabled{$p};
         }
 
         return;
@@ -235,12 +278,14 @@ sub process_logfiles {
 sub end_plugins {
         my $p;
 
-        foreach $p (keys %callbacks) {
-                if ($callbacks{$p}->can('end')) {
+        foreach $p (keys %enabled) {
+                if ($enabled{$p}->can('end')) {
                         print "Ending plugin '$p'\n" if $verbose;
-                        $callbacks{$p}->end();
+                        $enabled{$p}->end();
                 }
         }
+
+        # TODO: should we end() disabled plugins as well?
 
         return;
 }

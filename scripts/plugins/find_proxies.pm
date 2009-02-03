@@ -37,6 +37,10 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('direction', 'source-ip', 'host', 'request-uri');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
@@ -46,11 +50,7 @@ sub main {
         my $decoded_uri = "";
         my $request_uri;
 
-        # Make sure we really want to be here
-        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
-        return unless exists $record->{"request-uri"};
-        return unless exists $record->{"source-ip"};
-        return unless exists $record->{"host"};
+        return unless $record->{"direction"} eq '>';
 
         $request_uri = $record->{"request-uri"};
         $request_uri =~ s/%(?:25)+/%/g;

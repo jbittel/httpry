@@ -55,6 +55,10 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('direction', 'timestamp', 'source-ip', 'dest-ip');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
@@ -63,13 +67,7 @@ sub main {
         my $now = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
         my $timestamp;
         my $request_uri;
-
-        # Make sure we really want to be here
-        return unless exists $record->{"direction"};
-        return unless exists $record->{"timestamp"};
-        return unless exists $record->{"source-ip"};
-        return unless exists $record->{"dest-ip"};
-        
+ 
         if ($record->{"direction"} eq '>') {
                 return unless exists $record->{"host"};
                 return unless exists $record->{"request-uri"};

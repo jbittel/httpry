@@ -64,17 +64,17 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('direction', 'timestamp', 'source-ip', 'host', 'request-uri');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
         my $curr_line;
         my $decoded_uri;
 
-        return unless (exists $record->{"direction"} && ($record->{"direction"} eq '>'));
-        return unless exists $record->{"timestamp"};
-        return unless exists $record->{"source-ip"};
-        return unless exists $record->{"host"};
-        return unless exists $record->{"request-uri"};
+        return unless $record->{"direction"} eq '>';
 
         $decoded_uri = $record->{"request-uri"};
         $decoded_uri =~ s/%(?:25)+/%/g;
@@ -208,8 +208,6 @@ sub content_check {
         my $uri = lc shift;
         my $ip = shift;
         my $term;
-
-        # TODO: tokenize the URI and compare to query array
 
         my $path_offset = index($uri, '/');
         my $query_offset = index($uri, '?', $path_offset);

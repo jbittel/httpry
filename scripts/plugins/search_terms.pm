@@ -38,17 +38,18 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('direction', 'host', 'request-uri');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
         my $search_term;
         my $domain;
         my $name;
-        
-        # Make sure we really want to be here
-        return unless (exists $record->{'direction'} && ($record->{'direction'} eq '>'));
-        return unless exists $record->{'request-uri'};
-        return unless exists $record->{'host'};
+ 
+        return unless $record->{"direction"} eq '>';
 
         # These results can end up being a little messy, but it seems
         # most useful to simply dump out all search terms and let the user

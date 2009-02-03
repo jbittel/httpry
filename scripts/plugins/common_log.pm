@@ -42,16 +42,16 @@ sub init {
         return 0;
 }
 
+sub list {
+        return ('direction', 'source-ip', 'dest-ip');
+}
+
 sub main {
         my $self = shift;
         my $record = shift;
         my $line = "";
         my ($sec, $min, $hour, $mday, $mon, $year);
         my $tz_offset;
-
-        return unless exists $record->{'direction'};
-        return unless exists $record->{'source-ip'};
-        return unless exists $record->{'dest-ip'};
 
         if ($record->{'direction'} eq '>') {
                 return unless exists $record->{'timestamp'};
