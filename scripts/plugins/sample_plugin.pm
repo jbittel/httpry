@@ -45,11 +45,9 @@ sub init {
         # Call our load configuration sub; this can be good to break out
         # into a separate sub like this, particularly if you end up with
         # many checks on the config variables
-        if (&load_config($cfg_dir)) {
-                return 1;
-        }
+        &load_config($cfg_dir);
 
-        return 0;
+        return;
 }
 
 # This sub returns a list of fields that the plugin requires. This list
@@ -94,7 +92,7 @@ sub load_config {
         # file variables. This can also be a good place to do file reads for
         # initializing run time data structures.
 
-        return 0;
+        return;
 }
 
 1;

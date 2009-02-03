@@ -29,9 +29,7 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        if (&load_config($cfg_dir)) {
-                return 1;
-        }
+        &load_config($cfg_dir);
 
         if (-e $output_file) {
                 open(OUTFILE, ">>$output_file") or die "Error: Cannot open $output_file: $!\n";
@@ -45,7 +43,7 @@ sub init {
 
         $fh = *OUTFILE;
 
-        return 0;
+        return;
 }
 
 sub main {
@@ -92,17 +90,15 @@ sub load_config {
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                warn "Error: No config file found\n";
-                return 1;
+                die "Error: No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                warn "Error: No output file provided\n";
-                return 1;
+                die "Error: No output file provided\n";
         }
 
-        return 0;
+        return;
 }
 
 1;

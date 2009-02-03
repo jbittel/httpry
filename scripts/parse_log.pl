@@ -147,7 +147,9 @@ sub load_plugin {
         }
 
         if ($enabled{$p}->can('init')) {
-                if ($enabled{$p}->init($dir)) {
+                eval '$enabled{$p}->init($dir)';
+                if ($@) {
+                        warn "Warning: $@" if $verbose;
                         warn "Warning: Plugin '$p' failed to initialize...disabling\n";
                         delete $enabled{$p};
                         return;
@@ -281,11 +283,24 @@ sub end_plugins {
         foreach $p (keys %enabled) {
                 if ($enabled{$p}->can('end')) {
                         print "Ending plugin '$p'\n" if $verbose;
-                        $enabled{$p}->end();
+                        eval '$enabled{$p}->end()';
+                        if ($@) {
+                                warn "Warning: $@" if $verbose;
+                                warn "Warning: Plugin '$p' failed to end\n";
+                        }
                 }
         }
 
-        # TODO: should we end() disabled plugins as well?
+        foreach $p (keys %disabled) {
+                if ($disabled{$p}->can('end')) {
+                        print "Ending plugin '$p'\n" if $verbose;
+                        eval '$disabled{$p}->end()';
+                        if ($@) {
+                                warn "Warning: $@" if $verbose;
+                                warn "Warning: Plugin '$p' failed to end\n";
+                        }
+                }
+        }
 
         return;
 }

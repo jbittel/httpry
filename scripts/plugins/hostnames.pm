@@ -29,11 +29,9 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        if (&load_config($cfg_dir)) {
-                return 1;
-        }
+        &load_config($cfg_dir);
 
-        return 0;
+        return;
 }
 
 sub list {
@@ -95,17 +93,15 @@ sub load_config {
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                warn "Error: No config file found\n";
-                return 1;
+                die "Error: No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                warn "Error: No output file provided\n";
-                return 1;
+                die "Error: No output file provided\n";
         }
 
-        return 0;
+        return;
 }
 
 1;

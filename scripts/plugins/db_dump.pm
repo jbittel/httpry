@@ -32,13 +32,9 @@ sub init {
         my $sql;
         my $limit;
 
-        if (&load_config($cfg_dir)) {
-                return 1;
-        }
+        &load_config($cfg_dir);
 
-        unless ($dbh = &connect_db($type, $db, $host, $port, $user, $pass)) {
-                return 1;
-        }
+        $dbh = &connect_db($type, $db, $host, $port, $user, $pass);
 
         # Delete data inserted $rmbefore days prior
         if ($rmbefore > 0) {
@@ -52,7 +48,7 @@ sub init {
                 &execute_query($dbh, $sql);
         }
 
-        return 0;
+        return;
 }
 
 sub list {
@@ -74,7 +70,7 @@ sub main {
 
                 $sql = qq{ INSERT INTO client_data (timestamp, pktstamp, src_ip, dst_ip, hostname, uri)
                            VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}', '$record->{"dest-ip"}',
-                           '$record->{"host"}', '$record->{"request_uri"}') };
+                           '$record->{"host"}', '$record->{"request-uri"}') };
         } elsif ($record->{"direction"} eq '<') {
                 return unless exists $record->{"status-code"};
                 return unless exists $record->{"reason-phrase"};
@@ -105,26 +101,22 @@ sub load_config {
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                warn "Error: No config file found\n";
-                return 1;
+                die "Error: No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$type) {
-                warn "Error: No database type provided\n";
-                return 1;
+                die "Error: No database type provided\n";
         }
         if (!$db) {
-                warn "Error: No database name provided\n";
-                return 1;
+                die "Error: No database name provided\n";
         }
         if (!$host) {
-                warn "Error: No database hostname provided\n";
-                return 1;
+                die "Error: No database hostname provided\n";
         }
         $port = '3306' unless ($port);
 
-        return 0;
+        return;
 }
 
 # -----------------------------------------------------------------------------
@@ -147,8 +139,7 @@ sub connect_db {
         if ($dbh = DBI->connect($dsn, $user, $pass, { PrintError => 0, RaiseError => 0, AutoCommit => 1 })) {
                 &execute_query($dbh, qq{ USE $db });
         } else {
-                warn "Error: Cannot connect to database: " . DBI->errstr . "\n";
-                return;
+                die "Error: Cannot connect to database: " . DBI->errstr . "\n";
         }
 
         return $dbh;
