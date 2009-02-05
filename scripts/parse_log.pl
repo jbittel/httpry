@@ -34,18 +34,18 @@ my @input_files;
 # -----------------------------------------------------------------------------
 # Main Program
 # -----------------------------------------------------------------------------
-&get_arguments();
+get_arguments();
 
-&read_plugin_line($plugin_list) if ($plugin_list);
-&read_plugin_dir($plugin_dir) if ($plugin_dir);
-&read_plugin_dir() if (!$plugin_list && !$plugin_dir);
+read_plugin_line($plugin_list) if ($plugin_list);
+read_plugin_dir($plugin_dir) if ($plugin_dir);
+read_plugin_dir() if (!$plugin_list && !$plugin_dir);
 
 die "Error: No plugins loaded\n" if (keys %enabled == 0);
-print int(keys %enabled) . " plugins loaded\n" if $verbose;
+print "Info: " . int(keys %enabled) . " plugins loaded\n" if $verbose;
 
-&process_logfiles();
+process_logfiles();
 
-&end_plugins();
+end_plugins();
 
 # -----------------------------------------------------------------------------
 # Parse a comma-delmited string for plugins to initialize
@@ -59,12 +59,12 @@ sub read_plugin_line {
                 $_ =~ s/\s+$//;
                 next if ($_ =~ /^$/);
 
-                &load_plugin($_);
+                load_plugin($_);
                 $i++;
         }
 
         warn "Warning: No plugins found in plugin list\n" if ($i == 0);
-        print "$i plugins found in plugin list\n" if $verbose;
+        print "Info: $i plugins found in plugin list\n" if $verbose;
 
         return;
 }
@@ -94,20 +94,20 @@ sub read_plugin_dir {
                 }
         }
 
-        print "Reading plugin directory '$plugin_dir'\n" if $verbose;
+        print "Info: Reading plugin directory '$plugin_dir'\n" if $verbose;
 
         # Load all plugins found in directory
         opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot find or access '$plugin_dir': $!\n";
 
         foreach (grep /\.pm$/, readdir(PLUGINDIR)) {
-                &load_plugin($plugin_dir . '/' . $_);
+                load_plugin($plugin_dir . '/' . $_);
                 $i++;
         }
 
         closedir(PLUGINDIR);
 
         warn "Warning: No plugins found in $plugin_dir\n" if ($i == 0);
-        print "$i plugins found in '$plugin_dir' directory\n" if $verbose;
+        print "Info: $i plugins found in '$plugin_dir' directory\n" if $verbose;
 
         return;
 }
@@ -120,28 +120,28 @@ sub load_plugin {
         my $p = (fileparse($path, '\.pm'))[0];
         my $dir = dirname($path);
 
-        print "Loading plugin file '$path'\n" if $verbose;
+        print "Info: Loading plugin file '$path'\n" if $verbose;
 
         if (! -e $path) {
-                warn "Warning: Cannot find or access '$path'\n";
+                warn "Warning: $p: Cannot find or access '$path'\n";
                 return;
         }
 
         if (exists $enabled{$p}) {
-                warn "Warning: Plugin '$p' is already registered\n";
+                warn "Warning: $p: Name already registered\n";
                 return;
         }
 
         eval 'require $path';
         if ($@) {
-                warn "Warning: $@" if $verbose;
-                warn "Warning: Plugin '$p' failed to load...disabling\n";
+                warn "Warning: $p: $@" if $verbose;
+                warn "Warning: $p: Failed to load...disabling\n";
                 delete $enabled{$p};
                 return;
         }
 
         unless ($enabled{$p}->can('main')) {
-                warn "Warning: Plugin '$p' does not contain a required main() function...disabling\n";
+                warn "Warning: $p: Cannot find a required main() function...disabling\n";
                 delete $enabled{$p};
                 return;
         }
@@ -149,14 +149,14 @@ sub load_plugin {
         if ($enabled{$p}->can('init')) {
                 eval '$enabled{$p}->init($dir)';
                 if ($@) {
-                        warn "Warning: $@" if $verbose;
-                        warn "Warning: Plugin '$p' failed to initialize...disabling\n";
+                        warn "Warning: $p: $@" if $verbose;
+                        warn "Warning: $p: Failed to initialize...disabling\n";
                         delete $enabled{$p};
                         return;
                 }
         }
 
-        print "Initialized plugin '$p'\n" if $verbose;
+        print "Info: Initialized plugin '$p'\n" if $verbose;
 
         return;
 }
@@ -169,13 +169,13 @@ sub register_plugin {
         my $p = (fileparse((caller)[1], '\.pm'))[0];
 
         if ($package ne $p) {
-                die "Warning: Package '$package' does not match filename in plugin '$p'\n";
+                die "Warning: $p: Package name does not match filename\n";
         }
 
         if ($package->can('new')) {
                 $enabled{$p} = $package->new();
         } else {
-                die "Warning: Plugin '$p' does not contain a required new() function\n";
+                die "Warning: $p: Cannot find a required new() function\n";
         }
 
         return;
@@ -196,7 +196,7 @@ sub process_logfiles {
                         next;
                 }
 
-                print "Processing file '$curr_file'\n" if $verbose;
+                print "Info: Processing file '$curr_file'\n" if $verbose;
 
                 while ($curr_line = <INFILE>) {
                         chomp $curr_line;
@@ -209,7 +209,7 @@ sub process_logfiles {
                                 next unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map { s/\s//g; lc; } split /\,/, $1;
 
-                                &check_fields(@header);
+                                check_fields(@header);
 
                                 if (keys %enabled == 0) {
                                         warn "Error: All plugins are disabled...skipping file\n";
@@ -254,7 +254,7 @@ sub check_fields {
                         next if $_ eq '';
 
                         if (!exists $fields{$_}) {
-                                warn "Warning: Plugin '$p' requires the field '$_'...disabling\n";
+                                warn "Warning: $p: Required field '$_' not found...disabling\n";
                                 $disabled{$p} = $enabled{$p};
                                 delete $enabled{$p};
                                 next PLUGIN;
@@ -271,7 +271,7 @@ sub check_fields {
                         next PLUGIN if (!exists $fields{$_});
                 }
 
-                print "Plugin '$p' has been re-enabled\n" if $verbose;
+                print "Info: Plugin $p has been re-enabled\n" if $verbose;
                 $enabled{$p} = $disabled{$p};
                 delete $disabled{$p};
         }
@@ -293,11 +293,11 @@ sub end_plugins {
 
         foreach $p (keys %enabled) {
                 if ($enabled{$p}->can('end')) {
-                        print "Ending plugin '$p'\n" if $verbose;
+                        print "Info: Ending plugin $p\n" if $verbose;
                         eval '$enabled{$p}->end()';
                         if ($@) {
-                                warn "Warning: $@" if $verbose;
-                                warn "Warning: Plugin '$p' failed to end\n";
+                                warn "Warning: $p: $@" if $verbose;
+                                warn "Warning: $p: Failed to end\n";
                         }
                 }
         }
@@ -309,13 +309,13 @@ sub end_plugins {
 # Retrieve and process command line arguments
 # -----------------------------------------------------------------------------
 sub get_arguments {
-        getopts('d:hp:v', \%opts) or &print_usage();
+        getopts('d:hp:v', \%opts) or print_usage();
 
         # Print help/usage information to the screen if necessary
-        &print_usage() if ($opts{h});
+        print_usage() if ($opts{h});
         unless ($ARGV[0]) {
                 warn "Error: No input file(s) provided\n";
-                &print_usage();
+                print_usage();
         }
 
         # Copy command line arguments to internal variables

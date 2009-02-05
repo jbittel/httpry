@@ -19,7 +19,7 @@ my $fh;
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin();
+main::register_plugin();
 
 sub new {
         return bless {};
@@ -29,13 +29,13 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        &load_config($cfg_dir);
+        _load_config($cfg_dir);
 
         if (-e $output_file) {
-                open(OUTFILE, ">>$output_file") or die "Error: Cannot open $output_file: $!\n";
+                open(OUTFILE, ">>$output_file") or die "Cannot open $output_file: $!\n";
                 print OUTFILE "<flow version=\"$flow_version\" xmlversion=\"$xml_version\">\n";
         } else {
-                open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
+                open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
                 print OUTFILE "<?xml version=\"1.0\"?>\n";
                 print OUTFILE "<?xml-stylesheet href=\"xml_output.css\" type=\"text/css\"?>\n";
                 print OUTFILE "<flow version=\"$flow_version\" xmlversion=\"$xml_version\">\n";
@@ -49,8 +49,6 @@ sub init {
 sub main {
         my $self = shift;
         my $record = shift;
-        my $direction;
-        my $request_uri;
         my $field;
         my $data;
 
@@ -83,19 +81,19 @@ sub end {
 # -----------------------------------------------------------------------------
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
-sub load_config {
+sub _load_config {
         my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                die "Error: No config file found\n";
+                die "No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                die "Error: No output file provided\n";
+                die "No output file provided\n";
         }
 
         return;

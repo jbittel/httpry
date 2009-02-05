@@ -32,7 +32,7 @@ my $end_time;
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin();
+main::register_plugin();
 
 sub new {
         return bless {};
@@ -42,7 +42,7 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        &load_config($cfg_dir);
+        _load_config($cfg_dir);
 
         $start_time = (times)[0];
         
@@ -50,7 +50,7 @@ sub init {
 }
 
 sub list {
-        return ('direction');
+        return qw(direction);
 }
 
 sub main {
@@ -82,7 +82,7 @@ sub main {
 sub end {
         $end_time = (times)[0];
         
-        &write_output_file();
+        _write_output_file();
 
         return;
 }
@@ -90,19 +90,19 @@ sub end {
 # -----------------------------------------------------------------------------
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
-sub load_config {
+sub _load_config {
         my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                die "Error: No config file found\n";
+                die "No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                die "Error: No output file provided\n";
+                die "No output file provided\n";
         }
         $summary_cap = $SUMMARY_CAP unless ($summary_cap > 0);
 
@@ -112,7 +112,7 @@ sub load_config {
 # -----------------------------------------------------------------------------
 # Write collected information to specified output file
 # -----------------------------------------------------------------------------
-sub write_output_file {
+sub _write_output_file {
         my $key;
         my $count = 0;
 
@@ -121,7 +121,7 @@ sub write_output_file {
         my $num_response_codes = keys %response_codes;
         my $num_filetypes = keys %filetypes;
 
-        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nLOG SUMMARY\n\n";
         print OUTFILE "Generated:      " . localtime() . "\n";
@@ -131,7 +131,7 @@ sub write_output_file {
         if ($num_top_hosts) {
                 print OUTFILE "\n\n$summary_cap/$num_top_hosts VISITED HOSTS\n\n";
                 foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
-                        print OUTFILE "$top_hosts{$key}\t" . &percent_of($top_hosts{$key}, $total_line_cnt) . "%\t$key\n";
+                        print OUTFILE "$top_hosts{$key}\t" . _percent_of($top_hosts{$key}, $total_line_cnt) . "%\t$key\n";
                         last if (++$count == $summary_cap);
                 }
         }
@@ -140,7 +140,7 @@ sub write_output_file {
                 $count = 0;
                 print OUTFILE "\n\n$summary_cap/$num_top_talkers TOP TALKERS\n\n";
                 foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
-                        print OUTFILE "$top_talkers{$key}\t" . &percent_of($top_talkers{$key}, $total_line_cnt) . "%\t$key\n";
+                        print OUTFILE "$top_talkers{$key}\t" . _percent_of($top_talkers{$key}, $total_line_cnt) . "%\t$key\n";
                         last if (++$count == $summary_cap);
                 }
         }
@@ -149,7 +149,7 @@ sub write_output_file {
                 $count = 0;
                 print OUTFILE "\n\n$summary_cap/$num_response_codes RESPONSE CODES\n\n";
                 foreach $key (sort { $response_codes{$b} <=> $response_codes{$a} } keys %response_codes) {
-                        print OUTFILE "$response_codes{$key}\t" . &percent_of($response_codes{$key}, $srv_responses) . "%\t$key\n";
+                        print OUTFILE "$response_codes{$key}\t" . _percent_of($response_codes{$key}, $srv_responses) . "%\t$key\n";
                         last if (++$count == $summary_cap);
                 }
         }
@@ -158,7 +158,7 @@ sub write_output_file {
                 $count = 0;
                 print OUTFILE "\n\n$summary_cap/$num_filetypes FILE EXTENSIONS\n\n";
                 foreach $key (sort { $filetypes{$b} <=> $filetypes{$a} } keys %filetypes) {
-                        print OUTFILE "$filetypes{$key}\t" . &percent_of($filetypes{$key}, $ext_cnt) . "%\t$key\n";
+                        print OUTFILE "$filetypes{$key}\t" . _percent_of($filetypes{$key}, $ext_cnt) . "%\t$key\n";
                         last if (++$count == $summary_cap);
                 }
         }
@@ -171,7 +171,7 @@ sub write_output_file {
 # -----------------------------------------------------------------------------
 # Calculate ratio information
 # -----------------------------------------------------------------------------
-sub percent_of {
+sub _percent_of {
         my $subset = shift;
         my $total = shift;
 

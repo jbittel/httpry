@@ -17,7 +17,7 @@ my %terms = ();
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin();
+main::register_plugin();
 
 sub new {
         return bless {};
@@ -27,13 +27,13 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        &load_config($cfg_dir);
+        _load_config($cfg_dir);
 
         return;
 }
 
 sub list {
-        return ('source-ip', 'host', 'request-uri');
+        return qw(source-ip host request-uri);
 }
 
 sub main {
@@ -67,7 +67,7 @@ sub end {
         # TODO: This could use more control over the output style and format
         foreach $ip (keys %terms) {
                 open(OUT, ">$output_dir/terms_$ip.txt") or
-                        die "Error: Cannot open $output_dir/terms_$ip.txt: $!\n";
+                        die "Cannot open $output_dir/terms_$ip.txt: $!\n";
 
                 foreach $term (keys %{ $terms{$ip} }) {
                         for ($i = 0; $i < $terms{$ip}->{$term}; $i++) {
@@ -86,14 +86,14 @@ sub end {
 # -----------------------------------------------------------------------------
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
-sub load_config {
+sub _load_config {
         my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                die "Error: No config file found\n";
+                die "No config file found\n";
         }
 
         $output_dir = "." if (!$output_dir);

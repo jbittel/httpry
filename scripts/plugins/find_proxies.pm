@@ -20,7 +20,7 @@ my %proxy_lines = ();
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin();
+main::register_plugin();
 
 sub new {
         return bless {};
@@ -30,13 +30,13 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        &load_config($cfg_dir);
+        _load_config($cfg_dir);
 
         return;
 }
 
 sub list {
-        return ('direction', 'source-ip', 'host', 'request-uri');
+        return qw(direction source-ip host request-uri);
 }
 
 sub main {
@@ -100,8 +100,8 @@ sub main {
 }
 
 sub end {
-        &prune_hits();
-        &write_output_file();
+        _prune_hits();
+        _write_output_file();
 
         return;
 }
@@ -109,19 +109,19 @@ sub end {
 # -----------------------------------------------------------------------------
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
-sub load_config {
+sub _load_config {
         my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                die "Error: No config file found\n";
+                die "No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                die "Error: No output file provided\n";
+                die "No output file provided\n";
         }
         $prune_limit = $PRUNE_LIMIT unless ($prune_limit > 0);
 
@@ -131,7 +131,7 @@ sub load_config {
 # -----------------------------------------------------------------------------
 # Remove hits from results tree that are below our level of interest
 # -----------------------------------------------------------------------------
-sub prune_hits {
+sub _prune_hits {
         my $ip;
         my $hostname;
 
@@ -155,14 +155,14 @@ sub prune_hits {
 # -----------------------------------------------------------------------------
 # Write collected information to specified output file
 # -----------------------------------------------------------------------------
-sub write_output_file {
+sub _write_output_file {
         my $ip;
         my $hostname;
         my $domain;
         my %counts;
         my %output;
 
-        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nPOTENTIAL PROXIES\n\n";
         print OUTFILE "Generated: " . localtime() . "\n\n\n";
@@ -199,7 +199,7 @@ sub write_output_file {
                         }
                         print OUTFILE "]\n";
                 }
-                print OUTFILE "\n\n";
+                print OUTFILE "\n";
         }
 
         close(OUTFILE);

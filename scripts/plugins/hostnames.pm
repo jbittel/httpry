@@ -19,7 +19,7 @@ my %hostnames = ();
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin();
+main::register_plugin();
 
 sub new {
         return bless {};
@@ -29,13 +29,13 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        &load_config($cfg_dir);
+        _load_config($cfg_dir);
 
         return;
 }
 
 sub list {
-        return ('direction', 'host');
+        return qw(direction host);
 }
 
 sub main {
@@ -72,7 +72,7 @@ sub main {
 sub end {
         my $host;
 
-        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
         
         foreach $host (keys %hostnames) {
                 print OUTFILE "$hostnames{$host}\t$host\n";
@@ -86,19 +86,19 @@ sub end {
 # -----------------------------------------------------------------------------
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
-sub load_config {
+sub _load_config {
         my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                die "Error: No config file found\n";
+                die "No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                die "Error: No output file provided\n";
+                die "No output file provided\n";
         }
 
         return;

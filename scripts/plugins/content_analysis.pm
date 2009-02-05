@@ -36,7 +36,7 @@ my @terms = ();
 # Plugin core
 # -----------------------------------------------------------------------------
 
-&main::register_plugin();
+main::register_plugin();
 
 sub new {
         return bless {};
@@ -46,22 +46,21 @@ sub init {
         my $self = shift;
         my $cfg_dir = shift;
 
-        &load_config($cfg_dir);
-
-        &load_terms();
+        _load_config($cfg_dir);
+        _load_terms();
 
         # Remove any existing text files so they don't accumulate
-        opendir(DIR, $output_dir) or die "Error: Cannot open directory $output_dir: $!\n";
-                foreach (grep /^$FILE_PREFIX[\d\.]+\.txt$/, readdir(DIR)) {
-                        unlink;
-                }
+        opendir(DIR, $output_dir) or die "Cannot open directory $output_dir: $!\n";
+        foreach (grep /^$FILE_PREFIX[\d\.]+\.txt$/, readdir(DIR)) {
+                unlink;
+        }
         closedir(DIR);
 
         return;
 }
 
 sub list {
-        return ('direction', 'timestamp', 'source-ip', 'host', 'request-uri');
+        return qw(direction timestamp source-ip host request-uri);
 }
 
 sub main {
@@ -93,10 +92,10 @@ sub main {
 
         # Insert the current line into the buffer
         $flow{$record->{"source-ip"}}->{"length"}++;
-        push(@{ $flow_buffer{$record->{"source-ip"}} }, $curr_line);
+        push @{ $flow_buffer{$record->{"source-ip"}} }, $curr_line;
 
         # If a term is found, flag the buffer as dirty
-        if (&content_check("$record->{'host'}$decoded_uri", $record->{"source-ip"}) > 0) {
+        if (_content_check("$record->{'host'}$decoded_uri", $record->{"source-ip"}) > 0) {
                 $flow{$record->{"source-ip"}}->{"dirty"} = 1;
                 $flow{$record->{"source-ip"}}->{"count"} = $WINDOW_SIZE;
         } else {
@@ -110,13 +109,13 @@ sub main {
         if (($flow{$record->{"source-ip"}}->{"dirty"} == 0) &&
             ($flow{$record->{"source-ip"}}->{"length"} > $WINDOW_SIZE)) {
                 $flow{$record->{"source-ip"}}->{"length"}--;
-                shift(@{ $flow_buffer{$record->{"source-ip"}} });
+                shift @{ $flow_buffer{$record->{"source-ip"}} };
         }
 
         # If buffer is dirty and the window count is 0, flush it
         if (($flow{$record->{"source-ip"}}->{"dirty"} == 1) &&
             ($flow{$record->{"source-ip"}}->{"count"} == 0)) {
-                &flush_buffer($record->{"source-ip"});
+                _flush_buffer($record->{"source-ip"});
         }
 
         return;
@@ -126,10 +125,10 @@ sub end {
         my $ip;
         
         foreach $ip (keys %flow) {
-                &flush_buffer($ip);
+                _flush_buffer($ip);
         }
 
-        &write_summary_file();
+        _write_summary_file();
 
         return;
 }
@@ -137,23 +136,23 @@ sub end {
 # -----------------------------------------------------------------------------
 # Load config file and check for required options
 # -----------------------------------------------------------------------------
-sub load_config {
+sub _load_config {
         my $cfg_dir = shift;
 
         # Load config file; by default in same directory as plugin
         if (-e "$cfg_dir/" . __PACKAGE__ . ".cfg") {
                 require "$cfg_dir/" . __PACKAGE__ . ".cfg";
         } else {
-                die "Error: No config file found\n";
+                die "No config file found\n";
         }
 
         # Check for required options and combinations
         if (!$output_file) {
-                die "Error: No output file provided\n";
+                die "No output file provided\n";
         }
 
         if (!$terms_file) {
-                die "Error: No terms file provided\n";
+                die "No terms file provided\n";
         }
 
         $output_dir = "." if (!$output_dir);
@@ -165,12 +164,12 @@ sub load_config {
 # -----------------------------------------------------------------------------
 # Read in query terms from input file
 # -----------------------------------------------------------------------------
-sub load_terms {
+sub _load_terms {
         my $line;
         my $term;
 
         unless (open(TERMS, "$terms_file")) {
-                die "Error: Cannot open $terms_file: $!\n";
+                die "Cannot open $terms_file: $!\n";
         }
 
         while ($line = <TERMS>) {
@@ -196,7 +195,7 @@ sub load_terms {
 # Search for specified terms in each URI, scoring terms according to rules
 # based on their position and context
 # -----------------------------------------------------------------------------
-sub content_check {
+sub _content_check {
         my $uri = lc shift;
         my $ip = shift;
         my $term;
@@ -263,7 +262,7 @@ sub content_check {
 # Handle end of flow duties: update statistics, save flow scoring data as
 # necessary and delete the associated data structures
 # -----------------------------------------------------------------------------
-sub flush_buffer {
+sub _flush_buffer {
         my $ip = shift;
 
         # Update flow statistics
@@ -279,7 +278,7 @@ sub flush_buffer {
                         $scored_flow{$ip}->{"terms"}->{$_} += $flow{$ip}->{"terms"}->{$_};
                 }
 
-                &write_file($ip);
+                _write_file($ip);
         }
 
         delete $flow{$ip};
@@ -291,12 +290,13 @@ sub flush_buffer {
 # -----------------------------------------------------------------------------
 # Append flow data to a detail file based on client IP
 # -----------------------------------------------------------------------------
-sub write_file {
+sub _write_file {
         my $ip = shift;
         my $term;
         my $line;
 
-        open(OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") or die "Error: Cannot open $output_dir/$FILE_PREFIX$ip.txt: $!\n";
+        # TODO: bail more cleanly here
+        open(OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") or die "Cannot open $output_dir/$FILE_PREFIX$ip.txt: $!\n";
 
         print OUTFILE '#' x 80 . "\n";
         print OUTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
@@ -322,13 +322,13 @@ sub write_file {
 # -----------------------------------------------------------------------------
 # Format and write summary information to specified output file
 # -----------------------------------------------------------------------------
-sub write_summary_file {
+sub _write_summary_file {
         my $ip;
         my $term;
         my $term_cnt;
         my $scored_flow_cnt = 0;
 
-        open(OUTFILE, ">$output_file") or die "Error: Cannot open $output_file: $!\n";
+        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nCONTENT ANALYSIS SUMMARY\n\n";
         print OUTFILE "Generated:    " . localtime() . "\n";
@@ -345,7 +345,7 @@ sub write_summary_file {
         }
 
         if ($cluster_flows) {
-                &partition_scores();
+                _partition_scores();
 
                 # Delete flows and associated files from the lower partition
                 foreach $ip (keys %scored_flow) {
@@ -393,7 +393,7 @@ sub write_summary_file {
 # K-means code originally taken from: http://www.perlmonks.org/?node_id=541000
 # Many subsequent modifications and changes have been made
 # -----------------------------------------------------------------------------
-sub partition_scores() {
+sub _partition_scores() {
         my $OUTLIER_THRESHOLD = 3;
         my $MAX_ITERS = 30;
 
