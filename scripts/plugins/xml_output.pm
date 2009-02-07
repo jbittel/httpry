@@ -73,7 +73,7 @@ sub main {
 
 sub end {
         print $fh "</flow>\n";
-        close($fh);
+        close $fh or die "Cannot close $fh: $!\n";
 
         return;
 }

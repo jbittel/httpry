@@ -232,7 +232,7 @@ sub process_logfiles {
                         }
                 }
 
-                close(INFILE);
+                close INFILE or die "Error: Cannot close $curr_file: $!\n";;
         }
 
         return;

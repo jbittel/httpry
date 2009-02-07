@@ -66,18 +66,18 @@ sub end {
 
         # TODO: This could use more control over the output style and format
         foreach $ip (keys %terms) {
-                open(OUT, ">$output_dir/terms_$ip.txt") or
+                open(OUTFILE, ">$output_dir/terms_$ip.txt") or
                         die "Cannot open $output_dir/terms_$ip.txt: $!\n";
 
                 foreach $term (keys %{ $terms{$ip} }) {
                         for ($i = 0; $i < $terms{$ip}->{$term}; $i++) {
-                                print OUT "$term ";
+                                print OUTFILE "$term ";
                         }
 
-                        print OUT "\n";
+                        print OUTFILE "\n";
                 }
 
-                close(OUT);
+                close OUTFILE or die "Cannot close $output_dir/terms_$ip.txt: $!\n";
         }
 
         return;

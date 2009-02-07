@@ -169,7 +169,7 @@ sub _write_output_file {
 
         if ((keys %proxy_lines) == 0) {
                 print OUTFILE "*** No potential proxies found\n";
-                close(OUTFILE);
+                close OUTFILE or die "Cannot close $output_file: $!\n";
 
                 return;
         }
@@ -202,7 +202,7 @@ sub _write_output_file {
                 print OUTFILE "\n";
         }
 
-        close(OUTFILE);
+        close OUTFILE or die "Cannot close $output_file: $!\n";
 
         return;
 }

@@ -78,7 +78,7 @@ sub end {
                 print OUTFILE "$hostnames{$host}\t$host\n";
         }
 
-        close(OUTFILE);
+        close OUTFILE or die "Cannot close $output_file: $!\n";
 
         return;
 }

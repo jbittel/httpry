@@ -126,7 +126,7 @@ sub main {
 sub end {
         # TODO: Print lines that don't have a matching response?
 
-        close($fh);
+        close $fh or die "Cannot close $fh: $!\n";
 
         return;
 }

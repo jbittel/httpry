@@ -186,7 +186,7 @@ sub _load_terms {
                 }
         }
 
-        close(TERMS);
+        close TERMS or die "Cannot close $terms_file: $!\n";
 
         return;
 }
@@ -295,8 +295,10 @@ sub _write_file {
         my $term;
         my $line;
 
-        # TODO: bail more cleanly here
-        open(OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") or die "Cannot open $output_dir/$FILE_PREFIX$ip.txt: $!\n";
+        unless (open(OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt")) {
+                warn "Cannot open $output_dir/$FILE_PREFIX$ip.txt: $!\n";
+                return;
+        }
 
         print OUTFILE '#' x 80 . "\n";
         print OUTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
@@ -314,7 +316,7 @@ sub _write_file {
         }
         print OUTFILE "\n";
 
-        close(OUTFILE);
+        close OUTFILE or die "Cannot close $output_file: $!\n";
 
         return;
 }
@@ -339,7 +341,7 @@ sub _write_summary_file {
 
         if (scalar keys %scored_flow == 0) {
                 print OUTFILE "*** No scored flows found\n";
-                close(OUTFILE);
+                close OUTFILE or die "Cannot close $output_file: $!\n";
 
                 return;
         }
@@ -380,7 +382,7 @@ sub _write_summary_file {
                 print OUTFILE "\n";
         }
 
-        close(OUTFILE);
+        close OUTFILE or die "Cannot close $output_file: $!\n";
 
         return;
 }

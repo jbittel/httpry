@@ -163,7 +163,7 @@ sub _write_output_file {
                 }
         }
 
-        close(OUTFILE);
+        close OUTFILE or die "Cannot close $output_file: $!\n";
 
         return;
 }

@@ -131,7 +131,7 @@ sub _write_output_file {
 
         if ((keys %search_terms) == 0) {
                 print OUTFILE "\n\n*** No search terms found\n";
-                close(OUTFILE);
+                close OUTFILE or die "Cannot close $output_file: $!\n";
 
                 return;
         }
@@ -148,7 +148,7 @@ sub _write_output_file {
                 print OUTFILE "\n";
         }
 
-        close(OUTFILE);
+        close OUTFILE or die "Cannot close $output_file: $!\n";
 
         return;
 }
