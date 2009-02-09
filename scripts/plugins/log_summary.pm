@@ -121,7 +121,7 @@ sub _write_output_file {
         my $num_response_codes = keys %response_codes;
         my $num_filetypes = keys %filetypes;
 
-        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
+        open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nLOG SUMMARY\n\n";
         print OUTFILE "Generated:      " . localtime() . "\n";
@@ -175,7 +175,7 @@ sub _percent_of {
         my $subset = shift;
         my $total = shift;
 
-        return sprintf("%.1f", ($subset / $total) * 100);
+        return sprintf "%.1f", ($subset / $total) * 100;
 }
 
 1;

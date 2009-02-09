@@ -34,7 +34,7 @@ sub init {
 
         _load_config($cfg_dir);
 
-        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
+        open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
         $fh = *OUTFILE;
 
         return;

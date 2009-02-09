@@ -41,7 +41,7 @@ read_plugin_dir($plugin_dir) if ($plugin_dir);
 read_plugin_dir() if (!$plugin_list && !$plugin_dir);
 
 die "Error: No plugins loaded\n" if (keys %enabled == 0);
-print "Info: " . int(keys %enabled) . " plugins loaded\n" if $verbose;
+print "Info: " . (keys %enabled) . " plugins loaded\n" if $verbose;
 
 process_logfiles();
 
@@ -97,7 +97,7 @@ sub read_plugin_dir {
         print "Info: Reading plugin directory '$plugin_dir'\n" if $verbose;
 
         # Load all plugins found in directory
-        opendir(PLUGINDIR, $plugin_dir) or die "Error: Cannot find or access '$plugin_dir': $!\n";
+        opendir PLUGINDIR, $plugin_dir or die "Error: Cannot find or access '$plugin_dir': $!\n";
 
         foreach (grep /\.pm$/, readdir(PLUGINDIR)) {
                 load_plugin($plugin_dir . '/' . $_);
@@ -191,9 +191,9 @@ sub process_logfiles {
         my %record;
 
         FILE: foreach $curr_file (@input_files) {
-                unless (open(INFILE, "$curr_file")) {
+                unless (open INFILE, "$curr_file") {
                         warn "Error: Cannot open $curr_file: $!\n";
-                        next;
+                        next FILE;
                 }
 
                 print "Info: Processing file '$curr_file'\n" if $verbose;

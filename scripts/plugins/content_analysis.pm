@@ -50,7 +50,7 @@ sub init {
         _load_terms();
 
         # Remove any existing text files so they don't accumulate
-        opendir(DIR, $output_dir) or die "Cannot open directory $output_dir: $!\n";
+        opendir DIR, $output_dir or die "Cannot open directory $output_dir: $!\n";
         foreach (grep /^$FILE_PREFIX[\d\.]+\.txt$/, readdir(DIR)) {
                 unlink;
         }
@@ -168,7 +168,7 @@ sub _load_terms {
         my $line;
         my $term;
 
-        unless (open(TERMS, "$terms_file")) {
+        unless (open TERMS, "$terms_file") {
                 die "Cannot open $terms_file: $!\n";
         }
 
@@ -181,7 +181,7 @@ sub _load_terms {
                 $line =~ s/\s+/ /;  # Remove sequential whitespace
                 next if $line =~ /^$/;
 
-                foreach $term (split(/\s/, $line)) {
+                foreach $term (split /\s/, $line) {
                         push(@terms, lc $term) if $term;
                 }
         }
@@ -295,7 +295,7 @@ sub _write_file {
         my $term;
         my $line;
 
-        unless (open(OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt")) {
+        unless (open OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") {
                 warn "Cannot open $output_dir/$FILE_PREFIX$ip.txt: $!\n";
                 return;
         }
@@ -330,7 +330,7 @@ sub _write_summary_file {
         my $term_cnt;
         my $scored_flow_cnt = 0;
 
-        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
+        open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nCONTENT ANALYSIS SUMMARY\n\n";
         print OUTFILE "Generated:    " . localtime() . "\n";

@@ -124,7 +124,7 @@ sub _write_output_file {
         my $hostname;
         my $term;
 
-        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
+        open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSEARCH TERMS SUMMARY\n\n";
         print OUTFILE "Generated:        " . localtime() . "\n";

@@ -162,7 +162,7 @@ sub _write_output_file {
         my %counts;
         my %output;
 
-        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
+        open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nPOTENTIAL PROXIES\n\n";
         print OUTFILE "Generated: " . localtime() . "\n\n\n";
@@ -184,7 +184,7 @@ sub _write_output_file {
                                 $domain = $hostname;
                         }
 
-                        push(@{$output{$domain}->{$hostname}}, $ip);
+                        push @{$output{$domain}->{$hostname}}, $ip;
                         $counts{$hostname} += $proxy_lines{$ip}->{$hostname};
                 }
         }

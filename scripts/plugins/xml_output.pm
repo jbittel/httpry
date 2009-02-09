@@ -32,10 +32,10 @@ sub init {
         _load_config($cfg_dir);
 
         if (-e $output_file) {
-                open(OUTFILE, ">>$output_file") or die "Cannot open $output_file: $!\n";
+                open OUTFILE, ">>$output_file" or die "Cannot open $output_file: $!\n";
                 print OUTFILE "<flow version=\"$flow_version\" xmlversion=\"$xml_version\">\n";
         } else {
-                open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
+                open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
                 print OUTFILE "<?xml version=\"1.0\"?>\n";
                 print OUTFILE "<?xml-stylesheet href=\"xml_output.css\" type=\"text/css\"?>\n";
                 print OUTFILE "<flow version=\"$flow_version\" xmlversion=\"$xml_version\">\n";

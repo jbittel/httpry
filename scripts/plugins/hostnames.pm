@@ -72,7 +72,7 @@ sub main {
 sub end {
         my $host;
 
-        open(OUTFILE, ">$output_file") or die "Cannot open $output_file: $!\n";
+        open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
         
         foreach $host (keys %hostnames) {
                 print OUTFILE "$hostnames{$host}\t$host\n";
