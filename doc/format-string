@@ -22,10 +22,11 @@ but the standard output from httpry is tab delimited. There are nine special
 the format string:
 
    Timestamp        Request-URI
-   Source-IP        HTTP-Version
+   Source-IP        Method
+   Source-Port      HTTP-Version
    Dest-IP          Status-Code
-   Direction        Reason-Phrase
-   Method
+   Dest-Port        Reason-Phrase
+   Direction        
 
 Most of these are fields from the header line of each request or response.
 The direction field will print a chevron with '>' indicating a client request

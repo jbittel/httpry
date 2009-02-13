@@ -9,6 +9,7 @@
 */
 
 #define MAX_TIME_LEN 20
+#define PORTSTRLEN 6
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -241,6 +242,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         struct tm *pkt_time;
         char *header_line, *req_value;
         char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN];
+        char sport[PORTSTRLEN], dport[PORTSTRLEN];
         char ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
 
@@ -300,6 +302,12 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         strncpy(daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
         insert_value("source-ip", saddr);
         insert_value("dest-ip", daddr);
+
+        /* Grab source/destination ports */
+        sprintf(sport, "%d", ntohs(tcp->th_sport));
+        sprintf(dport, "%d", ntohs(tcp->th_dport));
+        insert_value("source-port", sport);
+        insert_value("dest-port", dport);
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
