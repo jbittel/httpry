@@ -57,6 +57,7 @@ static int set_promisc = 1;
 static char *new_user = NULL;
 static char *format_str = NULL;
 static char *methods_str = NULL;
+static char *use_dumpfile = NULL;
 int quiet_mode = 0;               /* Defined as extern in error.h */
 int use_syslog = 0;               /* Defined as extern in error.h */
 
@@ -65,6 +66,7 @@ static char *buf = NULL;
 static unsigned num_parsed = 0;   /* Count of fully parsed HTTP packets */
 static unsigned start_time = 0;   /* Start tick for statistics calculations */
 static int header_offset = 0;
+static pcap_dumper_t *dumpfile = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
 static char default_methods[] = DEFAULT_METHODS;
@@ -316,6 +318,9 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         print_format_values();
 
+        if (dumpfile)
+                pcap_dump((unsigned char *) dumpfile, header, pkt);
+
         num_parsed++;
         if (parse_count && (num_parsed >= parse_count))
                 pcap_breakloop(pcap_hnd);
@@ -491,10 +496,11 @@ void display_banner() {
 void display_usage() {
         display_banner();
 
-        printf("Usage: %s [ -dhpq ] [ -f format ] [ -i device ] [ -m methods ] [ -n count ]\n"
-                             "[ -r file ] [ -o file ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
+        printf("Usage: %s [ -dhpq ] [-b file ] [ -f format ] [ -i device ] [ -m methods ]\n"
+               "       [ -n count ] [ -r file ] [ -o file ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
-        printf("   -d           run as daemon\n"
+        printf("   -b file      write HTTP packets to a binary dump file\n"
+               "   -d           run as daemon\n"
                "   -f format    specify output format string\n"
                "   -h           print this help information\n"
                "   -i device    listen on this interface\n"
@@ -522,8 +528,9 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "df:hpqi:m:n:o:r:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:df:hpqi:m:n:o:r:u:")) != -1) {
                 switch (opt) {
+                        case 'b': use_dumpfile = optarg; break;
                         case 'd': daemon_mode = 1;
                                   use_syslog = 1; break;
                         case 'f': format_str = optarg; break;
@@ -571,6 +578,13 @@ int main(int argc, char **argv) {
         }
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
+
+        /* Open binary dump file if requested */
+        if (use_dumpfile) {
+               if ((dumpfile = pcap_dump_open(pcap_hnd, use_dumpfile)) == NULL)
+                       LOG_DIE("Cannot open binary dump file '%s'", use_dumpfile);
+                PRINT("Writing binary dump file: %s", use_dumpfile);
+        }
 
         if (daemon_mode) runas_daemon();
         if (new_user) change_user(new_user);

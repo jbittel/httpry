@@ -19,7 +19,7 @@
 #define DEFAULT_CAPFILTER "tcp port 80 or 8080"
 
 /* Default output format string; see doc/format-string for more information
-   *** Can be overridden with -s */
+   *** Can be overridden with -f */
 #define DEFAULT_FORMAT "timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase"
 
 /* Default request methods to process; see doc/method-string for more information

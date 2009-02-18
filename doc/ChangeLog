@@ -4,6 +4,10 @@ which are often updated significantly between releases as well. It only
 lists notable changes and fixes to the core httpry program.
 
 
+version 0.1.5
+   * added a binary pcap dump file option (-b)
+   * changed -s to -f to be more mnemonic
+
 version 0.1.4
    * improved efficiency of header line parsing
    * added support for parsing any request method (-m)
