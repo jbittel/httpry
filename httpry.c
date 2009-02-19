@@ -34,6 +34,7 @@
 int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
 void set_header_offset(int header_type);
+void open_outfile();
 void runas_daemon();
 void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
@@ -159,6 +160,26 @@ void set_header_offset(int header_type) {
         return;
 }
 
+/* Redirect stdout to the specified output file if requested */
+void open_outfile() {
+        if (use_outfile) {
+                if (daemon_mode && (use_outfile[0] != '/'))
+                        LOG_WARN("Output file path is not absolute and may be inaccessible after daemonizing");
+
+                if (freopen(use_outfile, "a", stdout) == NULL)
+                        LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
+
+                /* Set stdout to line buffering instead of the default block buffering */
+                if (setvbuf(stdout, NULL, _IOLBF, 0) != 0)
+                        LOG_WARN("Cannot set line buffering on output file");
+
+                PRINT("Writing output to file: %s", use_outfile);
+
+                printf("# %s version %s\n", PROG_NAME, PROG_VER);
+                print_format_list();
+        }
+}
+
 /* Run program as a daemon process */
 void runas_daemon() {
         int child_pid;
@@ -197,7 +218,7 @@ void runas_daemon() {
         signal(SIGTSTP, SIG_IGN);
         signal(SIGTTOU, SIG_IGN);
         signal(SIGTTIN, SIG_IGN);
-        signal(SIGHUP, SIG_IGN);
+        signal(SIGHUP, &handle_signal);
         signal(SIGTERM, &handle_signal);
 
         fflush(NULL);
@@ -415,6 +436,11 @@ int parse_server_response(char *header_line) {
 /* Perform clean shutdown if proper signal received */
 void handle_signal(int sig) {
         switch (sig) {
+                case SIGHUP:
+                        LOG_PRINT("Caught SIGHUP, restarting...");
+                        print_stats();
+                        open_outfile();
+                        return;
                 case SIGINT:
                         LOG_PRINT("Caught SIGINT, shutting down...");
                         cleanup();
@@ -564,20 +590,7 @@ int main(int argc, char **argv) {
         if (!methods_str) methods_str = default_methods;
         parse_methods_string(methods_str);
 
-        /* Redirect stdout to the specified output file if requested */
-        if (use_outfile) {
-                if (freopen(use_outfile, "a", stdout) == NULL)
-                        LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
-
-                /* Set stdout to line buffering instead of the default block buffering */
-                if (setvbuf(stdout, NULL, _IOLBF, 0) == 0)
-                        LOG_WARN("Cannot set line buffering on output file");
-
-                PRINT("Writing output to file: %s", use_outfile);
-
-                printf("# %s version %s\n", PROG_NAME, PROG_VER);
-                print_format_list();
-        }
+        open_outfile();
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
