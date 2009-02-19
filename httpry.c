@@ -438,9 +438,6 @@ void cleanup() {
         if (pcap_hnd)
                 pcap_breakloop(pcap_hnd);
 
-        if (use_outfile)
-                fflush(stdout);
-
         print_stats();
 
         fflush(NULL);
@@ -567,10 +564,15 @@ int main(int argc, char **argv) {
         if (!methods_str) methods_str = default_methods;
         parse_methods_string(methods_str);
 
-        /* Prepare output file as necessary */
+        /* Redirect stdout to the specified output file if requested */
         if (use_outfile) {
                 if (freopen(use_outfile, "a", stdout) == NULL)
                         LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
+
+                /* Set stdout to line buffering instead of the default block buffering */
+                if (setvbuf(stdout, NULL, _IOLBF, 0) == 0)
+                        LOG_WARN("Cannot set line buffering on output file");
+
                 PRINT("Writing output to file: %s", use_outfile);
 
                 printf("# %s version %s\n", PROG_NAME, PROG_VER);
