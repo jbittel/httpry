@@ -31,8 +31,7 @@ it can be easily adaptable to different applications. It does not display
 the raw HTTP data transferred, but instead focuses on parsing and displaying
 the request/response line along with associated header fields.
 
-"How is this tool useful?" you may ask. Well, here's a few ideas that have
-occurred to me:
+"How is this tool useful?" you may ask. Here's just a few ideas:
 
  > See what users on your network are browsing online
  > Check for proper server configuration (or improper, as the case may be)
@@ -74,16 +73,25 @@ Running the program with the -h switch will print out an abbreviated
 description of the available options. This section describes these options
 in greater detail.
 
-httpry [ -dhpq ] [ -i device ] [-m methods ] [ -n count ] [ -o file ]
-       [ -r file ] [ -s format ] [ -u user ] [ 'expression' ]
+httpry [ -dhpq ] [ -b file ] [ -f format ] [ -i device ] [-m methods ]
+       [ -n count ] [ -o file ] [ -r file ] [ -u user ] [ 'expression' ]
+
+-b file
+Write all processed HTTP packets to a binary pcap dump file. Useful for
+further analysis of logged data.
 
 -d
 Run the program as a daemon process. All program status output will be sent
 to syslog. A pid file is created for the process in /var/run/httpry.pid by
 default. Requires an output file specified with -o.
 
+-f format
+Provide a comma-delimited string specifying the parsed HTTP data to output.
+See the doc/format-string file for further information regarding available
+options and syntax.
+
 -h
-Display a brief description of these options.
+Display a brief summary of these options.
 
 -i device
 Specify an ethernet interface for the program to listen on. If not specified,
@@ -112,11 +120,6 @@ Suppress non-critical output (startup banner, statistics, etc.).
 -r file
 Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
-
--s format
-Provide a comma-delimited string specifying the parsed HTTP data to output.
-See the doc/format-string file for further information regarding available
-options and syntax.
 
 -u user
 Specify an alternate user to take ownership of the process and any output

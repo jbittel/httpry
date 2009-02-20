@@ -1,8 +1,9 @@
 A number of Perl scripts are included with the project to provide a basic log
 parsing framework. There is a central Perl script (parse_log.pl) that handles
 all of the core log parsing duties, and a set of Perl plugins (plugins/*.pm)
-that perform assorted processing duties. It is straightforward to create or
-modify the plugins to customize processing.
+with associated config files (plugins/*.cfg) that perform assorted processing
+duties. It is straightforward to create or modify the plugins to customize
+processing.
 
 *** IMPORTANT! ***
 The log parser will attempt to use all plugins that it finds in the default
@@ -15,16 +16,10 @@ start of the file.
 
 These non-core Perl modules must be installed to run all scripts: 
         DBI
-        IO::Compress::Gzip
 
 
 Included Perl scripts:
 ---------------------
-
- ./scripts/rotate_log.pl
-        Moves an active log file into a specified directory. Also offers
-        options for deleting text files, compressing the log files and
-        purging existing log files by number or total size.
 
  ./scripts/parse_log.pl
         Core script for plugins. Processes log files and delivers data to each

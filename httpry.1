@@ -2,7 +2,7 @@
 .SH NAME
 httpry \- HTTP logging and information retrieval tool
 .SH SYNOPSIS
-.B httpry [ -dpq ] [ -i device ] [ -m methods ] [ -n count ] [ -o file ] [ -r file ] [ -s format ] [ -u user ] [ 'expression' ]
+.B httpry [ -dpq ] [ -b file ] [ -f format ] [ -i device ] [ -m methods ] [ -n count ] [ -o file ] [ -r file ] [ -u user ] [ 'expression' ]
 .br
 .B httpry -h
 .br
@@ -14,10 +14,17 @@ to perform analysis itself, but instead to capture, parse and log the traffic
 for later analysis. It can be run in real-time displaying the live traffic on
 the wire, or as a daemon process that logs to an output file.
 .SH OPTIONS
+.IP "-b \fIfile\fP"
+Write all processed HTTP packets to a binary pcap dump file. Useful for
+further analysis of logged data.
 .IP "-d"
 Run the program as a daemon process. All program status output will be sent
 to syslog. A pid file is created for the process in /var/run/httpry.pid by
 default. Requires an output file specified with -o.
+.IP "-f \fIformat\fP"
+Provide a comma-delimited string specifying the parsed HTTP data to output.
+See the doc/format-string file for further information regarding available
+options and syntax.
 .IP "-h"
 Display a brief description of these options.
 .IP "-i \fIdevice\fP"
@@ -41,10 +48,6 @@ Suppress non-critical output (startup banner, statistics, etc.).
 .IP "-r \fIfile\fP"
 Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
-.IP "-s \fIformat\fP"
-Provide a comma-delimited string specifying the parsed HTTP data to output.
-See the doc/format-string file for further information regarding available
-options and syntax.
 .IP "-u \fIuser\fP"
 Specify an alternate user to take ownership of the process and any output
 files. You will need root privileges to do this; it will switch to the new

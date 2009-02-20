@@ -34,7 +34,7 @@
 int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
 void set_header_offset(int header_type);
-void open_outfile();
+void open_outfiles();
 void runas_daemon();
 void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
@@ -160,8 +160,9 @@ void set_header_offset(int header_type) {
         return;
 }
 
-/* Redirect stdout to the specified output file if requested */
-void open_outfile() {
+/* Open any requested output files */
+void open_outfiles() {
+        /* Redirect stdout to the specified output file if requested */
         if (use_outfile) {
                 if (daemon_mode && (use_outfile[0] != '/'))
                         LOG_WARN("Output file path is not absolute and may be inaccessible after daemonizing");
@@ -178,6 +179,18 @@ void open_outfile() {
                 printf("# %s version %s\n", PROG_NAME, PROG_VER);
                 print_format_list();
         }
+
+        /* Open pcap binary capture file if requested */
+        if (use_dumpfile) {
+                if (daemon_mode && (use_dumpfile[0] != '/'))
+                        LOG_WARN("Binary capture file path is not absolute and may be inaccessible after daemonizing");
+
+                if ((dumpfile = pcap_dump_open(pcap_hnd, use_dumpfile)) == NULL)
+                        LOG_DIE("Cannot open binary dump file '%s'", use_dumpfile);
+                PRINT("Writing binary dump file: %s", use_dumpfile);
+        }
+
+        return;
 }
 
 /* Run program as a daemon process */
@@ -241,10 +254,15 @@ void change_user(char *name) {
         if (!(user = getpwnam(name)))
                 LOG_DIE("User '%s' not found in system", name);
 
-        /* Change ownership of the output file before we drop privs */
+        /* Change ownership of output files before we drop privs */
         if (use_outfile) {
                 if (chown(use_outfile, user->pw_uid, user->pw_gid) < 0)
                         LOG_WARN("Cannot change ownership of output file '%s'", use_outfile);
+        }
+
+        if (use_dumpfile) {
+                if (chown(use_dumpfile, user->pw_uid, user->pw_gid) < 0)
+                        LOG_WARN("Cannot change ownership of dump file '%s'", use_dumpfile);
         }
 
         if (initgroups(name, user->pw_gid))
@@ -437,9 +455,9 @@ int parse_server_response(char *header_line) {
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGHUP:
-                        LOG_PRINT("Caught SIGHUP, restarting...");
+                        LOG_PRINT("Caught SIGHUP, reloading...");
                         print_stats();
-                        open_outfile();
+                        open_outfiles();
                         return;
                 case SIGINT:
                         LOG_PRINT("Caught SIGINT, shutting down...");
@@ -590,16 +608,9 @@ int main(int argc, char **argv) {
         if (!methods_str) methods_str = default_methods;
         parse_methods_string(methods_str);
 
-        open_outfile();
-
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
-        /* Open binary dump file if requested */
-        if (use_dumpfile) {
-               if ((dumpfile = pcap_dump_open(pcap_hnd, use_dumpfile)) == NULL)
-                       LOG_DIE("Cannot open binary dump file '%s'", use_dumpfile);
-                PRINT("Writing binary dump file: %s", use_dumpfile);
-        }
+        open_outfiles();
 
         if (daemon_mode) runas_daemon();
         if (new_user) change_user(new_user);
