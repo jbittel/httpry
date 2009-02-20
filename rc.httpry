@@ -51,6 +51,15 @@ httpry_stop() {
         fi
 }
 
+httpry_reload() {
+        echo "Reloading httpry..."
+        if [ -r "/var/run/httpry.pid" ] ; then
+                kill -HUP `cat /var/run/httpry.pid`
+        else
+                killall -HUP httpry
+        fi
+}
+
 case ${1} in
 start)
         httpry_start
@@ -63,7 +72,10 @@ restart)
         sleep 1
         httpry_start
         ;;
+reload)
+        httpry_reload
+        ;;
 *)
-        echo "Usage: ${0} [start|stop|restart]"
+        echo "Usage: ${0} [start|stop|restart|reload]"
         ;;
 esac
