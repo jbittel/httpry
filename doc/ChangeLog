@@ -8,6 +8,7 @@ version 0.1.5
    * added a binary pcap dump file option (-b)
    * changed -s to -f to be more mnemonic
    * added SIGHUP handling for graceful reloads
+   * default to line buffering on output files
 
 version 0.1.4
    * improved efficiency of header line parsing

@@ -1,4 +1,4 @@
-The -s switch allows the user to provide a format string that tells httpry
+The -f switch allows the user to provide a format string that tells httpry
 which fields to print from each HTTP packet. The string is a comma-
 delimited list of elements, examples of which are provided below. The format
 strings can have spaces between elements and are _not_ case sensitive.
@@ -61,6 +61,6 @@ reasonably flexible method for specifying the output string, while still
 supporting custom fields. Input order is maintained so you can position the
 fields in the output string.
 
-If you find yourself frequently using a custom format string and don't want to 
-specify it every run, just modify the default format string in config.h and 
+If you find yourself frequently using a custom format string and don't want to
+specify it every run, just modify the default format string in config.h and
 recompile httpry.
