@@ -45,14 +45,15 @@ sub new {
 sub init {
         my $self = shift;
         my $cfg_dir = shift;
+        my $file;
 
         _load_config($cfg_dir);
         _load_terms();
 
         # Remove any existing text files so they don't accumulate
         opendir DIR, $output_dir or die "Cannot open directory $output_dir: $!\n";
-        foreach (grep /^$FILE_PREFIX[\d\.]+\.txt$/, readdir(DIR)) {
-                unlink;
+        foreach $file (grep /^$FILE_PREFIX[\d\.]+\.txt$/, readdir(DIR)) {
+                unlink "$output_dir/$file";
         }
         closedir(DIR);
 
