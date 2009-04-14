@@ -5,7 +5,7 @@
 #
 #  Copyright (c) 2005-2009 Jason Bittel <jason.bittel@gmail.com>
 #
-# .spec file build and provided by Shawn Ashlee
+# .spec file built and provided by Shawn Ashlee
 #
 
 #
@@ -42,7 +42,7 @@ include them
 Summary: specialized packet sniffer designed for displaying and logging
 HTTP traffic
 Name: httpry
-Version: 0.1.4
+Version: 0.1.5
 Release: 1.rs%{?dist}
 License: GPLv2
 Group: Applications/Internet
