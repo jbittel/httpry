@@ -18,17 +18,16 @@
 # that need to be passed to httpry, add them to httpry_args.
 #
 
-output_file=""
+output_file="httpry.log"
 httpry_args=""
 
 httpry_start() {
-        echo "Starting httpry..."
-
         if [ ! -n "${output_file}" ] ; then
                 echo "Error: No output file provided; edit ${0} accordingly"
                 exit 1
         fi
 
+        echo "Starting httpry using output file '${output_file}'..."
         if [ -r "/var/run/httpry.pid" ] ; then
                 if [ ps acx | grep -q httpry ] ; then
                         echo "Error: httpry already running with PID `cat /var/run/httpry.pid`"
