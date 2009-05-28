@@ -3,5 +3,5 @@
 eval valgrind --tool=massif \
      "$@ -q" 2>&1 1>/dev/null |
      sed 's/^==[0-9]*==/massif:/'
-ms_print massif.out.* > massif.log
+ms_print massif.out.* > "`dirname ${0}`/massif.log"
 rm -f massif.out.*
