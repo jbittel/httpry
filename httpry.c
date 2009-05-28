@@ -451,7 +451,7 @@ int parse_server_response(char *header_line) {
         return 0;
 }
 
-/* Perform clean shutdown if proper signal received */
+/* Handle signals for clean reloading or shutdown */
 void handle_signal(int sig) {
         switch (sig) {
                 case SIGHUP:
@@ -461,10 +461,12 @@ void handle_signal(int sig) {
                         return;
                 case SIGINT:
                         LOG_PRINT("Caught SIGINT, shutting down...");
+                        print_stats();
                         cleanup();
                         break;
                 case SIGTERM:
                         LOG_PRINT("Caught SIGTERM, shutting down...");
+                        print_stats();
                         cleanup();
                         break;
                 default:
@@ -479,10 +481,7 @@ void handle_signal(int sig) {
 void cleanup() {
         /* This may have already been called, but might not
            have depending on how we got here */
-        if (pcap_hnd)
-                pcap_breakloop(pcap_hnd);
-
-        print_stats();
+        if (pcap_hnd) pcap_breakloop(pcap_hnd);
 
         fflush(NULL);
 
