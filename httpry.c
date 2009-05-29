@@ -124,7 +124,7 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 void set_header_offset(int header_type) {
 
 #ifdef DEBUG
-        ASSERT(header_type > 0);
+        ASSERT(header_type >= 0);
 #endif
 
         switch (header_type) {
@@ -245,7 +245,6 @@ void change_user(char *name) {
 
 #ifdef DEBUG
         ASSERT(name);
-        ASSERT(strlen(name) > 0);
 #endif
 
         if ((getuid() != 0) && (geteuid() != 0))
@@ -453,6 +452,11 @@ int parse_server_response(char *header_line) {
 
 /* Handle signals for clean reloading or shutdown */
 void handle_signal(int sig) {
+
+#ifdef DEBUG
+        ASSERT(sig > 0);
+#endif
+
         switch (sig) {
                 case SIGHUP:
                         LOG_PRINT("Caught SIGHUP, reloading...");
