@@ -64,8 +64,9 @@ sub main {
         return unless $search_term;
 
         # Clean up search term
-        $search_term =~ s/%25/%/g; # Sometimes '%' chars are double encoded
-        $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
+        $search_term =~ s/%(?:25)+/%/g;
+        $search_term =~ s/%(?:0A|0D)/\./ig;
+        $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
         $search_term =~ s/\+/ /g;
         $search_term =~ s/^\s+//;
         $search_term =~ s/\s+$//;

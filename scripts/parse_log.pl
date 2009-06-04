@@ -25,11 +25,11 @@ my %enabled = ();
 my %disabled = ();
 
 # Command line arguments
-my $verbose = 0;
-my $plugin_dir;
-my $plugin_list;
 my %opts;
-my @input_files;
+my $verbose = 0;
+my $plugin_dir = "";
+my $plugin_list = "";
+my @input_files = ();
 
 # -----------------------------------------------------------------------------
 # Main Program
