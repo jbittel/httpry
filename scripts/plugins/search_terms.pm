@@ -46,6 +46,7 @@ sub main {
         my $search_term;
         my $domain;
         my $name;
+        my $pattern;
  
         return unless $record->{"direction"} eq '>';
 
@@ -67,16 +68,18 @@ sub main {
         $search_term =~ s/%(?:25)+/%/g;
         $search_term =~ s/%(?:0A|0D)/\./ig;
         $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
-        $search_term =~ s/\+/ /g;
         $search_term =~ s/^\s+//;
         $search_term =~ s/\s+$//;
+        $search_term =~ s/\+/ /g;
 
-        # Custom cleanup rules; would be nice to generalize this better, but
-        # this will work for now
-        return if ($search_term =~ /^tbn:/);  # Let's ignore messy Google hits, shall we?
-        return if ($search_term =~ /^info:/); # ...
-        return if ($search_term =~ /^http:/); # ...
-        return if ($search_term =~ /^music\/image/);   # Unnecessary Froogle hits
+        # Apply rules to ignore unwanted hits
+        foreach $domain (keys %ignore) {
+                if ($record->{"host"} =~ /$domain$/) {
+                        foreach $pattern (@{ $ignore{$domain} }) {
+                                return if $search_term =~ /$pattern/;
+                        }
+                }
+        }
 
         $search_terms{$record->{'host'}}->{$search_term}++;
 
@@ -128,7 +131,7 @@ sub _write_output_file {
         open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
 
         print OUTFILE "\n\nSEARCH TERMS SUMMARY\n\n";
-        print OUTFILE "Generated:        " . localtime() . "\n";
+        print OUTFILE "Generated:       " . localtime() . "\n";
 
         if ((keys %search_terms) == 0) {
                 print OUTFILE "\n\n*** No search terms found\n";
@@ -137,9 +140,9 @@ sub _write_output_file {
                 return;
         }
 
-        print OUTFILE "Num of terms:     $num_terms\n";
-        print OUTFILE "Num of queries:   $num_queries\n";
-        print OUTFILE "Avg num of terms: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
+        print OUTFILE "Terms:           $num_terms\n";
+        print OUTFILE "Queries:         $num_queries\n";
+        print OUTFILE "Avg terms/query: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
         
         foreach $hostname (sort keys %search_terms) {
                 print OUTFILE "$hostname\n";
