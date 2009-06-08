@@ -37,7 +37,7 @@ sub init {
 }
 
 sub list {
-        return qw(direction host request-uri);
+        return qw(direction host request-uri source-ip);
 }
 
 sub main {
@@ -52,36 +52,37 @@ sub main {
 
         # These results can end up being a little messy, but it seems
         # most useful to simply dump out all search terms and let the user
-        # sift through what they deem interesting.
+        # sift through what they deem interesting
         foreach $domain (keys %domains) {
-                $name = $domains{$domain};
-
-                if ($record->{'host'} =~ /$domain$/) {
-                        return unless $record->{'request-uri'} =~ /[\?\&]$name=([^\&]+)/;
+                if (rindex($record->{"host"}, $domain) > -1) {
+                        $name = $domains{$domain};
+                        return unless $record->{"request-uri"} =~ /[\?\&]$name=([^\&]+)/;
                         $search_term = $1;
                         last;
                 }
         }
         return unless $search_term;
 
-        # Clean up search term
+        # Decode hex characters in the search term
         $search_term =~ s/%(?:25)+/%/g;
         $search_term =~ s/%(?:0A|0D)/\./ig;
         $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
+
+        # Remove leading/trailing/sequential whitespace
         $search_term =~ s/^\s+//;
         $search_term =~ s/\s+$//;
         $search_term =~ s/\+/ /g;
 
         # Apply rules to ignore unwanted hits
         foreach $domain (keys %ignore) {
-                if ($record->{"host"} =~ /$domain$/) {
+                if (rindex($record->{"host"}, $domain) > -1) {
                         foreach $pattern (@{ $ignore{$domain} }) {
                                 return if $search_term =~ /$pattern/;
                         }
                 }
         }
 
-        $search_terms{$record->{'host'}}->{$search_term}++;
+        $search_terms{$record->{"source-ip"}}->{$record->{"host"}}->{$search_term}++;
 
         # Count the number of terms in the query, treating quoted strings as a single term
         $num_terms += ($search_term =~ s/\".*?\"//g);
@@ -125,6 +126,7 @@ sub _load_config {
 # Write collected information to specified output file
 # -----------------------------------------------------------------------------
 sub _write_output_file {
+        my $ip;
         my $hostname;
         my $term;
 
@@ -143,13 +145,16 @@ sub _write_output_file {
         print OUTFILE "Terms:           $num_terms\n";
         print OUTFILE "Queries:         $num_queries\n";
         print OUTFILE "Avg terms/query: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
-        
-        foreach $hostname (sort keys %search_terms) {
-                print OUTFILE "$hostname\n";
-                foreach $term (sort keys %{$search_terms{$hostname}}) {
-                        print OUTFILE "\t$search_terms{$hostname}->{$term}\t$term\n";
+ 
+        foreach $ip (sort keys %search_terms) {
+                print OUTFILE "$ip\n";
+                foreach $hostname (keys %{ $search_terms{$ip} }) {
+                        print OUTFILE "\t$hostname\n";
+                        foreach $term (sort keys %{ $search_terms{$ip}->{$hostname} }) {
+                                print OUTFILE "\t\t$search_terms{$ip}->{$hostname}->{$term}\t$term\n";
+                        }
+                        print OUTFILE "\n";
                 }
-                print OUTFILE "\n";
         }
 
         close OUTFILE or die "Cannot close $output_file: $!\n";
