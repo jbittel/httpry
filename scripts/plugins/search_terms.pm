@@ -68,10 +68,11 @@ sub main {
         $search_term =~ s/%(?:0A|0D)/\./ig;
         $search_term =~ s/%([a-fA-F0-9][a-fA-F0-9])/chr(hex($1))/eg;
 
-        # Remove leading/trailing/sequential whitespace
+        # Clean up spaces in search term
+        $search_term =~ s/\+/ /g;
         $search_term =~ s/^\s+//;
         $search_term =~ s/\s+$//;
-        $search_term =~ s/\+/ /g;
+        $search_term =~ s/\s+/ /g;
 
         # Apply rules to ignore unwanted hits
         foreach $domain (keys %ignore) {
