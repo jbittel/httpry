@@ -24,7 +24,8 @@ my %filetypes = ();
 my %response_codes = ();
 my $total_line_cnt = 0;
 my $ext_cnt = 0;
-my $srv_responses = 0;
+my $requests = 0;
+my $responses = 0;
 my $start_time;
 my $end_time;
 
@@ -57,23 +58,25 @@ sub main {
         my $self = shift;
         my $record = shift;
 
-        # Gather statistics
         $total_line_cnt++;
 
         if ($record->{"direction"} eq '>') {
+                $requests++;
+
                 $top_hosts{$record->{"host"}}++ if exists $record->{"host"};
                 $top_talkers{$record->{"source-ip"}}++ if exists $record->{"source-ip"};
 
                 if ($filetype && (exists $record->{"request-uri"})) {
-                        if (($record->{"request-uri"} =~ /\.([\w\d]{2,5}?)$/i) or 
-                            ($record->{"request-uri"} =~ /\/.*\.([\w\d]{2,5}?)\?/i)) {
-                                $ext_cnt++;
+                        if (($record->{"request-uri"} =~ /\.(\w{2,5})$/) or 
+                            ($record->{"request-uri"} =~ /\.(\w{2,5})\?/)) {
                                 $filetypes{lc($1)}++;
+                                $ext_cnt++;
                         }
                 }
         } elsif ($record->{"direction"} eq '<') {
+                $responses++;
+
                 $response_codes{$record->{"status-code"}}++ if exists $record->{"status-code"};
-                $srv_responses++;
         }
 
         return;
@@ -131,7 +134,7 @@ sub _write_output_file {
         if ($num_top_hosts) {
                 print OUTFILE "\n\n$summary_cap/$num_top_hosts VISITED HOSTS\n\n";
                 foreach $key (sort { $top_hosts{$b} <=> $top_hosts{$a} } keys %top_hosts) {
-                        print OUTFILE "$top_hosts{$key}\t" . _percent_of($top_hosts{$key}, $total_line_cnt) . "%\t$key\n";
+                        print OUTFILE "$top_hosts{$key}\t" . _percent_of($top_hosts{$key}, $requests) . "%\t$key\n";
                         last if (++$count == $summary_cap);
                 }
         }
@@ -140,7 +143,7 @@ sub _write_output_file {
                 $count = 0;
                 print OUTFILE "\n\n$summary_cap/$num_top_talkers TOP TALKERS\n\n";
                 foreach $key (sort { $top_talkers{$b} <=> $top_talkers{$a} } keys %top_talkers) {
-                        print OUTFILE "$top_talkers{$key}\t" . _percent_of($top_talkers{$key}, $total_line_cnt) . "%\t$key\n";
+                        print OUTFILE "$top_talkers{$key}\t" . _percent_of($top_talkers{$key}, $requests) . "%\t$key\n";
                         last if (++$count == $summary_cap);
                 }
         }
@@ -149,7 +152,7 @@ sub _write_output_file {
                 $count = 0;
                 print OUTFILE "\n\n$summary_cap/$num_response_codes RESPONSE CODES\n\n";
                 foreach $key (sort { $response_codes{$b} <=> $response_codes{$a} } keys %response_codes) {
-                        print OUTFILE "$response_codes{$key}\t" . _percent_of($response_codes{$key}, $srv_responses) . "%\t$key\n";
+                        print OUTFILE "$response_codes{$key}\t" . _percent_of($response_codes{$key}, $responses) . "%\t$key\n";
                         last if (++$count == $summary_cap);
                 }
         }
