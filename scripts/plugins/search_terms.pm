@@ -47,7 +47,7 @@ sub main {
         my $domain;
         my $name;
         my $pattern;
- 
+
         return unless $record->{"direction"} eq '>';
 
         # These results can end up being a little messy, but it seems
@@ -146,7 +146,7 @@ sub _write_output_file {
         print OUTFILE "Terms:           $num_terms\n";
         print OUTFILE "Queries:         $num_queries\n";
         print OUTFILE "Avg terms/query: " . sprintf("%.1f", ($num_terms / $num_queries)) . "\n\n\n";
- 
+
         foreach $ip (sort keys %search_terms) {
                 print OUTFILE "$ip\n";
                 foreach $hostname (keys %{ $search_terms{$ip} }) {

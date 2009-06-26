@@ -130,7 +130,7 @@ FORMAT_NODE *insert_node(char *name) {
 
         if ((node->name = (char *) malloc(strlen(name) + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for node name");
-        
+ 
         strcpy(node->name, name);
         node->value = NULL;
         node->list = NULL;
@@ -197,7 +197,9 @@ void print_format_values() {
                 } else {
                         printf("%c", EMPTY_FIELD);
                 }
-                if (node->list != NULL) printf("%s", FIELD_DELIM);
+
+                if (node->list != NULL)
+                        printf("%s", FIELD_DELIM);
 
                 node = node->list;
         }

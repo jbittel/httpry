@@ -198,15 +198,15 @@ sub process_logfiles {
 
                 print "Info: Processing file '$curr_file'\n" if $verbose;
 
-                while ($curr_line = <INFILE>) {
+                LINE: while ($curr_line = <INFILE>) {
                         chomp $curr_line;
                         $curr_line =~ s/[^[:print:]\t]//g; # Strip unprintable characters
-                        next if $curr_line =~ /^$/;
+                        next LINE if $curr_line =~ /^$/;
 
                         # Handle comment lines
                         if ($curr_line =~ /^#/) {
                                 # Check the comment for a field specifier line
-                                next unless $curr_line =~ /^# Fields: (.*)$/;
+                                next LINE unless $curr_line =~ /^# Fields: (.*)$/;
                                 @header = map { s/\s//g; lc; } split /\,/, $1;
 
                                 check_fields(@header);
@@ -217,7 +217,7 @@ sub process_logfiles {
                                 }
 
                                 %record = ();
-                                next;
+                                next LINE;
                         }
 
                         if (scalar @header == 0) {
