@@ -22,6 +22,7 @@ my %top_hosts = ();
 my %top_talkers = ();
 my %filetypes = ();
 my %response_codes = ();
+my %timeofday = ();
 my $total_line_cnt = 0;
 my $ext_cnt = 0;
 my $requests = 0;
@@ -57,6 +58,7 @@ sub list {
 sub main {
         my $self = shift;
         my $record = shift;
+        my $hour;
 
         $total_line_cnt++;
 
@@ -66,12 +68,18 @@ sub main {
                 $top_hosts{$record->{"host"}}++ if exists $record->{"host"};
                 $top_talkers{$record->{"source-ip"}}++ if exists $record->{"source-ip"};
 
-                if ($filetype && (exists $record->{"request-uri"})) {
+                if (exists $record->{"request-uri"}) {
                         if (($record->{"request-uri"} =~ /\.(\w{2,5})$/) or 
                             ($record->{"request-uri"} =~ /\.(\w{2,5})\?/)) {
                                 $filetypes{lc($1)}++;
                                 $ext_cnt++;
                         }
+                }
+
+                if (exists $record->{"timestamp"}) {
+                        $record->{"timestamp"} =~ / (\d\d):\d\d:\d\d$/;
+                        $hour = int $1;
+                        $timeofday{$hour}++;
                 }
         } elsif ($record->{"direction"} eq '<') {
                 $responses++;
@@ -118,6 +126,7 @@ sub _load_config {
 sub _write_output_file {
         my $key;
         my $count = 0;
+        my $hour;
 
         my $num_top_hosts = keys %top_hosts;
         my $num_top_talkers = keys %top_talkers;
@@ -130,6 +139,26 @@ sub _write_output_file {
         print OUTFILE "Generated:      " . localtime() . "\n";
         print OUTFILE "Total lines:    " . $total_line_cnt . "\n";
         print OUTFILE "Total run time: " . sprintf("%.1f", $end_time - $start_time) . " secs\n";
+
+        if (keys %timeofday) {
+                print OUTFILE "\n\nREQUESTS BY HOUR\n\n";
+                foreach $hour (0..23) {
+                        if (exists $timeofday{$hour}) {
+                                print OUTFILE sprintf("%2d%% ", ($timeofday{$hour} / $requests) * 100);
+                        } else {
+                                print OUTFILE " 0% ";
+                        }
+                }
+                print OUTFILE "\n ";
+                foreach (0..22) {
+                        print OUTFILE "|---";
+                }
+                print OUTFILE "|\n";
+                foreach $hour (0..23) {
+                        print OUTFILE sprintf("%02d  ", $hour);
+                }
+                print OUTFILE "\n";
+        }
 
         if ($num_top_hosts) {
                 print OUTFILE "\n\n$summary_cap/$num_top_hosts VISITED HOSTS\n\n";
