@@ -22,7 +22,7 @@ my %top_hosts = ();
 my %top_talkers = ();
 my %filetypes = ();
 my %response_codes = ();
-my %timeofday = ();
+my %requests_hour = ();
 my $total_line_cnt = 0;
 my $ext_cnt = 0;
 my $requests = 0;
@@ -58,7 +58,6 @@ sub list {
 sub main {
         my $self = shift;
         my $record = shift;
-        my $hour;
 
         $total_line_cnt++;
 
@@ -77,9 +76,8 @@ sub main {
                 }
 
                 if (exists $record->{"timestamp"}) {
-                        $record->{"timestamp"} =~ / (\d\d):\d\d:\d\d$/;
-                        $hour = int $1;
-                        $timeofday{$hour}++;
+                        $record->{"timestamp"} =~ /(\d\d):\d\d:\d\d$/;
+                        $requests_hour{int $1}++;
                 }
         } elsif ($record->{"direction"} eq '<') {
                 $responses++;
@@ -140,24 +138,11 @@ sub _write_output_file {
         print OUTFILE "Total lines:    " . $total_line_cnt . "\n";
         print OUTFILE "Total run time: " . sprintf("%.1f", $end_time - $start_time) . " secs\n";
 
-        if (keys %timeofday) {
-                print OUTFILE "\n\nREQUESTS BY HOUR\n\n";
-                foreach $hour (0..23) {
-                        if (exists $timeofday{$hour}) {
-                                print OUTFILE sprintf("%2d%% ", ($timeofday{$hour} / $requests) * 100);
-                        } else {
-                                print OUTFILE " 0% ";
-                        }
-                }
-                print OUTFILE "\n ";
-                foreach (0..22) {
-                        print OUTFILE "|---";
-                }
-                print OUTFILE "|\n";
-                foreach $hour (0..23) {
-                        print OUTFILE sprintf("%02d  ", $hour);
-                }
-                print OUTFILE "\n";
+        if (keys %requests_hour) {
+                print OUTFILE "\n\nREQUESTS BY HOUR\n";
+
+                print OUTFILE _get_request_hours(0, 11);
+                print OUTFILE _get_request_hours(12, 23);
         }
 
         if ($num_top_hosts) {
@@ -198,6 +183,37 @@ sub _write_output_file {
         close OUTFILE or die "Cannot close $output_file: $!\n";
 
         return;
+}
+
+# -----------------------------------------------------------------------------
+# Build a string with request percentages per hour
+# -----------------------------------------------------------------------------
+sub _get_request_hours {
+        my $begin = shift;
+        my $end = shift;
+        my $str;
+
+        $str = "\n";
+        for ($begin..$end) {
+                if (exists $requests_hour{$_}) {
+                        $str .= sprintf("%3d%% ", _percent_of($requests_hour{$_}, $requests));
+                } else {
+                        $str .= "  0% ";
+                }
+        }
+        $str .= "\n  ";
+
+        for ($begin..$end - 1) {
+                $str .= "|----";
+        }
+        $str .= "|\n";
+
+        for ($begin..$end) {
+                $str .= sprintf(" %02d  ", $_);
+        }
+        $str .= "\n";
+
+        return $str;
 }
 
 # -----------------------------------------------------------------------------
