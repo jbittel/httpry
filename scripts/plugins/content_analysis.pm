@@ -11,12 +11,6 @@ package content_analysis;
 use warnings;
 
 # -----------------------------------------------------------------------------
-# GLOBAL CONSTANTS
-# -----------------------------------------------------------------------------
-my $WINDOW_SIZE = 60;
-my $FILE_PREFIX = "flows_";
-
-# -----------------------------------------------------------------------------
 # GLOBAL VARIABLES
 # -----------------------------------------------------------------------------
 # Counter variables
@@ -52,7 +46,7 @@ sub init {
 
         # Remove any existing text files so they don't accumulate
         opendir DIR, $output_dir or die "Cannot open directory $output_dir: $!\n";
-        foreach $file (grep /^$FILE_PREFIX[\d\.]+\.txt$/, readdir(DIR)) {
+        foreach $file (grep /^$file_prefix[\d\.]+\.txt$/, readdir(DIR)) {
                 unlink "$output_dir/$file";
         }
         closedir(DIR);
@@ -98,7 +92,7 @@ sub main {
         # If a term is found, flag the buffer as dirty
         if (_content_check("$record->{'host'}$decoded_uri", $record->{"source-ip"}) > 0) {
                 $flow{$record->{"source-ip"}}->{"dirty"} = 1;
-                $flow{$record->{"source-ip"}}->{"count"} = $WINDOW_SIZE;
+                $flow{$record->{"source-ip"}}->{"count"} = $window_size;
         } else {
                 # Term not found, so if buffer is dirty decrement the window count
                 if ($flow{$record->{"source-ip"}}->{"dirty"} == 1) {
@@ -108,7 +102,7 @@ sub main {
 
         # If buffer is clean and full, drop the oldest line
         if (($flow{$record->{"source-ip"}}->{"dirty"} == 0) &&
-            ($flow{$record->{"source-ip"}}->{"length"} > $WINDOW_SIZE)) {
+            ($flow{$record->{"source-ip"}}->{"length"} > $window_size)) {
                 $flow{$record->{"source-ip"}}->{"length"}--;
                 shift @{ $flow_buffer{$record->{"source-ip"}} };
         }
@@ -296,14 +290,14 @@ sub _write_file {
         my $term;
         my $line;
 
-        unless (open OUTFILE, ">>$output_dir/$FILE_PREFIX$ip.txt") {
-                warn "Cannot open $output_dir/$FILE_PREFIX$ip.txt: $!\n";
+        unless (open OUTFILE, ">>$output_dir/$file_prefix$ip.txt") {
+                warn "Cannot open $output_dir/$file_prefix$ip.txt: $!\n";
                 return;
         }
 
         print OUTFILE '#' x 80 . "\n";
         print OUTFILE "# Fields: timestamp,host,request-uri,source-ip,dest-ip,direction\n";
-        print OUTFILE "# Length: $flow{$ip}->{'length'} lines (window size: $WINDOW_SIZE)\n";
+        print OUTFILE "# Length: $flow{$ip}->{'length'} lines (window size: $window_size)\n";
         print OUTFILE "# Score: $flow{$ip}->{'score'}\n";
 
         print OUTFILE "# Terms: ";
@@ -354,7 +348,7 @@ sub _write_summary_file {
                 foreach $ip (keys %scored_flow) {
                         if ($scored_flow{$ip}->{"cluster"} == 0) {
                                 delete $scored_flow{$ip};
-                                unlink "$output_dir/$FILE_PREFIX$ip.txt";
+                                unlink "$output_dir/$file_prefix$ip.txt";
                         }
                 }
         }
