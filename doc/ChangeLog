@@ -5,7 +5,7 @@ lists notable changes and fixes to the core httpry program.
 
 
 version 0.1.6
-
+   * added IPv6 support
 
 version 0.1.5
    * added a binary pcap dump file option (-b)

@@ -10,6 +10,7 @@
 
 #define MAX_TIME_LEN 20
 #define PORTSTRLEN 6
+#define _FILE_OFFSET_BITS 64 /* Allow output files > 2GB */
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -34,6 +35,8 @@
 int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
 void set_header_offset(int header_type);
+int get_ethertype(int header_type, const u_char *pkt);
+void process_v6nh(int *size_ip, const u_char *pkt);
 void open_outfiles();
 void runas_daemon();
 void change_user(char *name);
@@ -66,6 +69,7 @@ static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
 static unsigned num_parsed = 0;   /* Count of fully parsed HTTP packets */
 static unsigned start_time = 0;   /* Start tick for statistics calculations */
+static int data_link_type = 0;
 static int header_offset = 0;
 static pcap_dumper_t *dumpfile = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
@@ -104,7 +108,8 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                         LOG_DIE("Cannot open saved capture file: %s", errbuf);
         }
 
-        set_header_offset(pcap_datalink(pcap_hnd));
+        data_link_type = pcap_datalink(pcap_hnd);
+        set_header_offset(data_link_type);
 
         /* Compile capture filter and apply to handle */
         if (pcap_compile(pcap_hnd, &filter, capfilter, 0, net) == -1)
@@ -158,6 +163,50 @@ void set_header_offset(int header_type) {
         }
 
         return;
+}
+
+/* Determine whether we are dealing with a v4 or v6 IP packet */
+int get_ethertype(int header_type, const u_char *pkt) {
+        const struct en10mb_header *eth;
+        int ethertype = -1;
+
+        switch (header_type) {
+                case DLT_EN10MB:
+                        eth = (struct en10mb_header *) pkt;
+                        ethertype = ntohs(eth->eth_type);
+                        break;
+                default:
+                        LOG_DIE("Header structure unknown for datalink type: %s", pcap_datalink_val_to_name(header_type));
+                        break;
+        }
+
+        return ethertype;
+}
+
+/* Check for IPv6 extension headers and determine their length */
+void process_v6nh(int *size_ip, const u_char *pkt) {
+        const struct ip6_ext_header * ip6_h;
+        ip6_h = (struct ip6_ext_header *) (pkt + header_offset + *size_ip);
+        switch (ip6_h->ip6_eh_nh) {
+                case 0: /* Hop-by-hop options */
+                case 43: /* Routing */
+                case 44: /* Fragment */
+                case 51: /* Authentication Header */
+                case 50: /* Encapsulating Security Payload */
+                case 60: /* Destination Options */
+                        size_ip = size_ip + (ip6_h->ip6_eh_len * 8) + 8;
+                        process_v6nh(size_ip, pkt);
+                        break;
+                case 59: /* No next header */
+                        size_ip = 0;
+                        break;
+                case 6: /* TCP */
+                        size_ip = size_ip + (ip6_h->ip6_eh_len * 8) + 8;
+                        break;
+                default:
+                        size_ip = 0;
+                        break;
+        }
 }
 
 /* Open any requested output files */
@@ -281,25 +330,51 @@ void change_user(char *name) {
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt) {
         struct tm *pkt_time;
         char *header_line, *req_value;
-        char saddr[INET_ADDRSTRLEN], daddr[INET_ADDRSTRLEN];
+        char saddr[INET6_ADDRSTRLEN], daddr[INET6_ADDRSTRLEN];
         char sport[PORTSTRLEN], dport[PORTSTRLEN];
         char ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
 
         const struct ip_header *ip;
+        const struct ip6_header *ip6;
         const struct tcp_header *tcp;
         const char *data;
         int size_ip, size_tcp, size_data;
 
-        /* Position pointers within packet stream and do sanity checks */
-        ip = (struct ip_header *) (pkt + header_offset);
-        size_ip = IP_HL(ip) * 4;
-        if (size_ip < 20) return;
-        if (ip->ip_p != IPPROTO_TCP) return;
+        /* Determine whether IPv4 or IPv6 packet */
+        switch (get_ethertype(data_link_type, pkt)) {
+                case ETH_P_IP: /* Packet is IPv4 */
+                        /* Position pointers within packet stream and do sanity checks */
+                        ip = (struct ip_header *) (pkt + header_offset);
+                        size_ip = IP_HL(ip) * 4;
+                        if (size_ip < 20) return;
+                        if (ip->ip_p != IPPROTO_TCP) return;
+                        inet_ntop(AF_INET, &(ip->ip_src), saddr, sizeof(saddr));
+                        inet_ntop(AF_INET, &(ip->ip_dst), daddr, sizeof(daddr));
+                        break;
+                case ETH_P_IPV6: /* Packet is IPv6 */
+                        /* Position pointers within packet stream and do sanity checks */
+                        ip6 = (struct ip6_header *) (pkt + header_offset);
+                        size_ip = 40;
+                        if (ip6->ip6_nh == 0 || ip6->ip6_nh == 43 || ip6->ip6_nh == 44 || ip6->ip6_nh == 51 || ip6->ip6_nh == 50 || ip6->ip6_nh == 60 || ip6->ip6_nh == 59 ){
+                                process_v6nh(&size_ip, pkt);
+                        }else if (ip6->ip6_nh != IPPROTO_TCP){
+                                return;
+                        }
+                        /* process_v6nh sets size_ip to 0 if we don't want to continue processing this packet */
+                        if (size_ip < 40) return;
+                        inet_ntop(AF_INET6, &(ip6->ip_src), saddr, sizeof(saddr));
+                        inet_ntop(AF_INET6, &(ip6->ip_dst), daddr, sizeof(daddr));
+                        break;
+                default:
+                        /* Not an IPv4 or IPv6 packet, stop processing */
+                        return;
+                        break;
+        }
 
         tcp = (struct tcp_header *) (pkt + header_offset + size_ip);
-	size_tcp = TH_OFF(tcp) * 4;
-	if (size_tcp < 20) return;
+        size_tcp = TH_OFF(tcp) * 4;
+        if (size_tcp < 20) return;
 
         data = (char *) (pkt + header_offset + size_ip + size_tcp);
         size_data = (header->caplen - (header_offset + size_ip + size_tcp));
@@ -338,8 +413,6 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         }
 
         /* Grab source/destination IP addresses */
-        strncpy(saddr, (char *) inet_ntoa(ip->ip_src), INET_ADDRSTRLEN);
-        strncpy(daddr, (char *) inet_ntoa(ip->ip_dst), INET_ADDRSTRLEN);
         insert_value("source-ip", saddr);
         insert_value("dest-ip", daddr);
 
