@@ -51,7 +51,7 @@ void display_banner();
 void display_usage();
 
 /* Program flags/options, set by arguments or config file */
-static int parse_count = 0;
+static u_int parse_count = 0;
 static int daemon_mode = 0;
 static char *use_infile = NULL;
 static char *interface = NULL;
@@ -67,8 +67,8 @@ int use_syslog = 0;               /* Defined as extern in error.h */
 
 static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
-static unsigned num_parsed = 0;   /* Count of fully parsed HTTP packets */
-static unsigned start_time = 0;   /* Start tick for statistics calculations */
+static u_int num_parsed = 0;      /* Count of fully parsed HTTP packets */
+static u_int start_time = 0;      /* Start tick for statistics calculations */
 static int data_link_type = 0;
 static int header_offset = 0;
 static pcap_dumper_t *dumpfile = NULL;
@@ -585,7 +585,7 @@ void print_stats() {
                         return;
                 }
 
-                LOG_PRINT("%d packets received, %d packets dropped, %d http packets parsed", \
+                LOG_PRINT("%u packets received, %u packets dropped, %u http packets parsed", \
                      pkt_stats.ps_recv, pkt_stats.ps_drop, num_parsed);
 
                 run_time = (float) (time(0) - start_time);
