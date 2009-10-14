@@ -702,6 +702,7 @@ int main(int argc, char **argv) {
                 PRINT("Loop halted, shutting down...");
         }
 
+        print_stats();
         cleanup();
 
         return loop_status == -1 ? EXIT_FAILURE : EXIT_SUCCESS;
