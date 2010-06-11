@@ -64,7 +64,14 @@ sub main {
         if ($record->{"direction"} eq '>') {
                 $requests++;
 
-                $top_hosts{$record->{"host"}}++ if exists $record->{"host"};
+                if (exists $record->{"host"}) {
+                        if ($record->{"host"} =~ /([\-\w]+?\.[\-\w]+?)(:?\:\d+?)??$/) {
+                                $top_hosts{$1}++;
+                        } else {
+                                $top_hosts{"-"}++;
+                        }
+                }
+
                 $top_talkers{$record->{"source-ip"}}++ if exists $record->{"source-ip"};
 
                 if (exists $record->{"request-uri"}) {
