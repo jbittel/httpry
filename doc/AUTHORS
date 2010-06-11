@@ -16,3 +16,6 @@ Significant suggestions or contributions:
    
    Mark Carter <mark.carter@imperial.ac.uk>
       * Provided a patch adding IPv6 support
+
+   Mats Erik Andersson <debian@gisladisker.se>
+      * Provided a patch adding IPv6 support
