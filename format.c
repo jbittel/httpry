@@ -167,7 +167,6 @@ char *get_value(char *name) {
 
 #ifdef DEBUG
         ASSERT(name);
-        ASSERT(node);
 #endif
 
         if (strlen(name) == 0)
