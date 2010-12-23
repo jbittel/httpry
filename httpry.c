@@ -31,6 +31,7 @@
 #include "format.h"
 #include "methods.h"
 #include "tcp.h"
+#include "rate.h"
 
 /* Function declarations */
 int getopt(int, char * const *, const char *);
@@ -641,6 +642,8 @@ int main(int argc, char **argv) {
 
         if ((buf = malloc(BUFSIZ + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for packet data buffer");
+
+        create_stats_thread();
 
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);

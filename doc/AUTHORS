@@ -19,3 +19,6 @@ Significant suggestions or contributions:
 
    Mats Erik Andersson <debian@gisladisker.se>
       * Provided a patch adding IPv6 support
+
+   Dennis Opacki <dopacki@adotout.com>
+      * Provided a major patch adding an HTTP rate statistics mode
