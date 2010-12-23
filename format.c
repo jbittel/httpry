@@ -161,6 +161,25 @@ void insert_value(char *name, char *value) {
         return;
 }
 
+/* Given the name, return a value from the hash */
+char *get_value(char *name) {
+        FORMAT_NODE *node;
+
+#ifdef DEBUG
+        ASSERT(name);
+        ASSERT(node);
+#endif
+
+        if (strlen(name) == 0)
+                return EMPTY_FIELD;
+
+        if ((node = hash_lookup(name))) {
+                return node->value;
+        } else {
+                return EMPTY_FIELD;
+        }
+}
+
 /* Print a list of all field names contained in the output format */
 void print_format_list() {
         FORMAT_NODE *node = head;
@@ -195,7 +214,7 @@ void print_format_values() {
                         printf("%s", node->value);
                         node->value = NULL;
                 } else {
-                        printf("%c", EMPTY_FIELD);
+                        printf("%s", EMPTY_FIELD);
                 }
 
                 if (node->list != NULL)

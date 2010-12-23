@@ -32,8 +32,8 @@
 /* Where to send unnecessary output */
 #define NULL_FILE "/dev/null"
 
-/* Character to print when an output field has no associated data */
-#define EMPTY_FIELD '-'
+/* String to print when an output field has no associated data */
+#define EMPTY_FIELD "-"
 
 /* Delimiter that separates output fields */
 #define FIELD_DELIM "\t"
