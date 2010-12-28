@@ -21,7 +21,7 @@
 #define WAIT_TIME 10
 #define THRESHOLD 1
 #define ALARM 60
-#define BINDSNAP 0
+#define BINDSNAP 1
 #define MARK_STATS 60
 
 typedef struct host_stats HOST_STATS;
@@ -44,7 +44,7 @@ static pthread_mutex_t stats_lock;
 static HOST_STATS **bb;
 static int totals = NUM_BUCKETS;
 
-void create_stats_thread() {
+void create_rate_stats_thread() {
         int s;
         pthread_t thread;
 
@@ -67,9 +67,7 @@ void create_stats_thread() {
 void init_buckets() {
         u_int i;
 
-        // create bucket brigade (final bucket is for totals)
-        /* TODO do we need a mutex lock here? */
-//        pthread_mutex_lock(&stats_lock);
+        /* Create bucket brigade (final bucket is for totals) */
         if ((bb = malloc( sizeof(HOST_STATS *) * (NUM_BUCKETS + 1))) == NULL)
                 LOG_DIE("Cannot allocate memory for stats array");
 
@@ -79,7 +77,6 @@ void init_buckets() {
 
                 scour_bucket(i);
         }
-//        pthread_mutex_unlock(&stats_lock);
 
         return;
 }
@@ -156,8 +153,7 @@ int calculate_averages() {
         
                 // handle bindsnap mode 
                 if (BINDSNAP > 0) {
-                        printf("[%s] totals - %3.2f rps",st_time, ((float)bb[totals]->count/delta));
-                        printf("\n");
+                        printf("[%s] totals - %3.2f rps\n",st_time, ((float)bb[totals]->count/delta));
                         fflush(stdout);
                 }
                 else {

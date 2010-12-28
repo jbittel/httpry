@@ -64,6 +64,7 @@ static char *methods_str = NULL;
 static char *use_dumpfile = NULL;
 int quiet_mode = 0;               /* Defined as extern in error.h */
 int use_syslog = 0;               /* Defined as extern in error.h */
+int rate_stats = 0;
 
 static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
@@ -73,6 +74,7 @@ static int header_offset = 0;
 static pcap_dumper_t *dumpfile = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
+static char rate_format[] = RATE_FORMAT;
 static char default_methods[] = DEFAULT_METHODS;
 
 /* Find and prepare ethernet device for capturing */
@@ -376,7 +378,12 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         strftime(ts, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", pkt_time);
         insert_value("timestamp", ts);
 
-        print_format_values();
+        if (rate_stats) {
+                add_to_bucket(get_value("host"));
+                clear_values();
+        } else {
+                print_format_values();
+        }
 
         if (dumpfile)
                 pcap_dump((unsigned char *) dumpfile, header, pkt);
@@ -594,7 +601,7 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "b:df:hpqi:m:n:o:r:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:df:hpqi:m:n:o:r:tu:")) != -1) {
                 switch (opt) {
                         case 'b': use_dumpfile = optarg; break;
                         case 'd': daemon_mode = 1;
@@ -608,6 +615,7 @@ int main(int argc, char **argv) {
                         case 'p': set_promisc = 0; break;
                         case 'q': quiet_mode = 1; break;
                         case 'r': use_infile = optarg; break;
+                        case 't': rate_stats = 1; break;
                         case 'u': new_user = optarg; break;
                         default: display_usage();
                 }
@@ -628,6 +636,7 @@ int main(int argc, char **argv) {
         }
 
         if (!format_str) format_str = default_format;
+        if (rate_stats) format_str = rate_format;
         parse_format_string(format_str);
 
         if (!methods_str) methods_str = default_methods;
@@ -643,7 +652,8 @@ int main(int argc, char **argv) {
         if ((buf = malloc(BUFSIZ + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for packet data buffer");
 
-        create_stats_thread();
+        if (rate_stats)
+                create_rate_stats_thread();
 
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);

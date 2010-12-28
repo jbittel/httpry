@@ -8,10 +8,10 @@
 
 */
 
-#ifndef _HAVE_TOP_H
-#define _HAVE_TOP_H
+#ifndef _HAVE_RATE_H
+#define _HAVE_RATE_H
 
-void create_stats_thread();
+void create_rate_stats_thread();
 int add_to_bucket(char *host);
 
-#endif /* ! _HAVE_TOP_H */
+#endif /* ! _HAVE_RATE_H */

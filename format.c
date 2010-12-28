@@ -179,6 +179,21 @@ char *get_value(char *name) {
         }
 }
 
+void clear_values() {
+        FORMAT_NODE *node = head;
+
+#ifdef DEBUG
+        ASSERT(node);
+#endif
+
+        while (node) {
+                node->value = NULL;
+                node = node->list;
+        }
+
+        return;
+}
+
 /* Print a list of all field names contained in the output format */
 void print_format_list() {
         FORMAT_NODE *node = head;

@@ -14,6 +14,7 @@
 void parse_format_string(char *str);
 void insert_value(char *name, char *value);
 char *get_value(char *name);
+void clear_values();
 void print_format_list();
 void print_format_values();
 void free_format();

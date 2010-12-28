@@ -22,6 +22,8 @@
    *** Can be overridden with -f */
 #define DEFAULT_FORMAT "timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase"
 
+#define RATE_FORMAT "host"
+
 /* Default request methods to process; see doc/method-string for more information
    *** Can be overridden with -m */
 #define DEFAULT_METHODS "options,get,head,post,put,delete,trace,connect"
