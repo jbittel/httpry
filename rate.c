@@ -15,27 +15,26 @@
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
+#include "config.h"
 #include "error.h"
 
+#define MAX_HOST_LEN 256
 #define NUM_BUCKETS 100
 #define WAIT_TIME 10
 #define THRESHOLD 1
-#define ALARM 60
-#define BINDSNAP 1
 #define MARK_STATS 60
 
 typedef struct host_stats HOST_STATS;
 struct host_stats {
-        char host[256];
+        char host[MAX_HOST_LEN + 1];
         unsigned int count;
         unsigned int rps;
         time_t first_packet;
         time_t last_packet;
-        time_t alarm_set;
 };
 
-void *run_stats();
-int calculate_averages();
+void run_stats();
+void calculate_averages();
 void init_buckets();
 void scour_bucket(int i);
 int find_bucket(char *host);
@@ -44,19 +43,18 @@ static pthread_mutex_t stats_lock;
 static HOST_STATS **bb;
 static int totals = NUM_BUCKETS;
 
+/* Spawn a thread for updating and printing rate statistics */
 void create_rate_stats_thread() {
         int s;
         pthread_t thread;
 
-        // initialize buckets and mark overall stats bucket
         init_buckets();  
-//        totals = NUM_BUCKETS;
                         
         s = pthread_mutex_init(&stats_lock, NULL);
         if (s != 0)
                 LOG_DIE("Statistics thread mutex initialization failed with error %d", s);
  
-        s = pthread_create(&thread, NULL, run_stats, (void *) 0);
+        s = pthread_create(&thread, NULL, (void *) run_stats, (void *) 0);
         if (s != 0)
                 LOG_DIE("Statistics thread creation failed with error %d", s);
 
@@ -88,13 +86,12 @@ void scour_bucket(int i) {
         bb[i]->rps = 0;
         bb[i]->first_packet = time(0);
         bb[i]->last_packet = (time_t) 0;
-        bb[i]->alarm_set = (time_t) 0;
-        
+ 
         return;
 }
 
 /* This is our statistics thread */
-void *run_stats () {
+void run_stats () {
         while (1) {
                 pthread_mutex_lock(&stats_lock);
                 calculate_averages();
@@ -103,123 +100,88 @@ void *run_stats () {
         }
 }
 
-/* calculate the running average within each bucket */
-int calculate_averages() {
-        u_int i,delta;
-        char st_time[10];
+/* Calculate the running average within each bucket */
+void calculate_averages() {
+        u_int i, delta;
+        char st_time[MAX_TIME_LEN];
         time_t now = time(0);
         struct tm *raw_time = localtime(&now);
-        snprintf(st_time, 9, "%02d:%02d:%02d",raw_time->tm_hour,raw_time->tm_min,raw_time->tm_sec);
 
-        for (i=0; i<NUM_BUCKETS; i++) {
+        strftime(st_time, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", raw_time);
 
-                // only process valid buckets
-                if ( strlen(bb[i]->host) >0 ) {
-                        delta = now - bb[i]->first_packet;
+        for (i = 0; i < NUM_BUCKETS; i++) {
+                if (strlen(bb[i]->host) == 0) /* Only process valid buckets */
+                        continue;
 
-                        // let's try to avoid a divide-by-zero, shall we?
-                        if (delta > 1 ) {
-        
-                                // round our average and save it in the bucket
-                                bb[i]->rps = (u_int)ceil( (bb[i]->count) / (float)delta);
+                delta = now - bb[i]->first_packet;
+                if (delta == 0) /* Let's try to avoid a divide-by-zero, shall we? */
+                        continue;
 
-                                // handle threshold crossing
-                                if ( bb[i]->rps > THRESHOLD ) {
+                /* Round our average and save it in the bucket */
+                bb[i]->rps = (u_int) ceil(bb[i]->count / (float) delta);
 
-        
-                                        // display detail to either syslog or stdout
-                                        if ( BINDSNAP > 0) {
-                                                printf("[%s] customer [%s] - %u rps\n",st_time,bb[i]->host,bb[i]->rps);
-                                                fflush(stdout);
-                                        }
-                                        else {
-                                                // if running in background, use alarm reset timer
-                                                if ((now-bb[i]->alarm_set) > ALARM) {
-
-                                                        syslog(LOG_NOTICE,"customer [%s] - %u rps\n",bb[i]->host,bb[i]->rps);
-
-                                                        // reset alarm
-                                                        bb[i]->alarm_set = now;
-                                                }
-                                        }
-                                }
-                        }
-                }               
+                if (bb[i]->rps > THRESHOLD)
+                        printf("%s%s%s%s%u rps\n", st_time, FIELD_DELIM, bb[i]->host, FIELD_DELIM, bb[i]->rps);
         }
 
-        /* 'mark stats' if required and it is time */
-        delta = (u_int)(now - bb[totals]->first_packet);
-        if ((MARK_STATS > 0) && (delta > 1) && (delta >= MARK_STATS) ) {
-        
-                // handle bindsnap mode 
-                if (BINDSNAP > 0) {
-                        printf("[%s] totals - %3.2f rps\n",st_time, ((float)bb[totals]->count/delta));
-                        fflush(stdout);
-                }
-                else {
-                        syslog(LOG_NOTICE,"[totals] - %3.2f rps\n", ((float)bb[totals]->count/delta));
-                }       
+        /* Display rate totals as necessary */
+        delta = (u_int) (now - bb[totals]->first_packet);
+        if (delta == 0)
+                return;
+
+        if ((MARK_STATS > 0) && (delta > 1) && (delta >= MARK_STATS)) {
+                printf("%s%stotals%s%3.2f rps\n", st_time, FIELD_DELIM, FIELD_DELIM, (float) bb[totals]->count / delta);
                 scour_bucket(totals);
         }
 
-        return 1;
+        return;
 }
 
-// add a packet to a bucket
-int add_to_bucket(char *host) {
-        int bucket = 0;
+/* Add or update host data in a bucket */
+void add_to_bucket(char *host) {
+        int bucket;
 
-        if ( host == NULL) {
-          return 0;
-        }
+        if (host == NULL)
+                return;
 
-        // get the bucket to put packet in      
         pthread_mutex_lock(&stats_lock);
+ 
+        /* Get a bucket to put packet in */
         bucket = find_bucket(host);
 
-        // set bucket fields
         bb[bucket]->last_packet = time(0);
         bb[bucket]->count++;
         bb[totals]->count++;
 
         pthread_mutex_unlock(&stats_lock);
 
-        return 1;
+        return;
 }
 
-// figure out where to put this request
+/* Look for a best fit bucket for this host name */
 int find_bucket(char *host) {
-        int i, bucket=0;
-        time_t oldest=0;
+        int i, unused = -1, oldest = -1, bucket;
+        time_t oldest_pkt = 0;
 
-        // look for an existing bucket for this IP
-        for (i=0; i< NUM_BUCKETS; i++ ){
-                // host field of bucket seems to match the host we are checking
-                if (strncmp(host,bb[i]->host,254) == 0 ) {
+        for (i = 0; i < NUM_BUCKETS; i++) {
+                if (strncmp(host, bb[i]->host, MAX_HOST_LEN) == 0) {
                         return i;
+                } else if ((unused == -1) && (strlen(bb[i]->host) == 0)) {
+                        unused = i;
+                } else if ((bb[i]->last_packet != 0) && ((oldest_pkt == 0) || (bb[i]->last_packet < oldest_pkt))) {
+                        oldest_pkt = bb[i]->last_packet;
+                        oldest = i;                     
                 }
         }
 
-        // look for unused buckets
-        for (i=0; i< NUM_BUCKETS; i++ ) {
-
-                // found an unused one - clean it, init it, and return it
-                if ( strlen(bb[i]->host) == 0 ) {
-                        scour_bucket(i);
-                        strncpy(bb[i]->host,host,254);
-                        return i;
-                }
-
-                if ( ( bb[i]->last_packet != 0 ) && ((oldest==0)||( bb[i]->last_packet < oldest))) {
-                        oldest = bb[i]->last_packet;
-                        bucket = i;                     
-                }
+        if (unused > -1) {
+                bucket = unused;
+        } else {
+                bucket = oldest;
         }
 
-        // use the most stagnant bucket since all are in use
-        // clean it, init it, and return it
         scour_bucket(bucket);
-        strncpy(bb[i]->host,host,254);
+        strncpy(bb[bucket]->host, host, MAX_HOST_LEN);
 
         return bucket;
 }

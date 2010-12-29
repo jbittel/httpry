@@ -12,6 +12,6 @@
 #define _HAVE_RATE_H
 
 void create_rate_stats_thread();
-int add_to_bucket(char *host);
+void add_to_bucket(char *host);
 
 #endif /* ! _HAVE_RATE_H */

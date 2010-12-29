@@ -8,9 +8,6 @@
 
 */
 
-#define MAX_TIME_LEN 20
-#define PORTSTRLEN 6
-
 #include <ctype.h>
 #include <fcntl.h>
 #include <grp.h>
