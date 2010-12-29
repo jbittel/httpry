@@ -20,15 +20,14 @@
 
 #define MAX_HOST_LEN 256
 #define NUM_BUCKETS 100
-#define WAIT_TIME 10
-#define THRESHOLD 1
-#define MARK_STATS 60
+#define DISPLAY_INTERVAL 10
+#define TOTALS_DISPLAY_INTERVAL 60
+#define RATE_THRESHOLD 1
 
 typedef struct host_stats HOST_STATS;
 struct host_stats {
         char host[MAX_HOST_LEN + 1];
         unsigned int count;
-        unsigned int rps;
         time_t first_packet;
         time_t last_packet;
 };
@@ -83,7 +82,6 @@ void init_buckets() {
 void scour_bucket(int i) {
         bb[i]->host[0] = '\0';
         bb[i]->count = 0;
-        bb[i]->rps = 0;
         bb[i]->first_packet = time(0);
         bb[i]->last_packet = (time_t) 0;
  
@@ -96,13 +94,13 @@ void run_stats () {
                 pthread_mutex_lock(&stats_lock);
                 calculate_averages();
                 pthread_mutex_unlock(&stats_lock);
-                sleep(WAIT_TIME);
+                sleep(DISPLAY_INTERVAL);
         }
 }
 
 /* Calculate the running average within each bucket */
 void calculate_averages() {
-        u_int i, delta;
+        u_int i, delta, rps;
         char st_time[MAX_TIME_LEN];
         time_t now = time(0);
         struct tm *raw_time = localtime(&now);
@@ -117,11 +115,11 @@ void calculate_averages() {
                 if (delta == 0) /* Let's try to avoid a divide-by-zero, shall we? */
                         continue;
 
-                /* Round our average and save it in the bucket */
-                bb[i]->rps = (u_int) ceil(bb[i]->count / (float) delta);
+                /* Calculate the average rate for this host */
+                rps = (u_int) ceil(bb[i]->count / (float) delta);
 
-                if (bb[i]->rps > THRESHOLD)
-                        printf("%s%s%s%s%u rps\n", st_time, FIELD_DELIM, bb[i]->host, FIELD_DELIM, bb[i]->rps);
+                if (rps > RATE_THRESHOLD)
+                        printf("%s%s%s%s%u rps\n", st_time, FIELD_DELIM, bb[i]->host, FIELD_DELIM, rps);
         }
 
         /* Display rate totals as necessary */
@@ -129,7 +127,7 @@ void calculate_averages() {
         if (delta == 0)
                 return;
 
-        if ((MARK_STATS > 0) && (delta > 1) && (delta >= MARK_STATS)) {
+        if ((delta > 1) && (delta >= TOTALS_DISPLAY_INTERVAL)) {
                 printf("%s%stotals%s%3.2f rps\n", st_time, FIELD_DELIM, FIELD_DELIM, (float) bb[totals]->count / delta);
                 scour_bucket(totals);
         }
@@ -146,7 +144,7 @@ void add_to_bucket(char *host) {
 
         pthread_mutex_lock(&stats_lock);
  
-        /* Get a bucket to put packet in */
+        /* Get a bucket to put host data in */
         bucket = find_bucket(host);
 
         bb[bucket]->last_packet = time(0);
@@ -175,8 +173,14 @@ int find_bucket(char *host) {
         }
 
         if (unused > -1) {
+#ifdef DEBUG
+                LOG_PRINT("No matching host bucket: found unused bucket");
+#endif
                 bucket = unused;
         } else {
+#ifdef DEBUG
+                LOG_PRINT("No matching host bucket: reusing oldest bucket [%s]", bb[oldest]->host);
+#endif
                 bucket = oldest;
         }
 
