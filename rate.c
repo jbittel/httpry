@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include "config.h"
 #include "error.h"
+#include "rate.h"
 
 #define MAX_HOST_LEN 256
 #define NUM_BUCKETS 100
@@ -33,11 +34,11 @@ struct host_stats {
 };
 
 void *run_stats();
-void calculate_averages();
 void init_buckets();
 void scour_bucket(int i);
 int find_bucket(char *host);
 
+static pthread_t thread;
 static pthread_mutex_t stats_lock;
 static HOST_STATS **bb;
 static int totals = NUM_BUCKETS;
@@ -45,7 +46,6 @@ static int totals = NUM_BUCKETS;
 /* Spawn a thread for updating and printing rate statistics */
 void create_rate_stats_thread() {
         int s;
-        pthread_t thread;
 
         init_buckets();  
                         
@@ -58,6 +58,11 @@ void create_rate_stats_thread() {
                 LOG_DIE("Statistics thread creation failed with error %d", s);
 
         return;
+}
+
+/* Explicitly exit rate statistics thread */
+void exit_rate_stats_thread() {
+        pthread_cancel(thread);
 }
 
 /* Allocate and initialize all host stats buckets */
@@ -91,19 +96,19 @@ void scour_bucket(int i) {
 /* This is our statistics thread */
 void *run_stats () {
         while (1) {
-                pthread_mutex_lock(&stats_lock);
-                calculate_averages();
-                pthread_mutex_unlock(&stats_lock);
+                display_rate_stats();
                 sleep(DISPLAY_INTERVAL);
         }
 }
 
-/* Calculate the running average within each bucket */
-void calculate_averages() {
+/* Display the running average within each valid bucket */
+void display_rate_stats() {
         u_int i, delta, rps;
         char st_time[MAX_TIME_LEN];
         time_t now = time(0);
         struct tm *raw_time = localtime(&now);
+
+        pthread_mutex_lock(&stats_lock);
 
         strftime(st_time, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", raw_time);
 
@@ -124,13 +129,13 @@ void calculate_averages() {
 
         /* Display rate totals as necessary */
         delta = (u_int) (now - bb[totals]->first_packet);
-        if (delta == 0)
-                return;
 
         if ((delta > 1) && (delta >= TOTALS_DISPLAY_INTERVAL)) {
                 printf("%s%stotals%s%3.2f rps\n", st_time, FIELD_DELIM, FIELD_DELIM, (float) bb[totals]->count / delta);
                 scour_bucket(totals);
         }
+
+        pthread_mutex_unlock(&stats_lock);
 
         return;
 }
@@ -173,8 +178,14 @@ int find_bucket(char *host) {
         }
 
         if (unused > -1) {
+#if 0
+                PRINT("No matching host bucket found: using unused bucket");
+#endif
                 bucket = unused;
         } else {
+#if 0
+                PRINT("No matching host bucket found: using oldest bucket");
+#endif
                 bucket = oldest;
         }
 

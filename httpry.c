@@ -512,6 +512,7 @@ void cleanup() {
         /* This may have already been called, but might not
            have depending on how we got here */
         if (pcap_hnd) pcap_breakloop(pcap_hnd);
+        if (rate_stats) exit_rate_stats_thread();
 
         fflush(NULL);
 
@@ -531,6 +532,9 @@ void cleanup() {
 void print_stats() {
         struct pcap_stat pkt_stats;
         float run_time;
+
+        if (rate_stats)
+                display_rate_stats();
 
         if (pcap_hnd && !use_infile) {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
