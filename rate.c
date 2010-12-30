@@ -32,7 +32,7 @@ struct host_stats {
         time_t last_packet;
 };
 
-void run_stats();
+void *run_stats();
 void calculate_averages();
 void init_buckets();
 void scour_bucket(int i);
@@ -53,7 +53,7 @@ void create_rate_stats_thread() {
         if (s != 0)
                 LOG_DIE("Statistics thread mutex initialization failed with error %d", s);
  
-        s = pthread_create(&thread, NULL, (void *) run_stats, (void *) 0);
+        s = pthread_create(&thread, NULL, run_stats, NULL);
         if (s != 0)
                 LOG_DIE("Statistics thread creation failed with error %d", s);
 
@@ -89,7 +89,7 @@ void scour_bucket(int i) {
 }
 
 /* This is our statistics thread */
-void run_stats () {
+void *run_stats () {
         while (1) {
                 pthread_mutex_lock(&stats_lock);
                 calculate_averages();
@@ -115,7 +115,7 @@ void calculate_averages() {
                 if (delta == 0) /* Let's try to avoid a divide-by-zero, shall we? */
                         continue;
 
-                /* Calculate the average rate for this host */
+                /* Calculate the rate for this host */
                 rps = (u_int) ceil(bb[i]->count / (float) delta);
 
                 if (rps > RATE_THRESHOLD)
@@ -173,14 +173,8 @@ int find_bucket(char *host) {
         }
 
         if (unused > -1) {
-#ifdef DEBUG
-                LOG_PRINT("No matching host bucket: found unused bucket");
-#endif
                 bucket = unused;
         } else {
-#ifdef DEBUG
-                LOG_PRINT("No matching host bucket: reusing oldest bucket [%s]", bb[oldest]->host);
-#endif
                 bucket = oldest;
         }
 
