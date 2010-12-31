@@ -36,9 +36,9 @@ struct host_stats {
 void *run_stats();
 void init_buckets();
 void scour_bucket(int i);
-int find_bucket(char *host);
+int find_bucket(char *host, time_t t);
 
-static pthread_t thread;
+static pthread_t thread = 0;
 static pthread_mutex_t stats_lock;
 static HOST_STATS **bb;
 static int totals = NUM_BUCKETS;
@@ -62,7 +62,7 @@ void create_rate_stats_thread() {
 
 /* Explicitly exit rate statistics thread */
 void exit_rate_stats_thread() {
-        pthread_cancel(thread);
+        if (thread) pthread_cancel(thread);
 }
 
 /* Allocate and initialize all host stats buckets */
@@ -87,7 +87,7 @@ void init_buckets() {
 void scour_bucket(int i) {
         bb[i]->host[0] = '\0';
         bb[i]->count = 0;
-        bb[i]->first_packet = time(0);
+        bb[i]->first_packet = (time_t) 0;
         bb[i]->last_packet = (time_t) 0;
  
         return;
@@ -105,30 +105,43 @@ void *run_stats () {
 void display_rate_stats() {
         u_int i, delta, rps;
         char st_time[MAX_TIME_LEN];
-        time_t now = time(0);
-        struct tm *raw_time = localtime(&now);
+        /*time_t now = time(0); */
+
+        if (!thread) return;
+
+        /*
+        if ((now - bb[totals]->last_packet) >= DISPLAY_INTERVAL)
+                bb[totals]->last_packet = now;
+                */
+
+        struct tm *raw_time = localtime(&bb[totals]->last_packet);
+        strftime(st_time, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", raw_time);
 
         pthread_mutex_lock(&stats_lock);
 
-        strftime(st_time, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", raw_time);
-
         for (i = 0; i < NUM_BUCKETS; i++) {
-                if (strlen(bb[i]->host) == 0) /* Only process valid buckets */
+                if ((strlen(bb[i]->host) == 0) || (bb[i]->count == 0)) /* Only process valid buckets */
                         continue;
 
-                delta = now - bb[i]->first_packet;
+                /*
+                if ((bb[totals]->last_packet - bb[i]->last_packet) >= DISPLAY_INTERVAL)
+                        bb[i]->last_packet = bb[totals]->last_packet;
+                        */
+
+                delta = bb[i]->last_packet - bb[i]->first_packet;
                 if (delta == 0) /* Let's try to avoid a divide-by-zero, shall we? */
                         continue;
 
                 /* Calculate the rate for this host */
                 rps = (u_int) ceil(bb[i]->count / (float) delta);
+                bb[i]->count = 0;
 
                 if (rps > RATE_THRESHOLD)
                         printf("%s%s%s%s%u rps\n", st_time, FIELD_DELIM, bb[i]->host, FIELD_DELIM, rps);
         }
 
         /* Display rate totals as necessary */
-        delta = (u_int) (now - bb[totals]->first_packet);
+        delta = (u_int) (bb[totals]->last_packet - bb[totals]->first_packet);
 
         if ((delta > 1) && (delta >= TOTALS_DISPLAY_INTERVAL)) {
                 printf("%s%stotals%s%3.2f rps\n", st_time, FIELD_DELIM, FIELD_DELIM, (float) bb[totals]->count / delta);
@@ -141,7 +154,7 @@ void display_rate_stats() {
 }
 
 /* Add or update host data in a bucket */
-void add_to_bucket(char *host) {
+void add_to_bucket(char *host, time_t t) {
         int bucket;
 
         if (host == NULL)
@@ -150,10 +163,11 @@ void add_to_bucket(char *host) {
         pthread_mutex_lock(&stats_lock);
  
         /* Get a bucket to put host data in */
-        bucket = find_bucket(host);
+        bucket = find_bucket(host, t);
 
-        bb[bucket]->last_packet = time(0);
+        bb[bucket]->last_packet = t;
         bb[bucket]->count++;
+        bb[totals]->last_packet = t;
         bb[totals]->count++;
 
         pthread_mutex_unlock(&stats_lock);
@@ -162,7 +176,7 @@ void add_to_bucket(char *host) {
 }
 
 /* Look for a best fit bucket for this host name */
-int find_bucket(char *host) {
+int find_bucket(char *host, time_t t) {
         int i, unused = -1, oldest = -1, bucket;
         time_t oldest_pkt = 0;
 
@@ -190,7 +204,11 @@ int find_bucket(char *host) {
         }
 
         scour_bucket(bucket);
+        bb[bucket]->first_packet = t;
         strncpy(bb[bucket]->host, host, MAX_HOST_LEN);
+
+        if (bb[totals]->first_packet == 0)
+                bb[totals]->first_packet = t;
 
         return bucket;
 }

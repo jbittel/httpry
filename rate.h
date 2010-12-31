@@ -14,6 +14,6 @@
 void create_rate_stats_thread();
 void exit_rate_stats_thread();
 void display_rate_stats();
-void add_to_bucket(char *host);
+void add_to_bucket(char *host, time_t t);
 
 #endif /* ! _HAVE_RATE_H */

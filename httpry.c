@@ -66,7 +66,7 @@ int rate_stats = 0;
 static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
 static u_int num_parsed = 0;      /* Count of fully parsed HTTP packets */
-static u_int start_time = 0;      /* Start tick for statistics calculations */
+static time_t start_time = 0;      /* Start tick for statistics calculations */
 static int header_offset = 0;
 static pcap_dumper_t *dumpfile = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
@@ -376,7 +376,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         insert_value("timestamp", ts);
 
         if (rate_stats) {
-                add_to_bucket(get_value("host"));
+                add_to_bucket(get_value("host"), header->ts.tv_sec);
                 clear_values();
         } else {
                 print_format_values();
