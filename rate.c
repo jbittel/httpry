@@ -22,7 +22,6 @@
 #define MAX_HOST_LEN 256
 #define NUM_BUCKETS 100
 #define DISPLAY_INTERVAL 10
-#define TOTALS_DISPLAY_INTERVAL 60
 #define RATE_THRESHOLD 1
 
 typedef struct host_stats HOST_STATS;
@@ -33,7 +32,7 @@ struct host_stats {
         time_t last_packet;
 };
 
-void *run_stats();
+void *run_stats(void *use_infile);
 void init_buckets();
 void scour_bucket(int i);
 int find_bucket(char *host, time_t t);
@@ -44,7 +43,7 @@ static HOST_STATS **bb;
 static int totals = NUM_BUCKETS;
 
 /* Spawn a thread for updating and printing rate statistics */
-void create_rate_stats_thread() {
+void create_rate_stats_thread(char *use_infile) {
         int s;
 
         init_buckets();  
@@ -53,7 +52,7 @@ void create_rate_stats_thread() {
         if (s != 0)
                 LOG_DIE("Statistics thread mutex initialization failed with error %d", s);
  
-        s = pthread_create(&thread, NULL, run_stats, NULL);
+        s = pthread_create(&thread, NULL, run_stats, (void *) use_infile);
         if (s != 0)
                 LOG_DIE("Statistics thread creation failed with error %d", s);
 
@@ -63,6 +62,8 @@ void create_rate_stats_thread() {
 /* Explicitly exit rate statistics thread */
 void exit_rate_stats_thread() {
         if (thread) pthread_cancel(thread);
+
+        return;
 }
 
 /* Allocate and initialize all host stats buckets */
@@ -94,59 +95,51 @@ void scour_bucket(int i) {
 }
 
 /* This is our statistics thread */
-void *run_stats () {
+void *run_stats (void *use_infile) {
         while (1) {
-                display_rate_stats();
                 sleep(DISPLAY_INTERVAL);
+                display_rate_stats((char *) use_infile);
         }
 }
 
 /* Display the running average within each valid bucket */
-void display_rate_stats() {
+void display_rate_stats(char *use_infile) {
         u_int i, delta, rps;
         char st_time[MAX_TIME_LEN];
-        /*time_t now = time(0); */
+        time_t now;
 
-        if (!thread) return;
+        if (!thread)
+                return;
 
-        /*
-        if ((now - bb[totals]->last_packet) >= DISPLAY_INTERVAL)
-                bb[totals]->last_packet = now;
-                */
+        if (use_infile) {
+                now = bb[totals]->last_packet;
+        } else {
+                now = time(NULL);
+        }
 
-        struct tm *raw_time = localtime(&bb[totals]->last_packet);
+        struct tm *raw_time = localtime(&now);
         strftime(st_time, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", raw_time);
 
         pthread_mutex_lock(&stats_lock);
 
         for (i = 0; i < NUM_BUCKETS; i++) {
-                if ((strlen(bb[i]->host) == 0) || (bb[i]->count == 0)) /* Only process valid buckets */
-                        continue;
-
-                /*
-                if ((bb[totals]->last_packet - bb[i]->last_packet) >= DISPLAY_INTERVAL)
-                        bb[i]->last_packet = bb[totals]->last_packet;
-                        */
-
-                delta = bb[i]->last_packet - bb[i]->first_packet;
-                if (delta == 0) /* Let's try to avoid a divide-by-zero, shall we? */
-                        continue;
+                /* Only process valid buckets */
+                if ((strlen(bb[i]->host) == 0) || (bb[i]->count == 0)) continue;
 
                 /* Calculate the rate for this host */
+                delta = now - bb[i]->first_packet;
+                if (delta == 0)
+                        continue;
                 rps = (u_int) ceil(bb[i]->count / (float) delta);
-                bb[i]->count = 0;
 
                 if (rps > RATE_THRESHOLD)
                         printf("%s%s%s%s%u rps\n", st_time, FIELD_DELIM, bb[i]->host, FIELD_DELIM, rps);
         }
 
-        /* Display rate totals as necessary */
-        delta = (u_int) (bb[totals]->last_packet - bb[totals]->first_packet);
-
-        if ((delta > 1) && (delta >= TOTALS_DISPLAY_INTERVAL)) {
+        /* Display rate totals */
+        delta = (u_int) (now - bb[totals]->first_packet);
+        if (delta > 0)
                 printf("%s%stotals%s%3.2f rps\n", st_time, FIELD_DELIM, FIELD_DELIM, (float) bb[totals]->count / delta);
-                scour_bucket(totals);
-        }
 
         pthread_mutex_unlock(&stats_lock);
 

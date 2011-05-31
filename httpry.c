@@ -530,7 +530,7 @@ void print_stats() {
         float run_time;
 
         if (rate_stats)
-                display_rate_stats();
+                display_rate_stats(use_infile);
 
         if (pcap_hnd && !use_infile) {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
@@ -657,7 +657,7 @@ int main(int argc, char **argv) {
                 LOG_DIE("Cannot allocate memory for packet data buffer");
 
         if (rate_stats)
-                create_rate_stats_thread();
+                create_rate_stats_thread(use_infile);
 
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);
