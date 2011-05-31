@@ -59,6 +59,7 @@ static char *format_str = NULL;
 static char *methods_str = NULL;
 static char *use_dumpfile = NULL;
 static int rate_stats = 0;
+static int force_flush = 0;
 int quiet_mode = 0;               /* Defined as extern in error.h */
 int use_syslog = 0;               /* Defined as extern in error.h */
 
@@ -170,10 +171,6 @@ void open_outfiles() {
 
                 if (freopen(use_outfile, "a", stdout) == NULL)
                         LOG_DIE("Cannot reopen output stream to '%s'", use_outfile);
-
-                /* Set stdout to line buffering instead of the default block buffering */
-                if (setvbuf(stdout, NULL, _IOLBF, 0) != 0)
-                        LOG_WARN("Cannot set line buffering on output file");
 
                 PRINT("Writing output to file: %s", use_outfile);
 
@@ -584,6 +581,7 @@ void display_usage() {
                "   -q           suppress non-critical output\n"
                "   -r file      read packets from input file\n"
                "   -u user      set process owner\n"
+               "   -F           force output flush\n"
                "   expression   specify a bpf-style capture filter\n\n");
 
         printf("Additional information can be found at:\n"
@@ -601,12 +599,13 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "b:df:hpqi:m:n:o:r:tu:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:df:Fhpqi:m:n:o:r:tu:")) != -1) {
                 switch (opt) {
                         case 'b': use_dumpfile = optarg; break;
                         case 'd': daemon_mode = 1;
                                   use_syslog = 1; break;
                         case 'f': format_str = optarg; break;
+                        case 'F': force_flush = 1; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
                         case 'm': methods_str = optarg; break;
@@ -641,6 +640,11 @@ int main(int argc, char **argv) {
 
         if (!methods_str) methods_str = default_methods;
         parse_methods_string(methods_str);
+
+        if (force_flush) {
+                if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
+                     LOG_WARN("Cannot disable buffering on output");
+        }
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
