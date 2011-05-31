@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <netinet/ip6.h>
 #include "config.h"
 #include "error.h"
 #include "format.h"
@@ -59,9 +58,9 @@ static char *new_user = NULL;
 static char *format_str = NULL;
 static char *methods_str = NULL;
 static char *use_dumpfile = NULL;
+static int rate_stats = 0;
 int quiet_mode = 0;               /* Defined as extern in error.h */
 int use_syslog = 0;               /* Defined as extern in error.h */
-int rate_stats = 0;
 
 static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;

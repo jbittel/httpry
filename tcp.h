@@ -13,6 +13,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/ip6.h>
 
 /* These IP and TCP structs/macros are from sniffex.c and
    were released under the following license: */
