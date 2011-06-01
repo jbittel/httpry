@@ -600,7 +600,7 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "b:df:Fhpqi:m:n:o:r:tu:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:df:Fhpqi:m:n:o:r:t:u:")) != -1) {
                 switch (opt) {
                         case 'b': use_dumpfile = optarg; break;
                         case 'd': daemon_mode = 1;
@@ -615,7 +615,7 @@ int main(int argc, char **argv) {
                         case 'p': set_promisc = 0; break;
                         case 'q': quiet_mode = 1; break;
                         case 'r': use_infile = optarg; break;
-                        case 't': rate_stats = 1; break;
+                        case 't': rate_stats = atoi(optarg); break;
                         case 'u': new_user = optarg; break;
                         default: display_usage();
                 }
@@ -644,7 +644,7 @@ int main(int argc, char **argv) {
 
         if (force_flush) {
                 if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
-                        LOG_WARN("Cannot disable buffering on output");
+                        LOG_WARN("Cannot disable buffering on stdout");
         }
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
@@ -658,7 +658,7 @@ int main(int argc, char **argv) {
                 LOG_DIE("Cannot allocate memory for packet data buffer");
 
         if (rate_stats)
-                create_rate_stats_thread(use_infile);
+                create_rate_stats_thread(rate_stats, use_infile);
 
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);

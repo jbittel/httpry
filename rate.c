@@ -21,7 +21,6 @@
 
 #define MAX_HOST_LEN 256
 #define NUM_BUCKETS 100
-#define DISPLAY_INTERVAL 10
 #define RATE_THRESHOLD 1
 
 typedef struct host_stats HOST_STATS;
@@ -32,7 +31,13 @@ struct host_stats {
         time_t last_packet;
 };
 
-void *run_stats(void *use_infile);
+typedef struct thread_args THREAD_ARGS;
+struct thread_args {
+        char *use_infile;
+        u_int display_interval;
+};
+
+void *run_stats(void *args);
 void init_buckets();
 void scour_bucket(int i);
 int find_bucket(char *host, time_t t);
@@ -41,18 +46,21 @@ static pthread_t thread = 0;
 static pthread_mutex_t stats_lock;
 static HOST_STATS **bb;
 static int totals = NUM_BUCKETS;
+static THREAD_ARGS thread_args;
 
 /* Spawn a thread for updating and printing rate statistics */
-void create_rate_stats_thread(char *use_infile) {
+void create_rate_stats_thread(int display_interval, char *use_infile) {
         int s;
+        thread_args.use_infile = use_infile;
+        thread_args.display_interval = display_interval;
 
-        init_buckets();  
+        init_buckets();
                         
         s = pthread_mutex_init(&stats_lock, NULL);
         if (s != 0)
                 LOG_DIE("Statistics thread mutex initialization failed with error %d", s);
- 
-        s = pthread_create(&thread, NULL, run_stats, (void *) use_infile);
+        
+        s = pthread_create(&thread, NULL, run_stats, (void *) &thread_args);
         if (s != 0)
                 LOG_DIE("Statistics thread creation failed with error %d", s);
 
@@ -95,10 +103,12 @@ void scour_bucket(int i) {
 }
 
 /* This is our statistics thread */
-void *run_stats (void *use_infile) {
+void *run_stats (void *args) {
+        THREAD_ARGS *thread_args = (THREAD_ARGS *) args;
+
         while (1) {
-                sleep(DISPLAY_INTERVAL);
-                display_rate_stats((char *) use_infile);
+                sleep(thread_args->display_interval);
+                display_rate_stats(thread_args->use_infile);
         }
 }
 
@@ -108,8 +118,9 @@ void display_rate_stats(char *use_infile) {
         char st_time[MAX_TIME_LEN];
         time_t now;
 
-        if (!thread)
-                return;
+        if (!thread) return;
+
+        pthread_mutex_lock(&stats_lock);
 
         if (use_infile) {
                 now = bb[totals]->last_packet;
@@ -119,8 +130,6 @@ void display_rate_stats(char *use_infile) {
 
         struct tm *raw_time = localtime(&now);
         strftime(st_time, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", raw_time);
-
-        pthread_mutex_lock(&stats_lock);
 
         for (i = 0; i < NUM_BUCKETS; i++) {
                 /* Only process valid buckets */
