@@ -13,7 +13,6 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <netinet/ip6.h>
 
 /* These IP and TCP structs/macros are from sniffex.c and
    were released under the following license: */
@@ -126,6 +125,24 @@ struct ip_header {
 };
 #define IP_HL(ip)               (((ip)->ip_vhl) & 0x0f)
 #define IP_V(ip)                (((ip)->ip_vhl) >> 4)
+
+/* IPv6 header */
+struct ip6_header {
+        uint32_t ip6_vtcfl;             /* version << 4 | traffic class 8 | flow label >> 20 */
+        u_short  ip6_plen;              /* payload length */
+        u_char   ip6_nh;                /* next header */
+        u_char   ip6_hl;                /* hop limit */
+        struct   in6_addr ip_src,ip_dst; /* source and dest address */
+};
+#define IP6_V(ip6)              (((ip6)->ip6_vtcfl) >> 28)
+#define IP6_TC(ip6)             ((((ip6)->ip6_vtcfl) >> 20) & 0x000000ff)
+#define IP6_FL(ip6)             (((ip6)->ip6_vtcfl) & 0x000fffff)
+
+/* IPv6 extension headers */
+struct ip6_ext_header {
+        u_char ip6_eh_nh;             /* next header */
+        u_char ip6_eh_len;            /* length in 8-octet units, not including first 8-octets */
+};
 
 /* TCP header */
 typedef u_int tcp_seq;

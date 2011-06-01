@@ -285,19 +285,19 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         int is_request = 0, is_response = 0;
 
         const struct ip_header *ip;
-        const struct ip6_hdr *ip6;
+        const struct ip6_header *ip6;
         const struct tcp_header *tcp;
         const char *data;
         int size_ip, size_tcp, size_data, family;
 
         /* Position pointers within packet stream and do sanity checks */
         ip = (struct ip_header *) (pkt + header_offset);
-        ip6 = (struct ip6_hdr *) (pkt + header_offset);
+        ip6 = (struct ip6_header *) (pkt + header_offset);
 
         switch (IP_V(ip)) {
                 case 4: family = AF_INET; break;
                 case 6: family = AF_INET6; break;
-                default: return; /* Ignore these. */
+                default: return;
         }
 
         if (family == AF_INET) {
@@ -305,8 +305,9 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 if (size_ip < 20) return;
                 if (ip->ip_p != IPPROTO_TCP) return;
         } else { /* AF_INET6 */
-                size_ip = sizeof(struct ip6_hdr);
-                if (ip6->ip6_nxt != IPPROTO_TCP) return;
+                size_ip = sizeof(struct ip6_header);
+                if (ip6->ip6_nh != IPPROTO_TCP) return;
+                if (size_ip < 40) return;
         }
 
         tcp = (struct tcp_header *) (pkt + header_offset + size_ip);
@@ -354,8 +355,8 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 inet_ntop(family, &ip->ip_src, saddr, sizeof(saddr));
                 inet_ntop(family, &ip->ip_dst, daddr, sizeof(daddr));
         } else { /* AF_INET6 */
-                inet_ntop(family, &ip6->ip6_src, saddr, sizeof(saddr));
-                inet_ntop(family, &ip6->ip6_dst, daddr, sizeof(daddr));
+                inet_ntop(family, &ip6->ip_src, saddr, sizeof(saddr));
+                inet_ntop(family, &ip6->ip_dst, daddr, sizeof(daddr));
         }
         insert_value("source-ip", saddr);
         insert_value("dest-ip", daddr);
@@ -643,7 +644,7 @@ int main(int argc, char **argv) {
 
         if (force_flush) {
                 if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
-                     LOG_WARN("Cannot disable buffering on output");
+                        LOG_WARN("Cannot disable buffering on output");
         }
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
