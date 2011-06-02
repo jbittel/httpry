@@ -4,7 +4,7 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  Copyright (c) 2005-2009 Jason Bittel <jason.bittel@gmail.com>
+  Copyright (c) 2005-2011 Jason Bittel <jason.bittel@gmail.com>
 
 */
 
@@ -558,7 +558,7 @@ void print_stats() {
 void display_banner() {
         PRINT("%s version %s -- "
               "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
-        PRINT("Copyright (c) 2005-2009 Jason Bittel <jason.bittel@gmail.com>");
+        PRINT("Copyright (c) 2005-2011 Jason Bittel <jason.bittel@gmail.com>");
 
         return;
 }
@@ -567,12 +567,13 @@ void display_banner() {
 void display_usage() {
         display_banner();
 
-        printf("Usage: %s [ -dhpq ] [-b file ] [ -f format ] [ -i device ] [ -m methods ]\n"
-               "       [ -n count ] [ -r file ] [ -o file ] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
+        printf("Usage: %s [ -dFhpq ] [-b file ] [ -f format ] [ -i device ] [ -m methods ]\n"
+               "       [ -n count ] [ -o file ] [ -r file ] [ -t seconds] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
         printf("   -b file      write HTTP packets to a binary dump file\n"
                "   -d           run as daemon\n"
                "   -f format    specify output format string\n"
+               "   -F           force output flush\n"
                "   -h           print this help information\n"
                "   -i device    listen on this interface\n"
                "   -m methods   specify request methods to parse\n"
@@ -581,8 +582,8 @@ void display_usage() {
                "   -p           disable promiscuous mode\n"
                "   -q           suppress non-critical output\n"
                "   -r file      read packets from input file\n"
+               "   -t seconds   run in HTTP requests per second mode\n"
                "   -u user      set process owner\n"
-               "   -F           force output flush\n"
                "   expression   specify a bpf-style capture filter\n\n");
 
         printf("Additional information can be found at:\n"
