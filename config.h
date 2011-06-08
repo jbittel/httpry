@@ -22,6 +22,7 @@
    *** Can be overridden with -f */
 #define DEFAULT_FORMAT "timestamp,source-ip,dest-ip,direction,method,host,request-uri,http-version,status-code,reason-phrase"
 
+/* Default format string for rate statistics mode; should never change! */
 #define RATE_FORMAT "host"
 
 /* Default request methods to process; see doc/method-string for more information

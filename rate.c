@@ -182,6 +182,12 @@ int find_bucket(char *host, time_t t) {
         int i, unused = -1, oldest = -1, bucket;
         time_t oldest_pkt = 0;
 
+#ifdef DEBUG
+        ASSERT(host);
+        ASSERT(strlen(host) > 0);
+        ASSERT(t);
+#endif
+
         for (i = 0; i < NUM_BUCKETS; i++) {
                 if (strncmp(host, bb[i]->host, MAX_HOST_LEN) == 0) {
                         return i;

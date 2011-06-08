@@ -604,8 +604,7 @@ int main(int argc, char **argv) {
         while ((opt = getopt(argc, argv, "b:df:Fhpqi:m:n:o:r:t:u:")) != -1) {
                 switch (opt) {
                         case 'b': use_dumpfile = optarg; break;
-                        case 'd': daemon_mode = 1;
-                                  use_syslog = 1; break;
+                        case 'd': daemon_mode = 1; use_syslog = 1; break;
                         case 'f': format_str = optarg; break;
                         case 'F': force_flush = 1; break;
                         case 'h': display_usage(); break;
@@ -629,6 +628,9 @@ int main(int argc, char **argv) {
 
         if (parse_count < 0)
                 LOG_DIE("Invalid -n value, must be 0 or greater");
+
+        if (rate_stats < 1)
+                LOG_DIE("Invalid -t value, must be 1 or greater");
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];
