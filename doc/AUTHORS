@@ -1,7 +1,6 @@
 Original author and primary maintainer:
 
    Jason Bittel <jason.bittel@gmail.com>
-   dumpsterventures.com/jason
 
 
 Significant suggestions or contributions:
@@ -21,4 +20,7 @@ Significant suggestions or contributions:
       * Provided a patch adding IPv6 support
 
    Dennis Opacki <dopacki@adotout.com>
-      * Provided a major patch adding an HTTP rate statistics mode
+      * Provided a major patch adding a rate statistics mode
+
+   Emanuele Acri <crossbower@backtrack-linux.org>
+      * Provided a patch adding a force output flush option

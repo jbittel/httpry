@@ -41,6 +41,14 @@ the request/response line along with associated header fields.
  > Extract HTTP statistics out of saved capture files
  > It's just plain fun to watch in realtime
 
+It is worth noting that httpry is rather naive when it comes to parsing HTTP
+packets. It does not perform any reordering or reassemply of packets and
+simply searches the start of each packet for HTTP data and ignores the packet
+if it does not find valid data. HTTP packets that are fragmented within the
+request/response line or where the request/response spans multiple packets
+will be ignored and any header data present in subsequent packets will not be
+parsed.
+
 In addition to the core program, there are several Perl scripts included
 for processing httpry log files. They should be useful for a number of
 generic situations, and can serve as a useful starting point for your own
@@ -69,9 +77,10 @@ page.
 
 --{ USAGE }--
 
-Running the program with the -h switch will print out an abbreviated
-description of the available options. This section describes these options
-in greater detail.
+Running httpry with no options will cause it to listen on the first nework
+device and output to the console with some sane defaults. The -h switch will
+print out an abbreviated description of the available options to change the
+defaults. This section describes these options in greater detail.
 
 httpry [ -dFhpq ] [ -b file ] [ -f format ] [ -i device ] [-m methods ]
        [ -n count ] [ -o file ] [ -r file ] [-t seconds] [ -u user ]
@@ -127,8 +136,8 @@ Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
 
 -t seconds
-Run httpry in an HTTP request per second mode. This displays the rate per
-host and total rate at the specified interval.
+Run httpry in an HTTP request per second display mode. This periodically
+displays the rate per host and total rate at the specified interval.
 
 -u user
 Specify an alternate user to take ownership of the process and any output
