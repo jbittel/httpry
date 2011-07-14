@@ -629,7 +629,7 @@ int main(int argc, char **argv) {
         if (parse_count < 0)
                 LOG_DIE("Invalid -n value, must be 0 or greater");
 
-        if (rate_stats < 1)
+        if ((rate_stats != 0) && (rate_stats < 1))
                 LOG_DIE("Invalid -t value, must be 1 or greater");
 
         if (argv[optind] && *(argv[optind])) {
