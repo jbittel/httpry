@@ -39,6 +39,7 @@ struct thread_args {
 
 void *run_stats(void *args);
 void init_buckets();
+void free_buckets();
 void scour_bucket(int i);
 int find_bucket(char *host, time_t t);
 
@@ -69,6 +70,7 @@ void create_rate_stats_thread(int display_interval, char *use_infile) {
 
 /* Explicitly exit rate statistics thread */
 void exit_rate_stats_thread() {
+        free_buckets();
         if (thread) pthread_cancel(thread);
 
         return;
@@ -79,7 +81,7 @@ void init_buckets() {
         u_int i;
 
         /* Create bucket brigade (final bucket is for totals) */
-        if ((bb = malloc( sizeof(HOST_STATS *) * (NUM_BUCKETS + 1))) == NULL)
+        if ((bb = malloc(sizeof(HOST_STATS *) * (NUM_BUCKETS + 1))) == NULL)
                 LOG_DIE("Cannot allocate memory for stats array");
 
         for (i = 0; i <= NUM_BUCKETS; i++) {
@@ -88,6 +90,20 @@ void init_buckets() {
 
                 scour_bucket(i);
         }
+
+        return;
+}
+
+void free_buckets() {
+        u_int i;
+
+        if (!bb) return;
+
+        for (i = 0; i <= NUM_BUCKETS; i++) {
+                free(bb[i]);
+        }
+
+        free(bb);
 
         return;
 }
@@ -119,6 +135,7 @@ void display_rate_stats(char *use_infile) {
         time_t now;
 
         if (!thread) return;
+        if (!bb) return;
 
         pthread_mutex_lock(&stats_lock);
 
@@ -159,8 +176,8 @@ void display_rate_stats(char *use_infile) {
 void add_to_bucket(char *host, time_t t) {
         int bucket;
 
-        if (host == NULL)
-                return;
+        if (!bb) return;
+        if (host == NULL) return;
 
         pthread_mutex_lock(&stats_lock);
  
