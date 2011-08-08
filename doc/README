@@ -41,14 +41,6 @@ the request/response line along with associated header fields.
  > Extract HTTP statistics out of saved capture files
  > It's just plain fun to watch in realtime
 
-It is worth noting that httpry is rather naive when it comes to parsing HTTP
-packets. It does not perform any reordering or reassemply of packets and
-simply searches the start of each packet for HTTP data and ignores the packet
-if it does not find valid data. HTTP packets that are fragmented within the
-request/response line or where the request/response spans multiple packets
-will be ignored and any header data present in subsequent packets will not be
-parsed.
-
 In addition to the core program, there are several Perl scripts included
 for processing httpry log files. They should be useful for a number of
 generic situations, and can serve as a useful starting point for your own
@@ -59,7 +51,7 @@ the doc/perl-tools file.
 --{ INSTALLATION }--
 
 httpry should compile on almost any *nix based OS with a relatively recent
-version of libpcap (specifically tested against 0.9.4 and newer). To compile
+version of libpcap (specifically tested against 1.1.1 and newer). To compile
 and install, run these commands in the base httpry directory:
 
  $ make
@@ -137,7 +129,7 @@ a live capture. This option does not require root privileges.
 
 -t seconds
 Run httpry in an HTTP request per second display mode. This periodically
-displays the rate per host and total rate at the specified interval.
+displays the rate per active host and total rate at the specified interval.
 
 -u user
 Specify an alternate user to take ownership of the process and any output
@@ -156,3 +148,13 @@ These filters will capture all web traffic both directions on two common
 ports, capture only requests made to port 80, and capture requests to port
 80 by a particular host, respectively. See 'man tcpdump' for further
 information on the syntax and available primitives.
+
+
+--{ KNOWN ISSUES }--
+
+It is worth noting that httpry is rather naive when it comes to parsing HTTP
+packets. It does not perform any reordering or reassemply of packets and
+simply searches the start of each packet for HTTP data and ignores the packet
+if it does not find valid data. HTTP packets that are fragmented within the
+request/response line will be ignored and any header data present in subsequent
+packets will not be parsed.
