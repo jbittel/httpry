@@ -12,7 +12,7 @@
 #define _HAVE_CONFIG_H
 
 #define PROG_NAME "httpry"
-#define PROG_VER "0.1.6"
+#define PROG_VER "0.1.7"
 
 /* Default packet capture filter; must be a standard libpcap style filter
    *** Can be overridden */
