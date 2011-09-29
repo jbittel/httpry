@@ -24,3 +24,6 @@ Significant suggestions or contributions:
 
    Emanuele Acri <crossbower@backtrack-linux.org>
       * Provided a patch adding a force output flush option
+
+   Bart Roos <mail@bartroos.com>
+      * Provided a patch adding an option to specify the PID filename

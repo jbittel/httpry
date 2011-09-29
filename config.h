@@ -29,8 +29,9 @@
    *** Can be overridden with -m */
 #define DEFAULT_METHODS "options,get,head,post,put,delete,trace,connect"
 
-/* Location to store the PID file when running in daemon mode */
-#define PID_FILE "/var/run/httpry.pid"
+/* Default location to store the PID file when running in daemon mode
+   *** Can be overridden with -P */
+#define PID_FILENAME "/var/run/httpry.pid"
 
 /* Where to send unnecessary output */
 #define NULL_FILE "/dev/null"

@@ -75,8 +75,8 @@ print out an abbreviated description of the available options to change the
 defaults. This section describes these options in greater detail.
 
 httpry [ -dFhpq ] [ -b file ] [ -f format ] [ -i device ] [-m methods ]
-       [ -n count ] [ -o file ] [ -r file ] [-t seconds] [ -u user ]
-       [ 'expression' ]
+       [ -n count ] [ -o file ] [ -P file ] [ -r file ] [-t seconds]
+       [ -u user ] [ 'expression' ]
 
 -b file
 Write all processed HTTP packets to a binary pcap dump file. Useful for
@@ -119,6 +119,9 @@ Specify an output file for writing parsed packet data.
 -p
 Do not put the NIC in promiscuous mode on startup. Note that the NIC could
 already be in that mode for another reason.
+
+-P file
+Specify a path and filename for creating the PID file in daemon mode.
 
 -q
 Suppress non-critical output (startup banner, statistics, etc.).

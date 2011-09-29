@@ -54,6 +54,7 @@ static char *interface = NULL;
 static char *capfilter = NULL;
 static char *use_outfile = NULL;
 static int set_promisc = 1;
+static char *pid_filename = NULL;
 static char *new_user = NULL;
 static char *format_str = NULL;
 static char *methods_str = NULL;
@@ -218,11 +219,14 @@ void runas_daemon() {
         if (chdir("/") == -1)
                 LOG_DIE("Cannot change run directory to '/'");
 
-        if ((pid_file = fopen(PID_FILE, "w"))) {
+        /* Create PID file */
+        if (pid_filename[0] != '/')
+                LOG_WARN("PID file path is not absolute and may be inaccessible after daemonizing");
+        if ((pid_file = fopen(pid_filename, "w"))) {
                 fprintf(pid_file, "%d", getpid());
                 fclose(pid_file);
         } else {
-                LOG_WARN("Cannot open PID file '%s'", PID_FILE);
+                LOG_WARN("Cannot open PID file '%s'", pid_filename);
         }
 
         signal(SIGCHLD, SIG_IGN);
@@ -519,7 +523,7 @@ void cleanup() {
 
         /* Note that this won't get removed if we've switched to a
            user that doesn't have permission to delete the file */
-        if (daemon_mode) remove(PID_FILE);
+        if (daemon_mode) remove(pid_filename);
         if (pcap_hnd) pcap_close(pcap_hnd);
 
         return;
@@ -567,8 +571,8 @@ void display_banner() {
 void display_usage() {
         display_banner();
 
-        printf("Usage: %s [ -dFhpq ] [-b file ] [ -f format ] [ -i device ] [ -m methods ]\n"
-               "       [ -n count ] [ -o file ] [ -r file ] [ -t seconds] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
+        printf("Usage: %s [ -dFhpq ] [-b file ] [ -f format ] [ -i device ] [ -m methods ] [ -n count ]\n"
+               "       [ -o file ] [ -P file ] [ -r file ] [ -t seconds] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
         printf("   -b file      write HTTP packets to a binary dump file\n"
                "   -d           run as daemon\n"
@@ -580,6 +584,7 @@ void display_usage() {
                "   -n count     set number of HTTP packets to parse\n"
                "   -o file      write output to a file\n"
                "   -p           disable promiscuous mode\n"
+               "   -P file      use custom PID filename when running in daemon mode \n"
                "   -q           suppress non-critical output\n"
                "   -r file      read packets from input file\n"
                "   -t seconds   run in HTTP requests per second mode\n"
@@ -601,7 +606,7 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "b:df:Fhpqi:m:n:o:r:t:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:df:Fhpqi:m:n:o:P:r:t:u:")) != -1) {
                 switch (opt) {
                         case 'b': use_dumpfile = optarg; break;
                         case 'd': daemon_mode = 1; use_syslog = 1; break;
@@ -613,6 +618,7 @@ int main(int argc, char **argv) {
                         case 'n': parse_count = atoi(optarg); break;
                         case 'o': use_outfile = optarg; break;
                         case 'p': set_promisc = 0; break;
+                        case 'P': pid_filename = optarg; break;
                         case 'q': quiet_mode = 1; break;
                         case 'r': use_infile = optarg; break;
                         case 't': rate_stats = atoi(optarg); break;
@@ -649,6 +655,8 @@ int main(int argc, char **argv) {
                 if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
                         LOG_WARN("Cannot disable buffering on stdout");
         }
+        
+        if (!pid_filename) pid_filename = PID_FILENAME;
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);
 
