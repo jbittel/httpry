@@ -9,6 +9,7 @@
 */
 
 #include <math.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,19 +24,17 @@
 #define NUM_BUCKETS 100
 #define RATE_THRESHOLD 1
 
-typedef struct host_stats HOST_STATS;
-struct host_stats {
+typedef struct host_stats {
         char host[MAX_HOST_LEN + 1];
         unsigned int count;
         time_t first_packet;
         time_t last_packet;
-};
+} HOST_STATS;
 
-typedef struct thread_args THREAD_ARGS;
-struct thread_args {
+typedef struct thread_args {
         char *use_infile;
         u_int display_interval;
-};
+} THREAD_ARGS;
 
 void *run_stats(void *args);
 void init_buckets();
@@ -126,6 +125,8 @@ void *run_stats (void *args) {
                 sleep(thread_args->display_interval);
                 display_rate_stats(thread_args->use_infile);
         }
+        
+        return NULL;
 }
 
 /* Display the running average within each valid bucket */
