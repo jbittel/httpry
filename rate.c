@@ -126,7 +126,7 @@ void *run_stats (void *args) {
                 display_rate_stats(thread_args->use_infile);
         }
         
-        return 0;
+        return NULL;
 }
 
 /* Display the running average within each valid bucket */
