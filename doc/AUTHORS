@@ -27,3 +27,6 @@ Significant suggestions or contributions:
 
    Bart Roos <mail@bartroos.com>
       * Provided a patch adding an option to specify the PID filename
+
+   Dustin Webber <dustin.webber@gmail.com>
+      * Provided a patch fixing compile errors on OSX
