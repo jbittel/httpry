@@ -37,6 +37,7 @@ void open_outfiles();
 void runas_daemon();
 void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
+int process_ip6_nh(const u_char *pkt, int size_ip, int len);
 char *parse_header_line(char *header_line);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
@@ -310,7 +311,8 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 if (ip->ip_p != IPPROTO_TCP) return;
         } else { /* AF_INET6 */
                 size_ip = sizeof(struct ip6_header);
-                if (ip6->ip6_nh != IPPROTO_TCP) return;
+                if (ip6->ip6_nh != IPPROTO_TCP)
+                        size_ip = process_ip6_nh(pkt, size_ip, header->len);
                 if (size_ip < 40) return;
         }
 
@@ -391,6 +393,39 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
                 pcap_breakloop(pcap_hnd);
 
         return;
+}
+
+/* Iterate through IPv6 extension headers looking for a TCP header. Returns
+   the total size of the IPv6 header, including all extension headers.
+   Return 0 to abort processing of this packet. */
+int process_ip6_nh(const u_char *pkt, int size_ip, int len) {
+        const struct ip6_ext_header *ip6_eh;
+        ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + size_ip);
+
+        while (ip6_eh->ip6_eh_nh != IPPROTO_TCP) {
+                switch (ip6_eh->ip6_eh_nh) {
+                        case 0:  /* Hop-by-hop options */
+                        case 43: /* Routing */
+                        case 44: /* Fragment */
+                        case 51: /* Authentication Header */
+                        case 50: /* Encapsulating Security Payload */
+                        case 60: /* Destination Options */
+                                size_ip = size_ip + (ip6_eh->ip6_eh_len * 8) + 8;
+                                break;
+                        case 59: /* No next header */
+                        default:
+                                return 0;
+                }
+
+                if (size_ip > len) return 0;
+
+                ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + size_ip);
+        }
+
+        /* Next header is TCP, so increment past the final extension header */
+        size_ip = size_ip + (ip6_eh->ip6_eh_len * 8) + 8;
+
+        return size_ip;
 }
 
 /* Tokenize a HTTP header into lines; the first call should pass the string
