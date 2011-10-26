@@ -312,7 +312,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         } else { /* AF_INET6 */
                 size_ip = sizeof(struct ip6_header);
                 if (ip6->ip6_nh != IPPROTO_TCP)
-                        size_ip = process_ip6_nh(pkt, size_ip, header->len);
+                        size_ip = process_ip6_nh(pkt, size_ip, header->caplen - header_offset);
                 if (size_ip < 40) return;
         }
 
