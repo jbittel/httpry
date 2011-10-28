@@ -13,6 +13,8 @@ LIBS		= -lpcap -lm -lpthread
 PROG		= httpry
 FILES		= httpry.c format.c methods.c utility.c rate.c
 
+.PHONY: all debug install uninstall clean
+
 all: $(PROG)
 
 $(PROG): $(FILES)
