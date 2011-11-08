@@ -26,11 +26,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include "error.h"
 #include "format.h"
 #include "utility.h"
 
-#define HASHSIZE 30
+#define HASHSIZE 64
 
 typedef struct format_node FORMAT_NODE;
 struct format_node {
@@ -38,11 +39,10 @@ struct format_node {
         FORMAT_NODE *next, *list;
 };
 
-FORMAT_NODE *insert_node(char *str);
-FORMAT_NODE *hash_lookup(char *str);
-unsigned hash_string(char *str);
+FORMAT_NODE *insert_field(char *str);
+FORMAT_NODE *get_field(char *str);
 
-static FORMAT_NODE *output_fields[HASHSIZE];
+static FORMAT_NODE *fields[HASHSIZE];
 static FORMAT_NODE *head = NULL;
 
 /* Parse and insert output fields from format string */
@@ -68,7 +68,7 @@ void parse_format_string(char *str) {
                 name = str_tolower(name);
 
                 if (strlen(name) == 0) continue;
-                if (insert_node(name)) num_nodes++;
+                if (insert_field(name)) num_nodes++;
         }
 
         free(tmp);
@@ -81,10 +81,10 @@ void parse_format_string(char *str) {
         FORMAT_NODE *node;
 
         for (j = 0; j < HASHSIZE; j++) {
-                if (output_fields[j]) num_buckets++;
+                if (fields[j]) num_buckets++;
 
                 num_chain = 0;
-                for (node = output_fields[j]; node != NULL; node = node->next) num_chain++;
+                for (node = fields[j]; node != NULL; node = node->next) num_chain++;
                 if (num_chain > max_chain) max_chain = num_chain;
         }
 
@@ -101,28 +101,28 @@ void parse_format_string(char *str) {
 }
 
 /* Insert a new node into the hash table */
-FORMAT_NODE *insert_node(char *name) {
+FORMAT_NODE *insert_field(char *name) {
         FORMAT_NODE *node;
         static FORMAT_NODE *prev = NULL;
-        unsigned hashval;
+        unsigned int hashval;
 
 #ifdef DEBUG
         ASSERT(name);
         ASSERT(strlen(name) > 0);
 #endif
 
-        if ((node = hash_lookup(name)) == NULL) {
+        if ((node = get_field(name)) == NULL) {
                 if ((node = (FORMAT_NODE *) malloc(sizeof(FORMAT_NODE))) == NULL)
                         LOG_DIE("Cannot allocate memory for new node");
 
-                hashval = hash_string(name);
+                hashval = hash_str(name, HASHSIZE);
 
 #ifdef DEBUG
         ASSERT((hashval >= 0) && (hashval < HASHSIZE));
 #endif
 
-                node->next = output_fields[hashval];
-                output_fields[hashval] = node;
+                node->next = fields[hashval];
+                fields[hashval] = node;
         } else {
                 WARN("Format name '%s' already provided", name);
                 return NULL;
@@ -155,7 +155,7 @@ void insert_value(char *name, char *value) {
         if ((strlen(name) == 0) || (strlen(value) == 0))
                 return;
 
-        if ((node = hash_lookup(name)))
+        if ((node = get_field(name)))
                 node->value = value;
 
         return;
@@ -172,7 +172,7 @@ char *get_value(char *name) {
         if (strlen(name) == 0)
                 return EMPTY_FIELD;
 
-        if ((node = hash_lookup(name))) {
+        if ((node = get_field(name))) {
                 return node->value;
         } else {
                 return EMPTY_FIELD;
@@ -262,33 +262,18 @@ void free_format() {
 
 /* Lookup a particular node in hash; return pointer to node
    if found, NULL otherwise */
-FORMAT_NODE *hash_lookup(char *str) {
+FORMAT_NODE *get_field(char *str) {
         FORMAT_NODE *node;
 
 #ifdef DEBUG
         ASSERT(str);
         ASSERT(strlen(str) > 0);
-        ASSERT((hash_string(str) >= 0) && (hash_string(str) < HASHSIZE));
+        ASSERT((hash_str(str, HASHSIZE) >= 0) && (hash_str(str, HASHSIZE) < HASHSIZE));
 #endif
 
-        for (node = output_fields[hash_string(str)]; node != NULL; node = node->next)
+        for (node = fields[hash_str(str, HASHSIZE)]; node != NULL; node = node->next)
                 if (str_compare(str, node->name) == 0)
                         return node;
 
         return NULL;
-}
-
-/* Use the djb2 hash function; supposed to be good for strings */
-unsigned hash_string(char *str) {
-        unsigned hashval;
-
-#ifdef DEBUG
-        ASSERT(str);
-        ASSERT(strlen(str) > 0);
-#endif
-
-        for (hashval = 5381; *str != '\0'; str++)
-                hashval = (hashval * 33) ^ tolower(*str);
-
-        return hashval % HASHSIZE;
 }

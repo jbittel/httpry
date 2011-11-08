@@ -8,6 +8,7 @@ version 0.1.7
    * added an option (-P) to specify the PID filename
    * fixed compiling under OSX
    * changed IPv6 parsing to follow extension headers if present
+   * changed rate statistics code to use a hash table data structure
 
 version 0.1.6
    * added IPv6 support

@@ -48,7 +48,7 @@ void display_banner();
 void display_usage();
 
 /* Program flags/options, set by arguments or config file */
-static u_int parse_count = 0;
+static unsigned int parse_count = 0;
 static int daemon_mode = 0;
 static char *use_infile = NULL;
 static char *interface = NULL;
@@ -67,7 +67,7 @@ int use_syslog = 0;               /* Defined as extern in error.h */
 
 static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
-static u_int num_parsed = 0;      /* Count of fully parsed HTTP packets */
+static unsigned int num_parsed = 0;      /* Count of fully parsed HTTP packets */
 static time_t start_time = 0;      /* Start tick for statistics calculations */
 static int header_offset = 0;
 static pcap_dumper_t *dumpfile = NULL;
@@ -379,7 +379,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         insert_value("timestamp", ts);
 
         if (rate_stats) {
-                add_to_bucket(get_value("host"), header->ts.tv_sec);
+                update_host_stats(get_value("host"), header->ts.tv_sec);
                 clear_values();
         } else {
                 print_format_values();

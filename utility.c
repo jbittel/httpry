@@ -69,3 +69,27 @@ int str_compare(const char *str1, const char *str2) {
 
         return tolower(*str1) - *str2;
 }
+
+/* Implementation of Jenkins's One-at-a-Time hash, as described on
+   this page: http://www.burtleburtle.net/bob/hash/doobs.html */
+unsigned int hash_str(char *str, unsigned int hashsize) {
+        unsigned long int hash;
+
+#ifdef DEBUG
+        ASSERT(str);
+        ASSERT(strlen(str) > 0);
+#endif
+
+        for (hash = 0; *str != '\0'; str++) {
+                hash += tolower(*str);
+                hash += (hash << 10);
+                hash ^= (hash >> 6);
+        }
+
+        hash += (hash << 3);
+        hash ^= (hash >> 11);
+        hash += (hash << 15);
+
+        /* Restrict hash value to a maximum of hashsize */
+        return (unsigned int) (hash & (hashsize - 1));
+}
