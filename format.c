@@ -9,7 +9,7 @@
 */
 
 /*
-  The output format data structure is stored as a hash table 
+  The output format data structure is stored as a hash table
   with all of the nodes additionally chained together as a linked
   list. This allows insert_value() to utilize the more efficient
   hash structure to find nodes, while functions that need to
@@ -130,7 +130,7 @@ FORMAT_NODE *insert_node(char *name) {
 
         if ((node->name = (char *) malloc(strlen(name) + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for node name");
- 
+
         strcpy(node->name, name);
         node->value = NULL;
         node->list = NULL;

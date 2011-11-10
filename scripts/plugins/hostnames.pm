@@ -47,7 +47,7 @@ sub main {
 
         $hostname = $record->{"host"};
         $hostname =~ s/[^\-\.:0-9A-Za-z]//g;
- 
+
         # Eliminate invalid hostnames and online services
         return if ($hostname eq "");
         return if ($hostname eq "-");
@@ -73,7 +73,7 @@ sub end {
         my $host;
 
         open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
-        
+
         foreach $host (keys %hostnames) {
                 print OUTFILE "$hostnames{$host}\t$host\n";
         }

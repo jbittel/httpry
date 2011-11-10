@@ -43,7 +43,7 @@ sub init {
 
                 $sql = qq{ DELETE FROM client_data WHERE timestamp < '$limit' };
                 _execute_query($dbh, $sql);
-                
+
                 $sql = qq{ DELETE FROM server_data WHERE timestamp < '$limit' };
                 _execute_query($dbh, $sql);
         }
@@ -61,7 +61,7 @@ sub main {
         my $sql = "";
         my ($year, $mon, $day, $hour, $min, $sec) = (localtime)[5,4,3,2,1,0];
         my $now = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
- 
+
         if ($record->{"direction"} eq '>') {
                 return unless exists $record->{"host"};
                 return unless exists $record->{"request-uri"};
@@ -79,7 +79,7 @@ sub main {
         }
 
         _execute_query($dbh, $sql) if $sql;
-        
+
         return;
 }
 

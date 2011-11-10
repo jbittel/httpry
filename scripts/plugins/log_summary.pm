@@ -47,7 +47,7 @@ sub init {
         _load_config($cfg_dir);
 
         $start_time = (times)[0];
-        
+
         return;
 }
 
@@ -68,7 +68,7 @@ sub main {
                 $top_talkers{$record->{"source-ip"}}++ if exists $record->{"source-ip"};
 
                 if (exists $record->{"request-uri"}) {
-                        if (($record->{"request-uri"} =~ /\.(\w{2,5})$/) or 
+                        if (($record->{"request-uri"} =~ /\.(\w{2,5})$/) or
                             ($record->{"request-uri"} =~ /\.(\w{2,5})\?/)) {
                                 $filetypes{lc($1)}++;
                                 $ext_cnt++;
@@ -90,7 +90,7 @@ sub main {
 
 sub end {
         $end_time = (times)[0];
-        
+
         _write_output_file();
 
         return;

@@ -78,7 +78,7 @@ sub main {
         # search again for an embedded request
         if ($request_uri =~ /(\.pl|\.php|\.asp).*=(.+?)(?:\&|\Z)/) {
                 $encoded_uri = $2;
-                
+
                 $encoded_uri =~ tr|A-Za-z0-9+=/||cd;
                 return if (length($encoded_uri) % 4);
 
@@ -173,7 +173,7 @@ sub _write_output_file {
 
                 return;
         }
-        
+
         # Reformat data hash into a formatted output hash, clustering by domain name
         foreach $ip (keys %proxy_lines) {
                 foreach $hostname (keys %{$proxy_lines{$ip}}) {

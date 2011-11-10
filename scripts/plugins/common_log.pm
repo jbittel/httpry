@@ -16,7 +16,7 @@ use POSIX qw(strftime mktime);
 my %requests = ();
 my $fh;
 
-my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec); 
+my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
 # -----------------------------------------------------------------------------
 # Plugin core

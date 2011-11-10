@@ -118,7 +118,7 @@ sub main {
 
 sub end {
         my $ip;
-        
+
         foreach $ip (keys %flow) {
                 _flush_buffer($ip);
         }
@@ -385,7 +385,7 @@ sub _write_summary_file {
 # -----------------------------------------------------------------------------
 # Dynamically partition scored flows into sets using the k-means clustering
 # algorithm; this allows us to trim the low scoring flows off the bottom
-# without setting arbitrary thresholds or levels 
+# without setting arbitrary thresholds or levels
 #
 # K-means code originally taken from: http://www.perlmonks.org/?node_id=541000
 # Many subsequent modifications and changes have been made
@@ -444,7 +444,7 @@ sub _partition_scores() {
                 foreach $ip (keys %temp_flow) {
                         $closest = 0;
                         $dist = abs $temp_flow{$ip}->{"score"} - $center[$closest];
- 
+
                         foreach (1..$#center) {
                                 if (abs $temp_flow{$ip}->{"score"} - $center[$_] < $dist) {
                                         $dist = abs $temp_flow{$ip}->{"score"} - $center[$_];

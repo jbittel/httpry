@@ -77,12 +77,12 @@ void parse_methods_string(char *str) {
 int insert_method(char *method) {
         METHOD_NODE **node = &methods;
         int cmp;
-        
+
 #ifdef DEBUG
         ASSERT(method);
         ASSERT(strlen(method) > 0);
 #endif
-        
+
         while (*node) {
                 cmp = str_compare(method, (*node)->method);
                 if (cmp > 0) {
@@ -91,22 +91,22 @@ int insert_method(char *method) {
                         node = &(*node)->left;
                 } else {
                         WARN("Method '%s' already provided", method);
-                        
+
                         return 0;
                 }
         }
-        
+
         if ((*node = (METHOD_NODE *) malloc(sizeof(METHOD_NODE))) == NULL) {
                 LOG_DIE("Cannot allocate memory for method node");
         }
-        
+
         if (((*node)->method = (char *) malloc(strlen(method) + 1)) == NULL) {
                 LOG_DIE("Cannot allocate memory for method string");
         }
-        
+
         strcpy((*node)->method, method);
         (*node)->left = (*node)->right = NULL;
-        
+
         return 1;
 }
 
@@ -114,14 +114,14 @@ int insert_method(char *method) {
 int is_request_method(const char *str) {
         METHOD_NODE *node = methods;
         int cmp;
-        
+
 #ifdef DEBUG
         ASSERT(node);
         ASSERT(str);
 #endif
-        
+
         if (strlen(str) == 0) return 0;
-        
+
         while (node) {
                 cmp = str_compare(str, node->method);
                 if (cmp > 0) {
@@ -132,26 +132,26 @@ int is_request_method(const char *str) {
                         return 1;
                 }
         }
-        
+
         return 0;
 }
 
 /* Wrapper function to free allocated memory at program termination */
 void free_methods() {
         free_node(methods);
-        
+
         return;
 }
 
 /* Recursively free all children of the parameter node */
 void free_node(METHOD_NODE *node) {
         if (!node) return;
-        
+
         free_node(node->left);
         free_node(node->right);
-        
+
         free(node->method);
         free(node);
-        
+
         return;
 }

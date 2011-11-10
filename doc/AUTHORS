@@ -12,7 +12,7 @@ Significant suggestions or contributions:
       * Suggested source/destination port as output fields
       * Provided a patch for reopening output files with SIGHUP
       * Suggested line buffering for output files
-   
+
    Mark Carter <mark.carter@imperial.ac.uk>
       * Provided a patch adding IPv6 support
 

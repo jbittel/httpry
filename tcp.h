@@ -21,11 +21,11 @@
  * sniffex.c
  *
  * Sniffer example of TCP/IP packet capture using libpcap.
- * 
+ *
  * Version 0.1.1 (2005-07-05)
  * Copyright (c) 2005 The Tcpdump Group
  *
- * This software is intended to be used as a practical example and 
+ * This software is intended to be used as a practical example and
  * demonstration of the libpcap library; available at:
  * http://www.tcpdump.org/
  *
@@ -33,15 +33,15 @@
  *
  * This software is a modification of Tim Carstens' "sniffer.c"
  * demonstration source code, released as follows:
- * 
+ *
  * sniffer.c
  * Copyright (c) 2002 Tim Carstens
  * 2002-01-07
  * Demonstration of using libpcap
  * timcarst -at- yahoo -dot- com
- * 
+ *
  * "sniffer.c" is distributed under these terms:
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -93,7 +93,7 @@
  * TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE
  * PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,
  * REPAIR OR CORRECTION.
- * 
+ *
  * IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
  * WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
  * REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
@@ -104,7 +104,7 @@
  * PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGES.
  * <end of "sniffex.c" terms>
- * 
+ *
  */
 
 /* IP header */

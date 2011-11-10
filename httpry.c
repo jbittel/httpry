@@ -690,7 +690,7 @@ int main(int argc, char **argv) {
                 if (setvbuf(stdout, NULL, _IONBF, 0) != 0)
                         LOG_WARN("Cannot disable buffering on stdout");
         }
-        
+
         if (!pid_filename) pid_filename = PID_FILENAME;
 
         pcap_hnd = prepare_capture(interface, set_promisc, use_infile, capfilter);

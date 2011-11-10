@@ -26,7 +26,7 @@ the format string:
    Source-Port      HTTP-Version
    Dest-IP          Status-Code
    Dest-Port        Reason-Phrase
-   Direction        
+   Direction
 
 Most of these are fields from the header line of each request or response.
 The direction field will print a chevron with '>' indicating a client request
