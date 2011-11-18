@@ -27,7 +27,7 @@
 
 /* Default request methods to process; see doc/method-string for more information
    *** Can be overridden with -m */
-#define DEFAULT_METHODS "options,get,head,post,put,delete,trace,connect"
+#define DEFAULT_METHODS "get,post,put,head,options,delete,trace,connect"
 
 /* Default location to store the PID file when running in daemon mode
    *** Can be overridden with -P */
