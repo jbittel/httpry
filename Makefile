@@ -13,7 +13,7 @@ LIBS		= -lpcap -lm -lpthread
 PROG		= httpry
 FILES		= httpry.c format.c methods.c utility.c rate.c
 
-.PHONY: all debug install uninstall clean
+.PHONY: all debug profile install uninstall clean
 
 all: $(PROG)
 
@@ -26,11 +26,21 @@ debug: $(FILES)
 	@echo ""
 	@echo "This will cause the program to run slightly"
 	@echo "slower, but enables additional data verification"
-	@echo "and sanity checks. Recommended for testing, not"
-	@echo "production usage."
+	@echo "and sanity checks; recommended for testing, not"
+	@echo "production usage"
 	@echo "--------------------------------------------------"
 	@echo ""
 	$(CC) $(DEBUGFLAGS) -o $(PROG) $(FILES) $(LIBS)
+
+profile: $(FILES)
+	@echo "--------------------------------------------------"
+	@echo "Compiling $(PROG) in profile mode"
+	@echo ""
+	@echo "This enables profiling so gprof can be used for"
+	@echo "code analysis"
+	@echo "--------------------------------------------------"
+	@echo ""
+	$(CC) $(CCFLAGS) -pg -o $(PROG) $(FILES) $(LIBS)
 
 install: $(PROG)
 	@echo "--------------------------------------------------"
