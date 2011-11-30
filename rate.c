@@ -21,7 +21,6 @@
 #include "utility.h"
 
 #define MAX_HOST_LEN 255
-#define RATE_THRESHOLD 1
 #define HASHSIZE 2048
 #define NODE_BLOCKSIZE 100
 #define NODE_ALLOC_BLOCKSIZE 10
@@ -37,6 +36,7 @@ struct host_stats {
 struct thread_args {
         char *use_infile;
         unsigned int display_interval;
+        int rate_threshold;
 };
 
 void *run_stats(void *args);
@@ -54,10 +54,11 @@ static struct host_stats totals;
 static struct thread_args thread_args;
 
 /* Spawn a thread for updating and printing rate statistics */
-void create_rate_stats_thread(int display_interval, char *use_infile) {
+void create_rate_stats_thread(int display_interval, char *use_infile, int rate_threshold) {
         int s;
         thread_args.use_infile = use_infile;
         thread_args.display_interval = display_interval;
+        thread_args.rate_threshold = rate_threshold;
 
         s = pthread_mutex_init(&stats_lock, NULL);
         if (s != 0)
@@ -89,14 +90,14 @@ void *run_stats (void *args) {
 
         while (1) {
                 sleep(thread_args->display_interval);
-                display_rate_stats(thread_args->use_infile);
+                display_rate_stats(thread_args->use_infile, thread_args->rate_threshold);
         }
 
         return NULL;
 }
 
 /* Display the running average within each valid stats node */
-void display_rate_stats(char *use_infile) {
+void display_rate_stats(char *use_infile, int rate_threshold) {
         time_t now;
         char st_time[MAX_TIME_LEN];
         unsigned int delta, rps = 0;
@@ -149,7 +150,7 @@ void display_rate_stats(char *use_infile) {
                                 rps = 0;
                         }
 
-                        if (rps > RATE_THRESHOLD) {
+                        if (rps > rate_threshold) {
                                 printf("%s%s%s%s%u rps\n", st_time, FIELD_DELIM, node->host, FIELD_DELIM, rps);
                                 prev = node;
                                 node = node->next;

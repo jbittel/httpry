@@ -29,6 +29,10 @@
    *** Can be overridden with -m */
 #define DEFAULT_METHODS "get,post,put,head,options,delete,trace,connect"
 
+/* Default threshold for displaying rps in rate statistics mode
+   *** Can be overridden with -l */
+#define DEFAULT_RATE_THRESHOLD 1
+
 /* Default location to store the PID file when running in daemon mode
    *** Can be overridden with -P */
 #define PID_FILENAME "/var/run/httpry.pid"

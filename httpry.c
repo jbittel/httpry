@@ -61,6 +61,7 @@ static char *format_str = NULL;
 static char *methods_str = NULL;
 static char *use_dumpfile = NULL;
 static int rate_stats = 0;
+static int rate_threshold = DEFAULT_RATE_THRESHOLD;
 static int force_flush = 0;
 int quiet_mode = 0;               /* Defined as extern in error.h */
 int use_syslog = 0;               /* Defined as extern in error.h */
@@ -570,7 +571,7 @@ void print_stats() {
         float run_time;
 
         if (rate_stats)
-                display_rate_stats(use_infile);
+                display_rate_stats(use_infile, rate_threshold);
 
         if (pcap_hnd && !use_infile) {
                 if (pcap_stats(pcap_hnd, &pkt_stats) != 0) {
@@ -606,8 +607,9 @@ void display_banner() {
 void display_usage() {
         display_banner();
 
-        printf("Usage: %s [ -dFhpq ] [-b file ] [ -f format ] [ -i device ] [ -m methods ] [ -n count ]\n"
-               "       [ -o file ] [ -P file ] [ -r file ] [ -t seconds] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
+        printf("Usage: %s [ -dFhpq ] [-b file ] [ -f format ] [ -i device ] [ -l threshold ]\n"
+               "              [ -m methods ] [ -n count ] [ -o file ] [ -P file ] [ -r file ]\n"
+               "              [ -t seconds] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
         printf("   -b file      write HTTP packets to a binary dump file\n"
                "   -d           run as daemon\n"
@@ -615,6 +617,7 @@ void display_usage() {
                "   -F           force output flush\n"
                "   -h           print this help information\n"
                "   -i device    listen on this interface\n"
+               "   -l threshold specify a rps threshold for rate statistics\n"
                "   -m methods   specify request methods to parse\n"
                "   -n count     set number of HTTP packets to parse\n"
                "   -o file      write output to a file\n"
@@ -641,7 +644,7 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "b:df:Fhpqi:m:n:o:P:r:t:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:df:Fhpqi:l:m:n:o:P:r:t:u:")) != -1) {
                 switch (opt) {
                         case 'b': use_dumpfile = optarg; break;
                         case 'd': daemon_mode = 1; use_syslog = 1; break;
@@ -649,6 +652,7 @@ int main(int argc, char **argv) {
                         case 'F': force_flush = 1; break;
                         case 'h': display_usage(); break;
                         case 'i': interface = optarg; break;
+                        case 'l': rate_threshold = atoi(optarg); break;
                         case 'm': methods_str = optarg; break;
                         case 'n': parse_count = atoi(optarg); break;
                         case 'o': use_outfile = optarg; break;
@@ -672,6 +676,9 @@ int main(int argc, char **argv) {
 
         if ((rate_stats != 0) && (rate_stats < 1))
                 LOG_DIE("Invalid -t value, must be 1 or greater");
+
+        if (rate_threshold < 0)
+                LOG_DIE("Invalid -l value, must be 0 or greater");
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];
@@ -704,7 +711,7 @@ int main(int argc, char **argv) {
                 LOG_DIE("Cannot allocate memory for packet data buffer");
 
         if (rate_stats)
-                create_rate_stats_thread(rate_stats, use_infile);
+                create_rate_stats_thread(rate_stats, use_infile, rate_threshold);
 
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);

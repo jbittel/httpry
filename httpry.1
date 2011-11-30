@@ -34,6 +34,10 @@ Display a brief description of these options.
 Specify an ethernet interface for the program to listen on. If not specified,
 the program will poll the system for a list of interfaces and select the
 first one found.
+.IP "-l \fIthreshold\fP"
+Specify a requests per second rate threshold value when running in rate
+statistics mode. Only hosts with a rps value greater than this number will
+be displayed. Defaults to 1.
 .IP "-m \fImethods\fP"
 Provide a comma-delimited string that specifies the request methods to parse.
 The program defaults to parsing all of the standard RFC2616 method strings if
