@@ -45,7 +45,8 @@ struct host_stats *get_host(char *str);
 struct host_stats *get_node();
 void free_nodes();
 
-static pthread_t thread = 0;
+static pthread_t thread;
+static int thread_created = 0;
 static pthread_mutex_t stats_lock;
 static struct host_stats *stats[HASHSIZE];
 static struct host_stats *free_stack = NULL;
@@ -65,8 +66,11 @@ void create_rate_stats_thread(int display_interval, char *use_infile, int rate_t
                 LOG_DIE("Statistics thread mutex initialization failed with error %d", s);
 
         s = pthread_create(&thread, NULL, run_stats, (void *) &thread_args);
-        if (s != 0)
+        if (s != 0) {
                 LOG_DIE("Statistics thread creation failed with error %d", s);
+        } else {
+                thread_created = 1;
+        }
 
         /* Initialize host totals */
         totals.count = 0;
@@ -78,8 +82,25 @@ void create_rate_stats_thread(int display_interval, char *use_infile, int rate_t
 
 /* Explicitly exit rate statistics thread */
 void exit_rate_stats_thread() {
+        int s;
+        void *retval;
+
+        if (thread_created) {
+                s = pthread_cancel(thread);
+                if (s != 0)
+                        LOG_WARN("Statistics thread cancellation failed with error %d", s);
+
+                s = pthread_join(thread, &retval);
+                if (s != 0)
+                        LOG_WARN("Statistics thread join failed with error %d", s);
+
+                if (retval != PTHREAD_CANCELED)
+                        LOG_WARN("Statistics thread exit status was unexpected");
+
+                thread_created = 0;
+        }
+
         free_nodes();
-        if (thread) pthread_cancel(thread);
 
         return;
 }
@@ -93,7 +114,7 @@ void *run_stats (void *args) {
                 display_rate_stats(thread_args->use_infile, thread_args->rate_threshold);
         }
 
-        return NULL;
+        return (void *) 0;
 }
 
 /* Display the running average within each valid stats node */
@@ -104,9 +125,8 @@ void display_rate_stats(char *use_infile, int rate_threshold) {
         int i;
         struct host_stats *node, *prev;
 
-        if (thread == 0) return;
-
-        pthread_mutex_lock(&stats_lock);
+        if (thread_created)
+                pthread_mutex_lock(&stats_lock);
 
         if (use_infile) {
                 now = totals.last_packet;
@@ -165,7 +185,8 @@ void display_rate_stats(char *use_infile, int rate_threshold) {
         if (delta > 0)
                 printf("%s%stotals%s%3.2f rps\n", st_time, FIELD_DELIM, FIELD_DELIM, (float) totals.count / delta);
 
-        pthread_mutex_unlock(&stats_lock);
+        if (thread_created)
+                pthread_mutex_unlock(&stats_lock);
 
         return;
 }
@@ -210,7 +231,8 @@ void update_host_stats(char *host, time_t t) {
 
         if (host == NULL) return;
 
-        pthread_mutex_lock(&stats_lock);
+        if (thread_created)
+                pthread_mutex_lock(&stats_lock);
 
         if ((node = get_host(host)) == NULL) {
                 node = get_node();
@@ -240,7 +262,8 @@ void update_host_stats(char *host, time_t t) {
         totals.last_packet = t;
         totals.count++;
 
-        pthread_mutex_unlock(&stats_lock);
+        if (thread_created)
+                pthread_mutex_unlock(&stats_lock);
 
         return;
 }
