@@ -48,7 +48,7 @@ void free_nodes();
 static pthread_t thread;
 static int thread_created = 0;
 static pthread_mutex_t stats_lock;
-static struct host_stats *stats[HASHSIZE];
+static struct host_stats *stats[HASHSIZE] = {0};
 static struct host_stats *free_stack = NULL;
 static struct host_stats **block_alloc = NULL;
 static struct host_stats totals;
@@ -98,6 +98,10 @@ void exit_rate_stats_thread() {
                         LOG_WARN("Statistics thread exit status was unexpected");
 
                 thread_created = 0;
+
+                s = pthread_mutex_destroy(&stats_lock);
+                if (s != 0)
+                        LOG_WARN("Statistcs thread mutex destroy failed with error %d", s);
         }
 
         free_nodes();
@@ -289,9 +293,15 @@ struct host_stats *get_host(char *str) {
 /* Get a new node from either the free stack or an allocated block;
    if the block is empty, allocate a new chunk of memory */
 struct host_stats *get_node() {
-        static struct host_stats *block = NULL, *tail, **mv;
-        static int alloc_size = 0;
+        static struct host_stats *block, *tail, **mv;
         struct host_stats *head, **tmp;
+        static int alloc_size;
+
+        /* Initialize static variables as necessary */
+        if (block_alloc == NULL) {
+                block = NULL;
+                alloc_size = 0;
+        }
 
         if (free_stack != NULL) { /* Get node from free stack */
                 head = free_stack;
@@ -340,10 +350,11 @@ struct host_stats *get_node() {
         return head;
 }
 
-/* Release all memory allocated by get_node() back to the OS;
-   only called at program termination */
+/* Release all memory allocated by get_node() back to the OS
+   and re-initialize the hash array */
 void free_nodes() {
         struct host_stats **i;
+        int j;
 
         if (block_alloc == NULL) return;
 
@@ -352,6 +363,13 @@ void free_nodes() {
         }
 
         free(block_alloc);
+
+        block_alloc = NULL;
+        free_stack = NULL;
+
+        for (j = 0; j < HASHSIZE; j++) {
+                stats[j] = NULL;
+        }
 
         return;
 }

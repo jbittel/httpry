@@ -235,7 +235,6 @@ void runas_daemon() {
         signal(SIGTSTP, SIG_IGN);
         signal(SIGTTOU, SIG_IGN);
         signal(SIGTTIN, SIG_IGN);
-        signal(SIGHUP, &handle_signal);
         signal(SIGTERM, &handle_signal);
 
         fflush(NULL);
@@ -524,7 +523,11 @@ void handle_signal(int sig) {
                 case SIGHUP:
                         LOG_PRINT("Caught SIGHUP, reloading...");
                         print_stats();
+                        if (rate_stats)
+                                exit_rate_stats_thread();
                         open_outfiles();
+                        if (rate_stats)
+                                create_rate_stats_thread(rate_stats, use_infile, rate_threshold);
                         return;
                 case SIGINT:
                         LOG_PRINT("Caught SIGINT, shutting down...");
@@ -641,6 +644,7 @@ int main(int argc, char **argv) {
         extern int optind;
         int loop_status;
 
+        signal(SIGHUP, &handle_signal);
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
