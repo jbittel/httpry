@@ -11,8 +11,8 @@
 #ifndef _HAVE_RATE_H
 #define _HAVE_RATE_H
 
-void create_rate_stats_thread(int display_interval, char *use_infile, int rate_threshold);
-void exit_rate_stats_thread();
+void init_rate_stats(int display_interval, char *use_infile, int rate_threshold);
+void cleanup_rate_stats();
 void display_rate_stats(char *use_infile, int rate_threshold);
 void update_host_stats(char *host, time_t t);
 

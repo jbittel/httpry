@@ -39,11 +39,12 @@ struct thread_args {
         int rate_threshold;
 };
 
+void create_rate_stats_thread(int display_interval, char *use_infile, int rate_threshold);
+void exit_rate_stats_thread();
 void *run_stats(void *args);
 struct host_stats *remove_node(struct host_stats *node, struct host_stats *prev);
 struct host_stats *get_host(char *str);
 struct host_stats *get_node();
-void free_nodes();
 
 static pthread_t thread;
 static int thread_created = 0;
@@ -54,9 +55,26 @@ static struct host_stats **block_alloc = NULL;
 static struct host_stats totals;
 static struct thread_args thread_args;
 
+/* Initialize rate stats counters and structures, and
+   start up the stats thread if necessary */
+void init_rate_stats(int display_interval, char *use_infile, int rate_threshold) {
+        /* Initialize host totals */
+        totals.count = 0;
+        totals.first_packet = 0;
+        totals.last_packet = 0;
+
+        if (!use_infile)
+                create_rate_stats_thread(display_interval, use_infile, rate_threshold);
+
+        return;
+}
+
 /* Spawn a thread for updating and printing rate statistics */
 void create_rate_stats_thread(int display_interval, char *use_infile, int rate_threshold) {
         int s;
+
+        if (thread_created) return;
+
         thread_args.use_infile = use_infile;
         thread_args.display_interval = display_interval;
         thread_args.rate_threshold = rate_threshold;
@@ -66,16 +84,33 @@ void create_rate_stats_thread(int display_interval, char *use_infile, int rate_t
                 LOG_DIE("Statistics thread mutex initialization failed with error %d", s);
 
         s = pthread_create(&thread, NULL, run_stats, (void *) &thread_args);
-        if (s != 0) {
+        if (s != 0)
                 LOG_DIE("Statistics thread creation failed with error %d", s);
-        } else {
-                thread_created = 1;
+
+        thread_created = 1;
+
+        return;
+}
+
+/* Attempt to cancel the stats thread, cleanup allocated
+   memory and clear necessary counters and structures */
+void cleanup_rate_stats() {
+        struct host_stats **i;
+
+        exit_rate_stats_thread();
+
+        if (block_alloc != NULL) {
+                for (i = block_alloc; *i; i++) {
+                        free(*i);
+                }
+
+                free(block_alloc);
         }
 
-        /* Initialize host totals */
-        totals.count = 0;
-        totals.first_packet = 0;
-        totals.last_packet = 0;
+        block_alloc = NULL;
+        free_stack = NULL;
+
+        memset(stats, 0, sizeof(stats));
 
         return;
 }
@@ -85,26 +120,24 @@ void exit_rate_stats_thread() {
         int s;
         void *retval;
 
-        if (thread_created) {
-                s = pthread_cancel(thread);
-                if (s != 0)
-                        LOG_WARN("Statistics thread cancellation failed with error %d", s);
+        if (!thread_created) return;
 
-                s = pthread_join(thread, &retval);
-                if (s != 0)
-                        LOG_WARN("Statistics thread join failed with error %d", s);
+        s = pthread_cancel(thread);
+        if (s != 0)
+                LOG_WARN("Statistics thread cancellation failed with error %d", s);
 
-                if (retval != PTHREAD_CANCELED)
-                        LOG_WARN("Statistics thread exit status was unexpected");
+        s = pthread_join(thread, &retval);
+        if (s != 0)
+                LOG_WARN("Statistics thread join failed with error %d", s);
 
-                thread_created = 0;
+        if (retval != PTHREAD_CANCELED)
+                LOG_WARN("Statistics thread exit status was unexpected");
 
-                s = pthread_mutex_destroy(&stats_lock);
-                if (s != 0)
-                        LOG_WARN("Statistcs thread mutex destroy failed with error %d", s);
-        }
+        thread_created = 0;
 
-        free_nodes();
+        s = pthread_mutex_destroy(&stats_lock);
+        if (s != 0)
+                LOG_WARN("Statistcs thread mutex destroy failed with error %d", s);
 
         return;
 }
@@ -348,28 +381,4 @@ struct host_stats *get_node() {
         }
 
         return head;
-}
-
-/* Release all memory allocated by get_node() back to the OS
-   and re-initialize the hash array */
-void free_nodes() {
-        struct host_stats **i;
-        int j;
-
-        if (block_alloc == NULL) return;
-
-        for (i = block_alloc; *i; i++) {
-                free(*i);
-        }
-
-        free(block_alloc);
-
-        block_alloc = NULL;
-        free_stack = NULL;
-
-        for (j = 0; j < HASHSIZE; j++) {
-                stats[j] = NULL;
-        }
-
-        return;
 }

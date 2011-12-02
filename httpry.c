@@ -524,10 +524,10 @@ void handle_signal(int sig) {
                         LOG_PRINT("Caught SIGHUP, reloading...");
                         print_stats();
                         if (rate_stats)
-                                exit_rate_stats_thread();
+                                cleanup_rate_stats();
                         open_outfiles();
                         if (rate_stats)
-                                create_rate_stats_thread(rate_stats, use_infile, rate_threshold);
+                                init_rate_stats(rate_stats, use_infile, rate_threshold);
                         return;
                 case SIGINT:
                         LOG_PRINT("Caught SIGINT, shutting down...");
@@ -552,7 +552,7 @@ void cleanup() {
         /* This may have already been called, but might not
            have depending on how we got here */
         if (pcap_hnd) pcap_breakloop(pcap_hnd);
-        if (rate_stats) exit_rate_stats_thread();
+        if (rate_stats) cleanup_rate_stats();
 
         fflush(NULL);
 
@@ -715,7 +715,7 @@ int main(int argc, char **argv) {
                 LOG_DIE("Cannot allocate memory for packet data buffer");
 
         if (rate_stats)
-                create_rate_stats_thread(rate_stats, use_infile, rate_threshold);
+                init_rate_stats(rate_stats, use_infile, rate_threshold);
 
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);
