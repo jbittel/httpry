@@ -49,7 +49,7 @@ struct host_stats *get_node();
 static pthread_t thread;
 static int thread_created = 0;
 static pthread_mutex_t stats_lock;
-static struct host_stats *stats[HASHSIZE] = {0};
+static struct host_stats **stats = NULL;
 static struct host_stats *free_stack = NULL;
 static struct host_stats **block_alloc = NULL;
 static struct host_stats totals;
@@ -62,6 +62,10 @@ void init_rate_stats(int display_interval, char *use_infile, int rate_threshold)
         totals.count = 0;
         totals.first_packet = 0;
         totals.last_packet = 0;
+
+        /* Allocate host stats hash array */
+        if ((stats = (struct host_stats **) calloc(HASHSIZE, sizeof(struct host_stats *))) == NULL)
+                LOG_DIE("Cannot allocate memory for host stats");
 
         if (!use_infile)
                 create_rate_stats_thread(display_interval, use_infile, rate_threshold);
@@ -105,12 +109,15 @@ void cleanup_rate_stats() {
                 }
 
                 free(block_alloc);
+                block_alloc = NULL;
         }
 
-        block_alloc = NULL;
-        free_stack = NULL;
+        if (stats != NULL) {
+                free(stats);
+                stats = NULL;
+        }
 
-        memset(stats, 0, sizeof(stats));
+        free_stack = NULL;
 
         return;
 }
