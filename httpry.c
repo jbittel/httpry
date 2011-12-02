@@ -61,6 +61,7 @@ static char *format_str = NULL;
 static char *methods_str = NULL;
 static char *use_dumpfile = NULL;
 static int rate_stats = 0;
+static int rate_interval = DEFAULT_RATE_INTERVAL;
 static int rate_threshold = DEFAULT_RATE_THRESHOLD;
 static int force_flush = 0;
 int quiet_mode = 0;               /* Defined as extern in error.h */
@@ -527,7 +528,7 @@ void handle_signal(int sig) {
                                 cleanup_rate_stats();
                         open_outfiles();
                         if (rate_stats)
-                                init_rate_stats(rate_stats, use_infile, rate_threshold);
+                                init_rate_stats(rate_interval, use_infile, rate_threshold);
                         return;
                 case SIGINT:
                         LOG_PRINT("Caught SIGINT, shutting down...");
@@ -610,7 +611,7 @@ void display_banner() {
 void display_usage() {
         display_banner();
 
-        printf("Usage: %s [ -dFhpq ] [-b file ] [ -f format ] [ -i device ] [ -l threshold ]\n"
+        printf("Usage: %s [ -dFhpqs ] [-b file ] [ -f format ] [ -i device ] [ -l threshold ]\n"
                "              [ -m methods ] [ -n count ] [ -o file ] [ -P file ] [ -r file ]\n"
                "              [ -t seconds] [ -u user ] [ 'expression' ]\n\n", PROG_NAME);
 
@@ -628,7 +629,8 @@ void display_usage() {
                "   -P file      use custom PID filename when running in daemon mode \n"
                "   -q           suppress non-critical output\n"
                "   -r file      read packets from input file\n"
-               "   -t seconds   run in HTTP requests per second mode\n"
+               "   -s           run in HTTP requests per second mode\n"
+               "   -t seconds   specify the display interval for rate statistics\n"
                "   -u user      set process owner\n"
                "   expression   specify a bpf-style capture filter\n\n");
 
@@ -648,7 +650,7 @@ int main(int argc, char **argv) {
         signal(SIGINT, &handle_signal);
 
         /* Process command line arguments */
-        while ((opt = getopt(argc, argv, "b:df:Fhpqi:l:m:n:o:P:r:t:u:")) != -1) {
+        while ((opt = getopt(argc, argv, "b:df:Fhpqi:l:m:n:o:P:r:st:u:")) != -1) {
                 switch (opt) {
                         case 'b': use_dumpfile = optarg; break;
                         case 'd': daemon_mode = 1; use_syslog = 1; break;
@@ -664,7 +666,8 @@ int main(int argc, char **argv) {
                         case 'P': pid_filename = optarg; break;
                         case 'q': quiet_mode = 1; break;
                         case 'r': use_infile = optarg; break;
-                        case 't': rate_stats = atoi(optarg); break;
+                        case 's': rate_stats = 1; break;
+                        case 't': rate_interval = atoi(optarg); break;
                         case 'u': new_user = optarg; break;
                         default: display_usage();
                 }
@@ -678,7 +681,7 @@ int main(int argc, char **argv) {
         if (parse_count < 0)
                 LOG_DIE("Invalid -n value, must be 0 or greater");
 
-        if ((rate_stats != 0) && (rate_stats < 1))
+        if (rate_interval < 1)
                 LOG_DIE("Invalid -t value, must be 1 or greater");
 
         if (rate_threshold < 0)
@@ -715,7 +718,7 @@ int main(int argc, char **argv) {
                 LOG_DIE("Cannot allocate memory for packet data buffer");
 
         if (rate_stats)
-                init_rate_stats(rate_stats, use_infile, rate_threshold);
+                init_rate_stats(rate_interval, use_infile, rate_threshold);
 
         start_time = time(0);
         loop_status = pcap_loop(pcap_hnd, -1, &parse_http_packet, NULL);

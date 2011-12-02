@@ -36,8 +36,8 @@ the program will poll the system for a list of interfaces and select the
 first one found.
 .IP "-l \fIthreshold\fP"
 Specify a requests per second rate threshold value when running in rate
-statistics mode. Only hosts with a rps value greater than this number will
-be displayed. Defaults to 1.
+statistics mode (-s). Only hosts with a rps value greater than this number
+will be displayed. Defaults to 1.
 .IP "-m \fImethods\fP"
 Provide a comma-delimited string that specifies the request methods to parse.
 The program defaults to parsing all of the standard RFC2616 method strings if
@@ -57,9 +57,12 @@ Suppress non-critical output (startup banner, statistics, etc.).
 .IP "-r \fIfile\fP"
 Provide an input capture file to read from instead of performing
 a live capture. This option does not require root privileges.
-.IP "-t \fIseconds\fP"
+.IP "-s"
 Run httpry in an HTTP request per second display mode. This periodically
-displays the rate per active host and total rate at the specified interval.
+displays the rate per active host and total rate at a specified interval.
+.IP "-t \fIseconds\fP"
+Specify the host statistics display interval in seconds when running in
+rate statistics mode (-s). Defaults to 5 seconds.
 .IP "-u \fIuser\fP"
 Specify an alternate user to take ownership of the process and any output
 files. You will need root privileges to do this; it will switch to the new

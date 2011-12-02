@@ -10,6 +10,7 @@ version 0.1.7
    * changed IPv6 parsing to follow extension headers if present
    * changed rate statistics code to use a hash table data structure
    * added a rps threshold option (-l) when in rate statistics mode
+   * changed rps display mode to -s, -t now just sets the display interval
 
 version 0.1.6
    * added IPv6 support

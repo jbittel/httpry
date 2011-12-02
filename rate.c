@@ -35,11 +35,11 @@ struct host_stats {
 
 struct thread_args {
         char *use_infile;
-        unsigned int display_interval;
+        unsigned int rate_interval;
         int rate_threshold;
 };
 
-void create_rate_stats_thread(int display_interval, char *use_infile, int rate_threshold);
+void create_rate_stats_thread(int rate_interval, char *use_infile, int rate_threshold);
 void exit_rate_stats_thread();
 void *run_stats(void *args);
 struct host_stats *remove_node(struct host_stats *node, struct host_stats *prev);
@@ -57,7 +57,7 @@ static struct thread_args thread_args;
 
 /* Initialize rate stats counters and structures, and
    start up the stats thread if necessary */
-void init_rate_stats(int display_interval, char *use_infile, int rate_threshold) {
+void init_rate_stats(int rate_interval, char *use_infile, int rate_threshold) {
         /* Initialize host totals */
         totals.count = 0;
         totals.first_packet = 0;
@@ -68,19 +68,19 @@ void init_rate_stats(int display_interval, char *use_infile, int rate_threshold)
                 LOG_DIE("Cannot allocate memory for host stats");
 
         if (!use_infile)
-                create_rate_stats_thread(display_interval, use_infile, rate_threshold);
+                create_rate_stats_thread(rate_interval, use_infile, rate_threshold);
 
         return;
 }
 
 /* Spawn a thread for updating and printing rate statistics */
-void create_rate_stats_thread(int display_interval, char *use_infile, int rate_threshold) {
+void create_rate_stats_thread(int rate_interval, char *use_infile, int rate_threshold) {
         int s;
 
         if (thread_created) return;
 
         thread_args.use_infile = use_infile;
-        thread_args.display_interval = display_interval;
+        thread_args.rate_interval = rate_interval;
         thread_args.rate_threshold = rate_threshold;
 
         s = pthread_mutex_init(&stats_lock, NULL);
@@ -154,7 +154,7 @@ void *run_stats (void *args) {
         struct thread_args *thread_args = (struct thread_args *) args;
 
         while (1) {
-                sleep(thread_args->display_interval);
+                sleep(thread_args->rate_interval);
                 display_rate_stats(thread_args->use_infile, thread_args->rate_threshold);
         }
 
