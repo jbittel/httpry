@@ -169,6 +169,8 @@ void display_rate_stats(char *use_infile, int rate_threshold) {
         int i;
         struct host_stats *node, *prev;
 
+        if (stats == NULL) return;
+
         if (thread_created)
                 pthread_mutex_lock(&stats_lock);
 
@@ -273,7 +275,7 @@ void update_host_stats(char *host, time_t t) {
         struct host_stats *node;
         unsigned int hashval;
 
-        if (host == NULL) return;
+        if ((host == NULL) || (stats == NULL)) return;
 
         if (thread_created)
                 pthread_mutex_lock(&stats_lock);
