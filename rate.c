@@ -75,6 +75,7 @@ void init_rate_stats(int rate_interval, char *use_infile, int rate_threshold) {
 
 /* Spawn a thread for updating and printing rate statistics */
 void create_rate_stats_thread(int rate_interval, char *use_infile, int rate_threshold) {
+        sigset_t set;
         int s;
 
         if (thread_created) return;
@@ -83,13 +84,25 @@ void create_rate_stats_thread(int rate_interval, char *use_infile, int rate_thre
         thread_args.rate_interval = rate_interval;
         thread_args.rate_threshold = rate_threshold;
 
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        sigaddset(&set, SIGHUP);
+
         s = pthread_mutex_init(&stats_lock, NULL);
         if (s != 0)
                 LOG_DIE("Statistics thread mutex initialization failed with error %d", s);
 
+        s = pthread_sigmask(SIG_BLOCK, &set, NULL);
+        if (s != 0)
+                LOG_DIE("Statistics thread signal blocking failed with error %d", s);
+
         s = pthread_create(&thread, NULL, run_stats, (void *) &thread_args);
         if (s != 0)
                 LOG_DIE("Statistics thread creation failed with error %d", s);
+
+        s = pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+        if (s != 0)
+                LOG_DIE("Statistics thread signal unblocking failed with error %d", s);
 
         thread_created = 1;
 
@@ -138,7 +151,7 @@ void exit_rate_stats_thread() {
                 LOG_WARN("Statistics thread join failed with error %d", s);
 
         if (retval != PTHREAD_CANCELED)
-                LOG_WARN("Statistics thread exit status was unexpected");
+                LOG_WARN("Statistics thread exit value was unexpected");
 
         thread_created = 0;
 
