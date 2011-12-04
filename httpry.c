@@ -684,8 +684,8 @@ int main(int argc, char **argv) {
         if (rate_interval < 1)
                 LOG_DIE("Invalid -t value, must be 1 or greater");
 
-        if (rate_threshold < 0)
-                LOG_DIE("Invalid -l value, must be 0 or greater");
+        if (rate_threshold < 1)
+                LOG_DIE("Invalid -l value, must be 1 or greater");
 
         if (argv[optind] && *(argv[optind])) {
                 capfilter = argv[optind];

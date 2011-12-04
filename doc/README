@@ -106,8 +106,8 @@ first one found.
 
 -l threshold
 Specify a requests per second rate threshold value when running in rate
-statistics mode (-s). Only hosts with a rps value greater than this number
-will be displayed. Defaults to 1.
+statistics mode (-s). Only hosts with a rps value greater than or equal to
+this number will be displayed. Defaults to 1.
 
 -m methods
 Provide a comma-delimited string that specifies the request methods to parse.

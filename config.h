@@ -31,7 +31,7 @@
 
 /* Default threshold for displaying rps in rate statistics mode
    *** Can be overridden with -l */
-#define DEFAULT_RATE_THRESHOLD 1
+#define DEFAULT_RATE_THRESHOLD 2
 
 /* Default display interval for rate statistics
    *** Can be overridden with -t */

@@ -229,7 +229,7 @@ void display_rate_stats(char *use_infile, int rate_threshold) {
                                 rps = 0;
                         }
 
-                        if (rps > rate_threshold) {
+                        if (rps >= rate_threshold) {
                                 printf("%s%s%s%s%u rps\n", st_time, FIELD_DELIM, node->host, FIELD_DELIM, rps);
                                 prev = node;
                                 node = node->next;
