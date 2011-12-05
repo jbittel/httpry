@@ -58,27 +58,22 @@ sub list {
 sub main {
         my $self = shift;
         my $record = shift;
-        my $sql = "";
+        my $sth;
         my ($year, $mon, $day, $hour, $min, $sec) = (localtime)[5,4,3,2,1,0];
         my $now = ($year+1900) . "-" . ($mon+1) . "-$day $hour:$min:$sec";
+        my @values = ($now, $record->{"timestamp"}, $record->{"source-ip"}, $record->{"dest-ip"});
 
         if ($record->{"direction"} eq '>') {
-                return unless exists $record->{"host"};
-                return unless exists $record->{"request-uri"};
-
-                $sql = qq{ INSERT INTO client_data (timestamp, pktstamp, src_ip, dst_ip, hostname, uri)
-                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}', '$record->{"dest-ip"}',
-                           '$record->{"host"}', '$record->{"request-uri"}') };
+                push @values, $record->{"host"}, $record->{"request-uri"};
+                $sth = $dbh->prepare(qq{ INSERT INTO client_data (timestamp, pktstamp, src_ip, dst_ip, hostname, uri)
+                                         VALUES (?, ?, ?, ?, ?, ?) });
         } elsif ($record->{"direction"} eq '<') {
-                return unless exists $record->{"status-code"};
-                return unless exists $record->{"reason-phrase"};
-
-                $sql = qq{ INSERT INTO server_data (timestamp, pktstamp, src_ip, dst_ip, status_code, reason_phrase)
-                           VALUES ('$now', '$record->{"timestamp"}', '$record->{"source-ip"}', '$record->{"dest-ip"}',
-                           '$record->{"status-code"}', '$record->{"reason-phrase"}') };
+                push @values, $record->{"status-code"}, $record->{"reason-phrase"};
+                $sth = $dbh->prepare(qq{ INSERT INTO server_data (timestamp, pktstamp, src_ip, dst_ip, status_code, reason_phrase)
+                                         VALUES (?, ?, ?, ?, ?, ?) });
         }
 
-        _execute_query($dbh, $sql) if $sql;
+        $sth->execute(@values);
 
         return;
 }
