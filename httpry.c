@@ -369,8 +369,8 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         insert_value("dest-ip", daddr);
 
         /* Grab source/destination ports */
-        sprintf(sport, "%d", ntohs(tcp->th_sport));
-        sprintf(dport, "%d", ntohs(tcp->th_dport));
+        snprintf(sport, PORTSTRLEN, "%d", ntohs(tcp->th_sport));
+        snprintf(dport, PORTSTRLEN, "%d", ntohs(tcp->th_dport));
         insert_value("source-port", sport);
         insert_value("dest-port", dport);
 
