@@ -39,7 +39,7 @@ struct format_node {
         FORMAT_NODE *next, *list;
 };
 
-FORMAT_NODE *insert_field(char *str);
+FORMAT_NODE *insert_field(char *str, size_t len);
 FORMAT_NODE *get_field(char *str);
 
 static FORMAT_NODE *fields[HASHSIZE];
@@ -49,26 +49,28 @@ static FORMAT_NODE *head = NULL;
 void parse_format_string(char *str) {
         char *name, *tmp, *i;
         int num_nodes = 0;
+        size_t len;
 
 #ifdef DEBUG
         ASSERT(str);
 #endif
 
-        if (strlen(str) == 0)
+        len = strlen(str);
+        if (len == 0)
                 LOG_DIE("Empty format string provided");
 
         /* Make a temporary copy of the string so we don't modify the original */
-        if ((tmp = malloc(strlen(str) + 1)) == NULL)
+        if ((tmp = str_duplicate(str)) == NULL)
                 LOG_DIE("Cannot allocate memory for format string buffer");
-        strcpy(tmp, str);
 
         for (i = tmp; (name = strtok(i, ",")); i = NULL) {
                 /* Normalize input field text */
                 name = str_strip_whitespace(name);
                 name = str_tolower(name);
+                len = strlen(name);
 
-                if (strlen(name) == 0) continue;
-                if (insert_field(name)) num_nodes++;
+                if (len == 0) continue;
+                if (insert_field(name, len)) num_nodes++;
         }
 
         free(tmp);
@@ -101,14 +103,14 @@ void parse_format_string(char *str) {
 }
 
 /* Insert a new node into the hash table */
-FORMAT_NODE *insert_field(char *name) {
+FORMAT_NODE *insert_field(char *name, size_t len) {
         FORMAT_NODE *node;
         static FORMAT_NODE *prev = NULL;
         unsigned int hashval;
 
 #ifdef DEBUG
         ASSERT(name);
-        ASSERT(strlen(name) > 0);
+        ASSERT(len > 0);
 #endif
 
         if ((node = get_field(name)) == NULL) {
@@ -128,10 +130,10 @@ FORMAT_NODE *insert_field(char *name) {
                 return NULL;
         }
 
-        if ((node->name = (char *) malloc(strlen(name) + 1)) == NULL)
+        if ((node->name = (char *) malloc(len + 1)) == NULL)
                 LOG_DIE("Cannot allocate memory for node name");
+        str_copy(node->name, name, len + 1);
 
-        strcpy(node->name, name);
         node->value = NULL;
         node->list = NULL;
 

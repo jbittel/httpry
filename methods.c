@@ -37,32 +37,33 @@ struct method_node {
 
 static METHOD_NODE *methods = NULL;
 
-int insert_method(char *str);
+int insert_method(char *str, size_t len);
 void free_node(METHOD_NODE *node);
 
 /* Parse and insert methods from methods string */
 void parse_methods_string(char *str) {
         char *method, *tmp, *i;
         int num_methods = 0;
+        size_t len;
 
 #ifdef DEBUG
         ASSERT(str);
 #endif
-
-        if (strlen(str) == 0)
+        len = strlen(str);
+        if (len == 0)
                 LOG_DIE("Empty methods string provided");
 
         /* Make a temporary copy of the string so we don't modify the original */
-        if ((tmp = malloc(strlen(str) + 1)) == NULL)
+        if ((tmp = str_duplicate(str)) == NULL)
                 LOG_DIE("Cannot allocate memory for methods string buffer");
-        strcpy(tmp, str);
 
         for (i = tmp; (method = strtok(i, ",")); i = NULL) {
                 method = str_strip_whitespace(method);
                 method = str_tolower(method);
+                len = strlen(method);
 
-                if (strlen(method) == 0) continue;
-                if (insert_method(method)) num_methods++;
+                if (len == 0) continue;
+                if (insert_method(method, len)) num_methods++;
         }
 
         free(tmp);
@@ -74,7 +75,7 @@ void parse_methods_string(char *str) {
 }
 
 /* Insert a new method into the structure */
-int insert_method(char *method) {
+int insert_method(char *method, size_t len) {
         METHOD_NODE **node = &methods;
         int cmp;
 
@@ -100,11 +101,11 @@ int insert_method(char *method) {
                 LOG_DIE("Cannot allocate memory for method node");
         }
 
-        if (((*node)->method = (char *) malloc(strlen(method) + 1)) == NULL) {
+        if (((*node)->method = (char *) malloc(len + 1)) == NULL) {
                 LOG_DIE("Cannot allocate memory for method string");
         }
+        str_copy((*node)->method, method, len + 1);
 
-        strcpy((*node)->method, method);
         (*node)->left = (*node)->right = NULL;
 
         return 1;

@@ -302,7 +302,7 @@ void update_host_stats(char *host, time_t t) {
         ASSERT((hashval >= 0) && (hashval < HASHSIZE));
 #endif
 
-                strncpy(node->host, host, MAX_HOST_LEN);
+                str_copy(node->host, host, MAX_HOST_LEN);
                 node->count = 0;
                 node->first_packet = t;
 

@@ -70,6 +70,42 @@ int str_compare(const char *str1, const char *str2) {
         return tolower(*str1) - *str2;
 }
 
+/* Copy at most len characters from src to dest, including
+   the end of string terminator. Returns the total number of
+   characters copied, not including the string terminator. */
+int str_copy(char *dest, const char *src, size_t len) {
+        int i = 0;
+
+        if (len > 0) {
+                while ((*src != '\0') && --len) {
+                        *dest++ = *src++;
+                        i++;
+                }
+                *dest = '\0';
+        }
+
+        return i;
+}
+
+/* Wrapper function around str_copy() that first allocates
+   memory for the destination string and then copies the
+   parameter string into it. */
+char *str_duplicate(const char *str) {
+        char *new;
+        size_t len = strlen(str);
+
+        if ((new = malloc(len + 1)) == NULL)
+                return NULL;
+
+#ifdef DEBUG
+        ASSERT(str_copy(new, str, len + 1) <= (len + 1));
+#else
+        str_copy(new, str, len + 1);
+#endif
+
+        return new;
+}
+
 /* Implementation of Jenkins's One-at-a-Time hash, as described on
    this page: http://www.burtleburtle.net/bob/hash/doobs.html */
 unsigned int hash_str(char *str, unsigned int hashsize) {
@@ -90,6 +126,7 @@ unsigned int hash_str(char *str, unsigned int hashsize) {
         hash ^= (hash >> 11);
         hash += (hash << 15);
 
-        /* Restrict hash value to a maximum of hashsize */
+        /* Restrict hash value to a maximum of hashsize;
+           hashsize must be a power of 2 */
         return (unsigned int) (hash & (hashsize - 1));
 }
