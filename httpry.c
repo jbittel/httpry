@@ -336,7 +336,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         /* Copy packet data to editable buffer that was created in main() */
         if (size_data > BUFSIZ) size_data = BUFSIZ;
-        strncpy(buf, data, size_data);
+        memcpy(buf, data, size_data);
         buf[size_data] = '\0';
 
         /* Parse header line, bail if malformed */
