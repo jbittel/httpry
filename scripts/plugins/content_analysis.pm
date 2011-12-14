@@ -80,6 +80,7 @@ sub main {
 
                 $flow{$record->{"source-ip"}}->{"length"} = 0;
                 $flow{$record->{"source-ip"}}->{"score"} = 0;
+                $flow{$record->{"source-ip"}}->{"num_terms"} = 0;
                 $flow{$record->{"source-ip"}}->{"streak"} = 0;
                 $flow{$record->{"source-ip"}}->{"dirty"} = 0;
                 $flow{$record->{"source-ip"}}->{"count"} = 0;
@@ -249,6 +250,7 @@ sub _content_check {
         }
 
         $flow{$ip}->{"score"} += $score;
+        $flow{$ip}->{"num_terms"} += $num_terms;
 
         return $num_terms;
 }
@@ -265,10 +267,12 @@ sub _flush_buffer {
         $flow_max_len = $flow{$ip}->{"length"} if ($flow{$ip}->{"length"} > $flow_max_len);
         $flow_line_cnt += $flow{$ip}->{"length"};
 
-        # We're only interested in a flow if a score has been applied
-        if ($flow{$ip}->{"score"} > 0) {
+        # We're only interested if the score meets the thresholds
+        if (($flow{$ip}->{"score"} >= $score_threshold) &&
+            ($flow{$ip}->{"num_terms"} >= $terms_threshold)) {
                 $scored_flow{$ip}->{"num_flows"}++;
                 $scored_flow{$ip}->{"score"} += $flow{$ip}->{"score"};
+                $scored_flow{$ip}->{"num_terms"} += $flow{$ip}->{"num_terms"};
                 foreach (keys %{ $flow{$ip}->{"terms"} }) {
                         $scored_flow{$ip}->{"terms"}->{$_} += $flow{$ip}->{"terms"}->{$_};
                 }
@@ -322,7 +326,6 @@ sub _write_file {
 sub _write_summary_file {
         my $ip;
         my $term;
-        my $term_cnt;
         my $scored_flow_cnt = 0;
 
         open OUTFILE, ">$output_file" or die "Cannot open $output_file: $!\n";
@@ -364,17 +367,8 @@ sub _write_summary_file {
         print OUTFILE "Score\tIP\t\tFlows\tTerms\tTerm List\n";
         print OUTFILE "-----\t--\t\t-----\t-----\t---------\n";
         foreach $ip (sort { $scored_flow{$b}->{"score"} <=> $scored_flow{$a}->{"score"} } keys %scored_flow) {
-                $term_cnt = 0;
-
-                foreach (keys %{ $scored_flow{$ip}->{"terms"} }) {
-                        $term_cnt += $scored_flow{$ip}->{"terms"}->{$_};
-                }
-
-                print OUTFILE "$scored_flow{$ip}->{'score'}\t$ip\t$scored_flow{$ip}->{'num_flows'}\t$term_cnt\t";
-                foreach $term (sort keys %{ $scored_flow{$ip}->{"terms"} } ) {
-                        print OUTFILE "$term ";
-                }
-                print OUTFILE "\n";
+                print OUTFILE "$scored_flow{$ip}->{'score'}\t$ip\t$scored_flow{$ip}->{'num_flows'}\t$scored_flow{$ip}->{'num_terms'}\t";
+                print OUTFILE join(" ", sort keys %{ $scored_flow{$ip}->{"terms"} }) . "\n";
         }
 
         close OUTFILE or die "Cannot close $output_file: $!\n";
