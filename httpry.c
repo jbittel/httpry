@@ -592,7 +592,7 @@ void print_stats() {
                              ((pkt_stats.ps_recv * 60) / run_time), ((num_parsed * 60) / run_time));
                 }
         } else if (pcap_hnd) {
-                PRINT("%d http packets parsed", num_parsed);
+                PRINT("%u http packets parsed", num_parsed);
         }
 
         return;

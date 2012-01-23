@@ -18,7 +18,7 @@
    the string in place and returning a pointer to the (potentially)
    new starting point */
 char *str_strip_whitespace(char *str) {
-        int len;
+        size_t len = strlen(str);
 
 #ifdef DEBUG
         ASSERT(str);
@@ -26,7 +26,6 @@ char *str_strip_whitespace(char *str) {
 #endif
 
         while (isspace(*str)) str++;
-        len = strlen(str);
         while (len && isspace(*(str + len - 1)))
                 *(str + (len--) - 1) = '\0';
 
@@ -70,21 +69,20 @@ int str_compare(const char *str1, const char *str2) {
         return tolower(*str1) - *str2;
 }
 
-/* Copy at most len characters from src to dest, including
-   the end of string terminator. Returns the total number of
+/* Copy at most len characters from src to dest, guaranteeing
+   dest will be properly terminated. Returns the total number of
    characters copied, not including the string terminator. */
 int str_copy(char *dest, const char *src, size_t len) {
-        int i = 0;
+        const char *start = dest;
 
         if (len > 0) {
                 while ((*src != '\0') && --len) {
                         *dest++ = *src++;
-                        i++;
                 }
                 *dest = '\0';
         }
 
-        return i;
+        return dest - start;
 }
 
 /* Wrapper function around str_copy() that first allocates
