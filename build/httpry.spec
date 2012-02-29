@@ -42,7 +42,7 @@ include them
 Summary: specialized packet sniffer designed for displaying and logging
 HTTP traffic
 Name: httpry
-Version: 0.1.7
+Version: 0.1.8
 Release: 1.rs%{?dist}
 License: GPLv2
 Group: Applications/Internet
