@@ -64,6 +64,7 @@ static int rate_stats = 0;
 static int rate_interval = DEFAULT_RATE_INTERVAL;
 static int rate_threshold = DEFAULT_RATE_THRESHOLD;
 static int force_flush = 0;
+static int vlan_filter = 0;
 int quiet_mode = 0;               /* Defined as extern in error.h */
 int use_syslog = 0;               /* Defined as extern in error.h */
 
@@ -72,6 +73,7 @@ static char *buf = NULL;
 static unsigned int num_parsed = 0;      /* Count of fully parsed HTTP packets */
 static time_t start_time = 0;      /* Start tick for statistics calculations */
 static int header_offset = 0;
+static int vlan_offset = 0;
 static pcap_dumper_t *dumpfile = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
@@ -289,16 +291,30 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char sport[PORTSTRLEN], dport[PORTSTRLEN];
         char ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
+        unsigned int eth_type = 0;
 
+        const struct eth_header *eth;
         const struct ip_header *ip;
         const struct ip6_header *ip6;
         const struct tcp_header *tcp;
         const char *data;
         int size_ip, size_tcp, size_data, family;
 
+        /* If VLAN tags are potentially present, check the ethernet type
+           and insert a VLAN offset if necessary */
+        if (vlan_filter) {
+                eth = (struct eth_header *) pkt;
+                eth_type = ntohs(eth->ether_type);
+                if (eth_type == ETHER_TYPE_VLAN) {
+                        vlan_offset = 4;
+                } else {
+                        vlan_offset = 0;
+                }
+        }
+
         /* Position pointers within packet stream and do sanity checks */
-        ip = (struct ip_header *) (pkt + header_offset);
-        ip6 = (struct ip6_header *) (pkt + header_offset);
+        ip = (struct ip_header *) (pkt + header_offset + vlan_offset);
+        ip6 = (struct ip6_header *) (pkt + header_offset + vlan_offset);
 
         switch (IP_V(ip)) {
                 case 4: family = AF_INET; break;
@@ -313,16 +329,16 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         } else { /* AF_INET6 */
                 size_ip = sizeof(struct ip6_header);
                 if (ip6->ip6_nh != IPPROTO_TCP)
-                        size_ip = process_ip6_nh(pkt, size_ip, header->caplen - header_offset);
+                        size_ip = process_ip6_nh(pkt, size_ip, header->caplen - (header_offset + vlan_offset));
                 if (size_ip < 40) return;
         }
 
-        tcp = (struct tcp_header *) (pkt + header_offset + size_ip);
+        tcp = (struct tcp_header *) (pkt + header_offset + vlan_offset + size_ip);
         size_tcp = TH_OFF(tcp) * 4;
         if (size_tcp < 20) return;
 
-        data = (char *) (pkt + header_offset + size_ip + size_tcp);
-        size_data = (header->caplen - (header_offset + size_ip + size_tcp));
+        data = (char *) (pkt + header_offset + vlan_offset + size_ip + size_tcp);
+        size_data = (header->caplen - (header_offset + vlan_offset + size_ip + size_tcp));
         if (size_data <= 0) return;
 
         /* Check if we appear to have a valid request or response */
@@ -401,7 +417,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
    Return 0 to abort processing of this packet. */
 int process_ip6_nh(const u_char *pkt, int size_ip, int len) {
         const struct ip6_ext_header *ip6_eh;
-        ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + size_ip);
+        ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + vlan_offset + size_ip);
 
         while (ip6_eh->ip6_eh_nh != IPPROTO_TCP) {
                 switch (ip6_eh->ip6_eh_nh) {
@@ -420,7 +436,7 @@ int process_ip6_nh(const u_char *pkt, int size_ip, int len) {
 
                 if (size_ip > len) return 0;
 
-                ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + size_ip);
+                ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + vlan_offset + size_ip);
         }
 
         /* Next header is TCP, so increment past the final extension header */
@@ -692,6 +708,9 @@ int main(int argc, char **argv) {
         } else {
                 capfilter = default_capfilter;
         }
+
+        if (strstr(capfilter, "vlan") != NULL)
+                vlan_filter = 1;
 
         if (!format_str) format_str = default_format;
         if (rate_stats) format_str = rate_format;

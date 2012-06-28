@@ -14,6 +14,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#ifndef ETHER_TYPE_VLAN
+#define ETHER_TYPE_VLAN 0x8100  /* 802.1q VLAN type */
+#endif
+
 /* These IP and TCP structs/macros are from sniffex.c and
    were released under the following license: */
 
@@ -106,6 +110,16 @@
  * <end of "sniffex.c" terms>
  *
  */
+
+/* Ethernet addresses are 6 bytes */
+#define ETHER_ADDR_LEN	6
+
+/* Ethernet header */
+struct eth_header {
+        u_char  ether_dhost[ETHER_ADDR_LEN];    /* destination host address */
+        u_char  ether_shost[ETHER_ADDR_LEN];    /* source host address */
+        u_short ether_type;                     /* IP? ARP? RARP? etc */
+};
 
 /* IP header */
 struct ip_header {
