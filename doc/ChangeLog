@@ -4,6 +4,9 @@ which are often updated significantly between releases as well. It only
 lists notable changes and fixes to the core httpry program.
 
 
+version 0.1.8
+   * added support for 802.1Q VLAN tagged packets
+
 version 0.1.7
    * added an option (-P) to specify the PID filename
    * fixed compiling under OSX
