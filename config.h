@@ -27,7 +27,7 @@
 
 /* Default request methods to process; see doc/method-string for more information
    *** Can be overridden with -m */
-#define DEFAULT_METHODS "get,post,put,head,options,delete,trace,connect"
+#define DEFAULT_METHODS "get,post,put,head,options,delete,trace,connect,patch"
 
 /* Default threshold for displaying rps in rate statistics mode
    *** Can be overridden with -l */
