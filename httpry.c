@@ -452,7 +452,11 @@ char *parse_header_line(char *header_line) {
         /* Search for a '\n' line terminator, ignoring a leading
            '\r' if it exists (per RFC2616 section 19.3) */
         tmp = strchr(pos, '\n');
-        if (!tmp) return NULL;
+        if (!tmp && header_line) {
+                return header_line;
+        } else if (!tmp) {
+                return NULL;
+        }
         *tmp = '\0';
         if (*(tmp - 1) == '\r') *(--tmp) = '\0';
 
@@ -484,15 +488,15 @@ int parse_client_request(char *header_line) {
         *request_uri++ = '\0';
         while (isspace(*request_uri)) request_uri++;
 
-        if ((http_version = strchr(request_uri, ' ')) == NULL) return 1;
-        *http_version++ = '\0';
-        while (isspace(*http_version)) http_version++;
-
-        if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 1;
+        if ((http_version = strchr(request_uri, ' ')) != NULL) {
+                *http_version++ = '\0';
+                while (isspace(*http_version)) http_version++;
+                if (strncmp(http_version, HTTP_STRING, strlen(HTTP_STRING)) != 0) return 1;
+                insert_value("http-version", http_version);
+        }
 
         insert_value("method", method);
         insert_value("request-uri", request_uri);
-        insert_value("http-version", http_version);
         insert_value("direction", ">");
 
         return 0;
