@@ -1,5 +1,6 @@
-httpry (0.0.0-1) unstable; urgency=low
+httpry (0.0.0-0) precise; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * Initial release
+  * wip: http://rzr.online.fr/q/snapshot
 
- -- Philippe Coval <rzr@gna.org>  Sat, 26 Jan 2013 19:25:37 +0100
+ -- Philippe Coval <rzr@gna.org>  Sat, 26 Jan 2013 19:06:01 +0100
