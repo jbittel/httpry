@@ -32,12 +32,12 @@
 /* Function declarations */
 int getopt(int, char * const *, const char *);
 pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capfilter);
-void set_eth_offset(int header_type);
+void set_link_offset(int header_type);
 void open_outfiles();
 void runas_daemon();
 void change_user(char *name);
 void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pkt);
-int process_ip6_nh(const u_char *pkt, int size_ip, unsigned int caplen, unsigned int header_offset);
+int process_ip6_nh(const u_char *pkt, int size_ip, unsigned int caplen, unsigned int offset);
 char *parse_header_line(char *header_line);
 int parse_client_request(char *header_line);
 int parse_server_response(char *header_line);
@@ -71,7 +71,7 @@ static pcap_t *pcap_hnd = NULL;   /* Opened pcap device handle */
 static char *buf = NULL;
 static unsigned int num_parsed = 0;      /* Count of fully parsed HTTP packets */
 static time_t start_time = 0;      /* Start tick for statistics calculations */
-static int eth_offset = 0;
+static int link_offset = 0;
 static pcap_dumper_t *dumpfile = NULL;
 static char default_capfilter[] = DEFAULT_CAPFILTER;
 static char default_format[] = DEFAULT_FORMAT;
@@ -110,7 +110,7 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
                         LOG_DIE("Cannot open saved capture file: %s", errbuf);
         }
 
-        set_eth_offset(pcap_datalink(pcap_hnd));
+        set_link_offset(pcap_datalink(pcap_hnd));
 
         /* Compile capture filter and apply to handle */
         if (pcap_compile(pcap_hnd, &filter, capfilter, 0, net) == -1)
@@ -127,7 +127,7 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 }
 
 /* Set the proper packet header offset length based on the datalink type */
-void set_eth_offset(int header_type) {
+void set_link_offset(int header_type) {
 
 #ifdef DEBUG
         ASSERT(header_type >= 0);
@@ -135,37 +135,37 @@ void set_eth_offset(int header_type) {
 
         switch (header_type) {
                 case DLT_EN10MB:
-                        eth_offset = 14;
+                        link_offset = 14;
                         break;
 #ifdef DLT_IEEE802_11
                 case DLT_IEEE802_11:
-                        eth_offset = 32;
+                        link_offset = 32;
                         break;
 #endif
 #ifdef DLT_LINUX_SLL
                 case DLT_LINUX_SLL:
-                        eth_offset = 16;
+                        link_offset = 16;
                         break;
 #endif
 #ifdef DLT_LOOP
                 case DLT_LOOP:
-                        eth_offset = 4;
+                        link_offset = 4;
                         break;
 #endif
                 case DLT_NULL:
-                        eth_offset = 4;
+                        link_offset = 4;
                         break;
                 case DLT_RAW:
-                        eth_offset = 0;
+                        link_offset = 0;
                         break;
                 case DLT_PPP:
-                        eth_offset = 4;
+                        link_offset = 4;
                         break;
 #ifdef DLT_PPP_SERIAL
                 case DLT_PPP_SERIAL:
 #endif
                 case DLT_PPP_ETHER:
-                        eth_offset = 8;
+                        link_offset = 8;
                         break;
                 default:
                         LOG_DIE("Unsupported datalink type: %s", pcap_datalink_val_to_name(header_type));
@@ -298,7 +298,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char sport[PORTSTRLEN], dport[PORTSTRLEN];
         char ts[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
-        unsigned int eth_type = 0, header_offset;
+        unsigned int eth_type = 0, offset;
 
         const struct eth_header *eth;
         const struct ip_header *ip;
@@ -311,14 +311,14 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         eth = (struct eth_header *) pkt;
         eth_type = ntohs(eth->ether_type);
         if (eth_type == ETHER_TYPE_VLAN) {
-                header_offset = eth_offset + 4;
+                offset = link_offset + 4;
         } else {
-                header_offset = eth_offset;
+                offset = link_offset;
         }
 
         /* Position pointers within packet stream and do sanity checks */
-        ip = (struct ip_header *) (pkt + header_offset);
-        ip6 = (struct ip6_header *) (pkt + header_offset);
+        ip = (struct ip_header *) (pkt + offset);
+        ip6 = (struct ip6_header *) (pkt + offset);
 
         switch (IP_V(ip)) {
                 case 4: family = AF_INET; break;
@@ -333,16 +333,16 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         } else { /* AF_INET6 */
                 size_ip = sizeof(struct ip6_header);
                 if (ip6->ip6_nh != IPPROTO_TCP)
-                        size_ip = process_ip6_nh(pkt, size_ip, header->caplen, header_offset);
+                        size_ip = process_ip6_nh(pkt, size_ip, header->caplen, offset);
                 if (size_ip < 40) return;
         }
 
-        tcp = (struct tcp_header *) (pkt + header_offset + size_ip);
+        tcp = (struct tcp_header *) (pkt + offset + size_ip);
         size_tcp = TH_OFF(tcp) * 4;
         if (size_tcp < 20) return;
 
-        data = (char *) (pkt + header_offset + size_ip + size_tcp);
-        size_data = (header->caplen - (header_offset + size_ip + size_tcp));
+        data = (char *) (pkt + offset + size_ip + size_tcp);
+        size_data = (header->caplen - (offset + size_ip + size_tcp));
         if (size_data <= 0) return;
 
         /* Check if we appear to have a valid request or response */
@@ -419,10 +419,10 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 /* Iterate through IPv6 extension headers looking for a TCP header. Returns
    the total size of the IPv6 header, including all extension headers.
    Return 0 to abort processing of this packet. */
-int process_ip6_nh(const u_char *pkt, int size_ip, unsigned int caplen, unsigned int header_offset) {
+int process_ip6_nh(const u_char *pkt, int size_ip, unsigned int caplen, unsigned int offset) {
         const struct ip6_ext_header *ip6_eh;
-        unsigned int len = caplen - header_offset;
-        ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + size_ip);
+        unsigned int len = caplen - offset;
+        ip6_eh = (struct ip6_ext_header *) (pkt + offset + size_ip);
 
         while (ip6_eh->ip6_eh_nh != IPPROTO_TCP) {
                 switch (ip6_eh->ip6_eh_nh) {
@@ -441,7 +441,7 @@ int process_ip6_nh(const u_char *pkt, int size_ip, unsigned int caplen, unsigned
 
                 if (size_ip > len) return 0;
 
-                ip6_eh = (struct ip6_ext_header *) (pkt + header_offset + size_ip);
+                ip6_eh = (struct ip6_ext_header *) (pkt + offset + size_ip);
         }
 
         /* Next header is TCP, so increment past the final extension header */
