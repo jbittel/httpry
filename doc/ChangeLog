@@ -7,6 +7,8 @@ lists notable changes and fixes to the core httpry program.
 version 0.1.8
    * added support for 802.1Q VLAN tagged packets
    * added PATCH HTTP method to default method list
+   * changed packet parsing to continue without a full header present
+   * added PPP link type support
 
 version 0.1.7
    * added an option (-P) to specify the PID filename
