@@ -158,6 +158,15 @@ void set_eth_offset(int header_type) {
                 case DLT_RAW:
                         eth_offset = 0;
                         break;
+                case DLT_PPP:
+                        eth_offset = 4;
+                        break;
+#ifdef DLT_PPP_SERIAL
+                case DLT_PPP_SERIAL:
+#endif
+                case DLT_PPP_ETHER:
+                        eth_offset = 8;
+                        break;
                 default:
                         LOG_DIE("Unsupported datalink type: %s", pcap_datalink_val_to_name(header_type));
                         break;
