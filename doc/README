@@ -165,8 +165,8 @@ information on the syntax and available primitives.
 --{ KNOWN ISSUES }--
 
 It is worth noting that httpry is rather naive when it comes to parsing HTTP
-packets. It does not perform any reordering or reassemply of packets and
+packets. It does not perform any reordering or reassembly of packets and
 simply searches the start of each packet for HTTP data and ignores the packet
 if it does not find valid data. HTTP packets that are fragmented within the
-request/response line will be ignored and any header data present in subsequent
-packets will not be parsed.
+request/response line will be parsed to the end of the packet and any header
+data present in subsequent packets will not be parsed.
