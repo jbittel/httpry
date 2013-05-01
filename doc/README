@@ -69,7 +69,7 @@ page.
 
 --{ USAGE }--
 
-Running httpry with no options will cause it to listen on the first nework
+Running httpry with no options will cause it to listen on the first network
 device and output to the console with some sane defaults. The -h switch will
 print out an abbreviated description of the available options to change the
 defaults. This section describes these options in greater detail.

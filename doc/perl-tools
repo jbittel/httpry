@@ -28,7 +28,7 @@ Included Perl scripts:
         a plugins directory is specified (-d), that is used instead. If
         no directory is specified, the script first searches the current
         directory for a plugin directory followed by the base directory of
-        the script. The first directory found is used. To load only specifc
+        the script. The first directory found is used. To load only specific
         plugins, use the -p switch to provide a comma-delimited list of
         plugins (-d is not applied here, so specify them by their full path).
         Most included plugins require a config file, which must be named

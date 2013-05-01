@@ -81,7 +81,7 @@ version 0.0.9
    * command line arguments now *always* take precedence over config options
    * wrote custom command line argument parser
    * removed chance to test against invalid data on exit
-   * all major packet fields are now availble for output
+   * all major packet fields are now available for output
    * config file options now all lowercase
    * output files are now chown'd to process owner
    * -n switch now counts parsed packets, not total packets seen
@@ -119,5 +119,5 @@ version 0.0.6
    * error/log/warn message printing pushed into function macros
    * standardized error and status message strings
    * ability to specify running directory (-r)
-   * fixed an incorrect array initialisation
+   * fixed an incorrect array initialization
    * split version and help information into two commands (-v and -h)
