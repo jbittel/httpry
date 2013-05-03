@@ -48,6 +48,7 @@ sub main {
         my $self = shift;
         my $record = shift;
         my $line = "";
+        my $line_suffix;
         my ($sec, $min, $hour, $mday, $mon, $year);
         my $tz_offset;
 
@@ -80,6 +81,22 @@ sub main {
                 # Append request fields
                 $line .= " \"$record->{'method'} $record->{'request-uri'} $record->{'http-version'}\"";
 
+                if ($combined_format) {
+                        # Append referer
+                        if (exists $record->{'referer'}) {
+                                $line .= "\t \"$record->{'referer'}\"";
+                        } else {
+                                $line .= "\t \"-\"";
+                        }
+
+                        # Append user agent string
+                        if (exists $record->{'user-agent'}) {
+                                $line .= " \"$record->{'user-agent'}\"";
+                        } else {
+                                $line .= " \"-\"";
+                        }
+                }
+
                 if ($ignore_response) {
                         print $fh "$line - -\n";
                 } else {
@@ -87,9 +104,9 @@ sub main {
                 }
         } elsif ($record->{'direction'} eq '<') {
                 # NOTE: This is a bit naive, but functional. Basically we match a request with the
-                # next response from that IP in the log file. This means that under busy conditions
-                # the responses could be matched to the wrong request but currently there isn't a
-                # more accurate way to tie them together.
+                # next response from that IP pair in the log file. This means that under busy
+                # conditions the response could be matched to the wrong request but currently there
+                # isn't a more accurate way to tie them together.
                 if (exists $requests{"$record->{'dest-ip'}$record->{'source-ip'}"}) {
                         $line = shift(@{ $requests{"$record->{'dest-ip'}$record->{'source-ip'}"} });
                         return unless $line;
@@ -100,6 +117,8 @@ sub main {
                 } else {
                         return;
                 }
+
+                ($line, $line_suffix) = split /\t/, $line, 2 if $combined_format;
 
                 # Append status code
                 if (exists $record->{'status-code'}) {
@@ -115,7 +134,7 @@ sub main {
                         $line .= " -";
                 }
 
-                # TODO: also support combined log format: add referer and user-agent request headers
+                $line .= $line_suffix if $combined_format;
 
                 print $fh "$line\n";
         }
