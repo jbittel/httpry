@@ -98,7 +98,7 @@ pcap_t *prepare_capture(char *interface, int promisc, char *filename, char *capf
 
                 if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) net = 0;
 
-                pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, 0, errbuf);
+                pcap_hnd = pcap_open_live(dev, BUFSIZ, promisc, 1000, errbuf);
 
                 if (pcap_hnd == NULL)
                         LOG_DIE("Cannot open live capture on '%s': %s", dev, errbuf);
