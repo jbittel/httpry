@@ -4,7 +4,7 @@
   httpry - HTTP logging and information retrieval tool
   ----------------------------------------------------
 
-  Copyright (c) 2005-2013 Jason Bittel <jason.bittel@gmail.com>
+  Copyright (c) 2005-2014 Jason Bittel <jason.bittel@gmail.com>
 
 */
 
@@ -630,7 +630,7 @@ void print_stats() {
 void display_banner() {
         PRINT("%s version %s -- "
               "HTTP logging and information retrieval tool", PROG_NAME, PROG_VER);
-        PRINT("Copyright (c) 2005-2013 Jason Bittel <jason.bittel@gmail.com>");
+        PRINT("Copyright (c) 2005-2014 Jason Bittel <jason.bittel@gmail.com>");
 
         return;
 }
