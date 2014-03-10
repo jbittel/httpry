@@ -74,9 +74,9 @@ device and output to the console with some sane defaults. The -h switch will
 print out an abbreviated description of the available options to change the
 defaults. This section describes these options in greater detail.
 
-httpry [ -dFhpqs ] [ -b file ] [ -f format ] [ -i device ] [-l threshold ]
-       [-m methods ] [ -n count ] [ -o file ] [ -P file ] [ -r file ]
-       [-t seconds] [ -u user ] [ 'expression' ]
+httpry [ -dFhpqs ] [ -b file ] [ -f format ] [ -i device ] [ -l threshold ]
+       [ -m methods ] [ -n count ] [ -o file ] [ -P file ] [ -r file ]
+       [ -S bytes ] [ -t seconds ] [ -u user ] [ 'expression' ]
 
 -b file
 Write all processed HTTP packets to a binary pcap dump file. Useful for
@@ -138,6 +138,10 @@ a live capture. This option does not require root privileges.
 -s
 Run httpry in an HTTP request per second display mode. This periodically
 displays the rate per active host and total rate at a specified interval.
+
+-S
+Specify a number of bytes to skip in the ethernet header. This allows for
+custom header offsets to be accounted for.
 
 -t seconds
 Specify the host statistics display interval in seconds when running in
