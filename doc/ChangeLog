@@ -9,6 +9,7 @@ version 0.1.8
    * added PATCH HTTP method to default method list
    * changed packet parsing to continue without a full header present
    * added PPP link type support
+   * added custom ethernet header offset option (-S)
 
 version 0.1.7
    * added an option (-P) to specify the PID filename
