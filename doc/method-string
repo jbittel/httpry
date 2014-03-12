@@ -6,7 +6,7 @@ duplicate field names are ignored.
 
 This is the default methods string used:
 
-   options,get,head,post,put,delete,trace,connect
+   get,post,put,head,options,delete,trace,connect,patch
 
 These are all of the default methods listed in RFC2616. If, for example, you
 wanted to only process GET and HEAD requests (the default behavior in httpry <=
