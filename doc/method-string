@@ -8,9 +8,8 @@ This is the default methods string used:
 
    get,post,put,head,options,delete,trace,connect,patch
 
-These are all of the default methods listed in RFC2616. If, for example, you
-wanted to only process GET and HEAD requests (the default behavior in httpry <=
-version 0.1.3) you would use:
+For example, if you want to only process GET and HEAD requests (the default
+behavior in httpry <= version 0.1.3) you would use:
 
    httpry -m get,head
 
@@ -24,6 +23,5 @@ program simply displays what it sees on the wire. If you limit the request
 types but are capturing traffic both directions, you will still see the server
 responses for requests that were ignored.
 
-If you find yourself frequently using a custom method string and don't want to
-specify it every run, modify the default method string in config.h and
-recompile httpry.
+If you consistently use a custom method string and don't want to specify it
+every run, modify the default method string in config.h and recompile httpry.

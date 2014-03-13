@@ -23,7 +23,7 @@ version 0.1.6
    * added IPv6 support
    * added a force output flush option (-F) to disable output buffering
    * removed line buffering on output files
-   * added a http request per second display mode (-t)
+   * added a HTTP request per second display mode (-t)
 
 version 0.1.5
    * added a binary pcap dump file option (-b)
