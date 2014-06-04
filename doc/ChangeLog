@@ -10,6 +10,7 @@ version 0.1.8
    * changed packet parsing to continue without a full header present
    * added PPP link type support
    * added custom ethernet header offset option (-S)
+   * changed read timeout to be non-zero
 
 version 0.1.7
    * added an option (-P) to specify the PID filename
