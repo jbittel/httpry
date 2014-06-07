@@ -5,6 +5,7 @@
   ----------------------------------------------------
 
   Copyright (c) 2005-2014 Jason Bittel <jason.bittel@gmail.com>
+  Licensed under GPLv2. For further information, see COPYING file.
 
 */
 
