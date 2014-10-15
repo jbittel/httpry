@@ -54,7 +54,7 @@
 /* HTTP specific constant; should never change! */
 #define HTTP_STRING "HTTP/"
 
-#define MAX_TIME_LEN 20
+#define MAX_TIME_LEN 32
 #define PORTSTRLEN 6
 
 #endif /* ! _HAVE_CONFIG_H */

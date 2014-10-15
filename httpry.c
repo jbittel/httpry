@@ -298,7 +298,7 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
         char *header_line, *req_value;
         char saddr[INET6_ADDRSTRLEN], daddr[INET6_ADDRSTRLEN];
         char sport[PORTSTRLEN], dport[PORTSTRLEN];
-        char ts[MAX_TIME_LEN];
+        char ts[MAX_TIME_LEN], fmt[MAX_TIME_LEN];
         int is_request = 0, is_response = 0;
         unsigned int eth_type = 0, offset;
 
@@ -400,7 +400,8 @@ void parse_http_packet(u_char *args, const struct pcap_pkthdr *header, const u_c
 
         /* Extract packet capture time */
         pkt_time = localtime((time_t *) &header->ts.tv_sec);
-        strftime(ts, MAX_TIME_LEN, "%Y-%m-%d %H:%M:%S", pkt_time);
+        strftime(fmt, sizeof(fmt), "%Y-%m-%d %H:%M:%S.%%03u", pkt_time);
+        snprintf(ts, sizeof(ts), fmt, header->ts.tv_usec / 1000);
         insert_value("timestamp", ts);
 
         if (rate_stats) {
