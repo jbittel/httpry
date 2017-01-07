@@ -7,13 +7,14 @@
 #
 
 CC		= gcc
-CCFLAGS  	= -Wall -O3 -funroll-loops -I/usr/include/pcap -I/usr/local/include/pcap
-DEBUGFLAGS	= -Wall -g -DDEBUG -I/usr/include/pcap -I/usr/local/include/pcap
+CCFLAGS  	= -Wall -O3 -funroll-loops -I/usr/include/pcap -I${DESTDIR}/usr/include/pcap
+DEBUGFLAGS	= -Wall -g -DDEBUG -I/usr/include/pcap -I${DESTDIR}/usr/include/pcap
 LIBS		= -lpcap -lm -pthread
 PROG		= httpry
 FILES		= httpry.c format.c methods.c utility.c rate.c
 
 .PHONY: all debug profile install uninstall clean
+
 
 all: $(PROG)
 
@@ -50,12 +51,15 @@ install: $(PROG)
 	@echo "a location of your choosing manually"
 	@echo "--------------------------------------------------"
 	@echo ""
-	cp -f $(PROG) /usr/sbin/
-	cp -f $(PROG).1 /usr/man/man1/ || cp -f $(PROG).1 /usr/local/man/man1/
+	install -d ${DESTDIR}/usr/sbin/
+	cp -f $(PROG) ${DESTDIR}/usr/sbin/
+	install -d ${DESTDIR}/usr/man/man1/
+	cp -f $(PROG).1 ${DESTDIR}/usr/man/man1/ \
+	|| cp -f $(PROG).1 ${DESTDIR}/usr/man/man1/
 
 uninstall:
 	rm -f /usr/sbin/$(PROG)
-	rm -f /usr/man/man1/$(PROG).1 || rm -f /usr/local/man/man1/$(PROG).1
+	rm -f /usr/man/man1/$(PROG).1 || rm -f ${DESTDIR}/usr/man/man1/$(PROG).1
 
 clean:
 	rm -f $(PROG)
