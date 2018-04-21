@@ -50,6 +50,8 @@ install: $(PROG)
 	@echo "a location of your choosing manually"
 	@echo "--------------------------------------------------"
 	@echo ""
+	mkdir -p /usr/man/man1
+	mkdir -p /usr/local/man/man1/
 	cp -f $(PROG) /usr/sbin/
 	cp -f $(PROG).1 /usr/man/man1/ || cp -f $(PROG).1 /usr/local/man/man1/
 
